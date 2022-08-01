@@ -2,6 +2,15 @@ import {math} from './math.js';
 
 export class SpatialHash {
   constructor(bounds, dimensions) {
+    if(!(bounds[0] instanceof Array)) {
+      // If bounds is just the position of the top left corner 
+      // Convert it to an array of the top left and bottom right corners
+      const [x, y] = bounds;
+      bounds = [
+        [x, y],
+        [x + dimensions[0], y + dimensions[1]]
+      ]
+    }
     const [x, y] = dimensions;
     this._cells = [...Array(x)].map(_ => [...Array(y)].map(_ => (null)));
     this._dimensions = dimensions;
@@ -138,11 +147,12 @@ export class SpatialHash {
   }
 
   _GetCellIndex(position) {
+    //console.log('_GetCellIndex', position[0], this._bounds[0][0], this._bounds[1][0], this._bounds[0][0])
     const x = math.sat((position[0] - this._bounds[0][0]) / (
         this._bounds[1][0] - this._bounds[0][0]));
     const y = math.sat((position[1] - this._bounds[0][1]) / (
         this._bounds[1][1] - this._bounds[0][1]));
-
+      //console.log(x, y)
     const xIndex = Math.floor(x * (this._dimensions[0] - 1));
     const yIndex = Math.floor(y * (this._dimensions[1] - 1));
 
@@ -153,8 +163,12 @@ export class SpatialHash {
     const [x, y] = client.position;
     const [w, h] = client.dimensions;
 
+    //console.log(x, y, w, h);
+
     const i1 = this._GetCellIndex([x - w / 2, y - h / 2]);
     const i2 = this._GetCellIndex([x + w / 2, y + h / 2]);
+
+    //console.log(i1, i2);
 
     const nodes = [];
 

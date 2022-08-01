@@ -105,33 +105,19 @@ let start;
     
     ctx.clearRect(0, 0, width, height);
 
-    // Render player 
-    ctx.fillStyle = 'rgba(0, 0, 0, 1)';
-
-    ctx.fillRect(player.position[0] * scale + pos[0], player.position[1] * scale + pos[1], player.dimensions[0] * scale, player.dimensions[0] * scale);
-    
+    let objects = grid.FindNear(player.position, [20, 20]);
 
     // Render the objects 
-    for(let i = 0, k = Object.keys(grid._step); i < k.length; i++) {
-        const o = grid._step[k[i]];
-        const size = o.dimensions[0];
-        const vel = o.velocity;
+    for(let i = 0; i < objects.length; i++) {
+        const o = objects[i];
 
-        ctx.beginPath();
-        ctx.arc(o.position[0] * scale + pos[0], o.position[1] * scale + pos[1], size * scale , 0, 2 * Math.PI);
-        ctx.fillStyle = 'rgba(0, 0, 0, 1)';
-        ctx.fill();
+        // Object despawning
         if(Math.abs(player.position[0] - o.position[0]) >= despawnRange || 
         Math.abs(player.position[1] - o.position[1]) >= despawnRange) {
             grid.Remove(o)
         }
 
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-        for(let j = 0; j < 7; j++) {
-            ctx.beginPath();
-            ctx.arc(o.position[0] * scale + pos[0] - vel[0] * j *scale * .2, o.position[1] * scale + pos[1] - vel[1] *  j *scale* .2, size * scale , 0, 2 * Math.PI);
-            ctx.fill();
-        }
+        o.Render(ctx, pos, scale);
     }
 
     window.requestAnimationFrame(frame);

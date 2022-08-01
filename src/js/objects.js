@@ -26,6 +26,15 @@ export class PlayerClient extends Client {
             }
         }
     }
+
+    Render(ctx, offset, scale) {
+        const pos = offset;
+        // Render player 
+        ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+
+        ctx.fillRect(this.position[0] * scale + pos[0], this.position[1] * scale + pos[1], this.dimensions[0] * scale, this.dimensions[0] * scale);
+    
+    }
 }
 
 export class MagicProjectile extends Client {
@@ -56,8 +65,39 @@ export class MagicProjectile extends Client {
         this.velocity = vel;
     }
 
+    /**
+     * Run each frame, used for running things that HAS to run each frame
+     * such as projectile movement 
+     */
     Step() {
         this.position[0] += this.velocity[0] * this.speed;
         this.position[1] += this.velocity[1] * this.speed;
+    }
+
+    /**
+     * Renderer for the object
+     * @param {CanvasRenderingContext2D} ctx context to draw the object
+     * @param {Number[]} offset x and y offset in pixels to draw the object 
+     * @param {Number} scale ratio of units to pixels (scale = pixels/unit)
+     */
+    Render(ctx, offset, scale) {
+        const pos = offset;
+        const [x, y] = this.position;
+
+        const o = this;
+        const size = o.dimensions[0];
+        const vel = o.velocity;
+
+        ctx.beginPath();
+        ctx.arc(o.position[0] * scale + pos[0], o.position[1] * scale + pos[1], size * scale , 0, 2 * Math.PI);
+        ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+        ctx.fill();
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        for(let j = 0; j < 7; j++) {
+            ctx.beginPath();
+            ctx.arc(o.position[0] * scale + pos[0] - vel[0] * j *scale * .2, o.position[1] * scale + pos[1] - vel[1] *  j *scale* .2, size * scale , 0, 2 * Math.PI);
+            ctx.fill();
+        }
     }
 }
