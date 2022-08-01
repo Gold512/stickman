@@ -63,18 +63,15 @@ document.addEventListener('keyup', ev => {
 
 document.addEventListener('click', ev => {
     let [x, y] = [ev.clientX, ev.clientY];
-    console.log([x, y]);
 
     x -= player.position[0] * scale + width/2;
     y -= player.position[1] * scale + height/2;
-    console.log([x, y]);
 
     // Make magnitude always 1 
     const magnitude = Math.sqrt(x * x + y * y);
     x /= magnitude;
     y /= magnitude;
 
-    console.log([x, y]);
     grid.InsertClient(new MagicProjectile([2*x + player.position[0], 2*y + player.position[1]], .5, [x, y], .3, 1, 'black'));
 })
 
@@ -99,7 +96,7 @@ let start;
     // player movement 
     player.Move(keyState, .25);
     grid.UpdateClient(player);
-    const pos = [width/2, height/2];
+    const offset = [width/2, height/2];
 
     grid.Step(elapsedTime);
     
@@ -110,14 +107,16 @@ let start;
     // Render the objects 
     for(let i = 0; i < objects.length; i++) {
         const o = objects[i];
-
-        // Object despawning
+        o.Render(ctx, offset, scale);
+    }
+    
+    // Object despawning
+    for(let i = 0, k = Object.keys(grid._step); i < k.length; i++) {
+        const o = grid._step[k[i]];
         if(Math.abs(player.position[0] - o.position[0]) >= despawnRange || 
         Math.abs(player.position[1] - o.position[1]) >= despawnRange) {
-            grid.Remove(o)
+            grid.Remove(o);
         }
-
-        o.Render(ctx, pos, scale);
     }
 
     window.requestAnimationFrame(frame);
