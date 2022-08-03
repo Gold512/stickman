@@ -1,3 +1,4 @@
+import {math} from './math.js';
 import {Client} from './spacial_hash.js';
 
 const diagonalScaling = Math.pow(Math.sqrt(2), -1);
@@ -37,6 +38,30 @@ export class PlayerClient extends Client {
     }
 }
 
+export class Enemy extends Client {
+    constructor(position, dimensions) {
+        super(position, dimensions);
+        this.action = {};
+    }
+
+    Step(t) {
+        if(!this.action.time || this.action.time <= 0) {
+            this.action.direction = math.rand_int(1, 8);
+            this.action.time = math.rand_int(150, 500);
+        }
+
+        this.action.time -= t;
+    }
+
+    Render(ctx, offset, scale) {
+        const pos = offset;
+        // Render player 
+        ctx.fillStyle = 'rgba(200, 0, 0, 1)';
+
+        ctx.fillRect(this.position[0] * scale + pos[0], this.position[1] * scale + pos[1], this.dimensions[0] * scale, this.dimensions[0] * scale);
+    }
+}
+
 export class MagicProjectile extends Client {
     /**
      * A regular magic projectile
@@ -55,6 +80,11 @@ export class MagicProjectile extends Client {
         }
         this.velocity = vel;
         this.speed = speed;
+
+        this.collision = {
+            type: 'active', 
+            shape: 'circle'
+        }
     }
 
     /**
@@ -99,5 +129,9 @@ export class MagicProjectile extends Client {
             ctx.arc(o.position[0] * scale + pos[0] - vel[0] * j *scale * .2, o.position[1] * scale + pos[1] - vel[1] *  j *scale* .2, size * scale , 0, 2 * Math.PI);
             ctx.fill();
         }
+    }
+
+    Collision(ev) {
+        ev.grid.Remove(this);
     }
 }

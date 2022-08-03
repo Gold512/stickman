@@ -205,11 +205,24 @@ export class Client {
   constructor(position, dimensions) {
     this.position = position;
     this.dimensions = dimensions;
+    this.collision = {
+      type: 'passive', 
+      shape: 'rectangle'
+    }
     this._cells = {
       min: null,
       max: null,
       nodes: null,
     }
     this.__queryId = -1;
+  }
+
+  // All clients must have these functions to work 
+  Render() {
+
+  }
+
+  Collision() {
+
   }
 }

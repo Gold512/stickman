@@ -1,8 +1,13 @@
 import {SpatialHash} from './spacial_hash.js';
-import {PlayerClient, MagicProjectile} from './objects.js';
+import {PlayerClient, Enemy, MagicProjectile} from './objects.js';
+import {collision} from './collision.js'
+
 const grid = new SpatialHash([-30, -30], [60, 60]);
 
 const player = grid.InsertClient(new PlayerClient([0, 0], [.5, .5]));
+const enemy = grid.InsertClient(new Enemy([3, 3], [.5, .5]));
+
+
 window.player = player;
 window.grid = grid;
 
@@ -109,13 +114,48 @@ let start;
         const o = objects[i];
         o.Render(ctx, offset, scale);
     }
-    
+
     // Object despawning
     for(let i = 0, k = Object.keys(grid._step); i < k.length; i++) {
         const o = grid._step[k[i]];
         if(Math.abs(player.position[0] - o.position[0]) >= despawnRange || 
         Math.abs(player.position[1] - o.position[1]) >= despawnRange) {
             grid.Remove(o);
+        }
+
+        if(o.collision.type == 'active') {
+            const nearBy = grid.FindNear(o.position, [1, 1]);
+            let collisions = [];
+            for(let i = 0; i < nearBy.length; i++) {
+                const e = nearBy[i];
+                if(e == o) continue;
+
+                const operation = `${o.collision.shape}+${e.collision.shape}`;
+                let isCollided = false;
+                switch(operation) {
+                    case 'circle+circle':
+                        isCollided = collision.Circles(o.position[0], o.position[1], o.dimensions[0]/2, e.position[0], e.position[1], e.dimensions[0]/2);
+                        break;
+                    case 'rectangle+circle':
+                        isCollided = collision.RectAndCircle(o.position[0], o.position[1], o.dimensions[0], o.dimensions[1], e.position[0], e.position[1], e.dimensions[0]/2);
+                        break;
+                    case 'circle+rectangle':
+                        isCollided = collision.RectAndCircle(e.position[0], e.position[1], e.dimensions[0], e.dimensions[1], o.position[0], o.position[1], o.dimensions[0]/2);
+                        break;
+                    case 'rectangle+rectangle':
+                        isCollided = collision.Rects(o.position[0], o.position[1], o.dimensions[0], o.dimensions[1], e.position[0], e.position[1], e.dimensions[0], e.dimensions[1]);
+                        break;
+                    default: throw new Error(`invalid collision type ${operation}`)
+                }
+
+                if(isCollided) collisions.push(e);
+            }
+
+            if(collisions.length > 0) o.Collision({
+                objects: collisions,
+                grid: grid,
+                ctx: ctx
+            });
         }
     }
 
