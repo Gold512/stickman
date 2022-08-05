@@ -4,9 +4,14 @@ import {collision} from './collision.js'
 
 const grid = new SpatialHash([-30, -30], [60, 60]);
 
-const player = grid.InsertClient(new PlayerClient([0, 0], [.5, .5]));
-const enemy = grid.InsertClient(new Enemy([3, 3], [.5, .5]));
+const player = grid.InsertClient(new PlayerClient([0, 0], [.5, .5], {
+    health: document.getElementById('health-bar'),
+    mana: document.getElementById('mana-bar')
+}));
 
+grid.InsertClient(new Enemy([3, 3], [.5, .5]));
+grid.InsertClient(new Enemy([3, 3], [.5, .5]));
+grid.InsertClient(new Enemy([3, 3], [.5, .5]));
 
 window.player = player;
 window.grid = grid;
@@ -77,7 +82,7 @@ document.addEventListener('click', ev => {
     x /= magnitude;
     y /= magnitude;
 
-    grid.InsertClient(new MagicProjectile([2*x + player.position[0], 2*y + player.position[1]], .5, [x, y], .3, 1, 'black'));
+    grid.InsertClient(new MagicProjectile([x + player.position[0], y + player.position[1]], .5, [x, y], .3, 1, 'black'));
 })
 
 const canvas = document.getElementById('canvas');
@@ -107,7 +112,7 @@ let start;
     
     ctx.clearRect(0, 0, width, height);
 
-    let objects = grid.FindNear(player.position, [20, 20]);
+    let objects = grid.FindNear(player.position, [Math.ceil(1.5 * width / scale), Math.ceil(1.5 * height / scale)]);
 
     // Render the objects 
     for(let i = 0; i < objects.length; i++) {
@@ -129,6 +134,7 @@ let start;
             for(let i = 0; i < nearBy.length; i++) {
                 const e = nearBy[i];
                 if(e == o) continue;
+                if(e.collision.type == 'none') continue;
 
                 const operation = `${o.collision.shape}+${e.collision.shape}`;
                 let isCollided = false;

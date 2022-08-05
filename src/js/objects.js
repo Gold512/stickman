@@ -4,8 +4,10 @@ import {Client} from './spacial_hash.js';
 const diagonalScaling = Math.pow(Math.sqrt(2), -1);
 
 export class PlayerClient extends Client {
-    constructor(position, dimensions) {
+    constructor(position, dimensions, bars) {
         super(position, dimensions);
+        this.manaBar = bars.mana;
+        this.healthBar = bars.health;
     }
 
     Move(keys, distance) {
@@ -34,7 +36,17 @@ export class PlayerClient extends Client {
         ctx.fillStyle = 'rgba(0, 0, 0, 1)';
 
         ctx.fillRect(this.position[0] * scale + pos[0], this.position[1] * scale + pos[1], this.dimensions[0] * scale, this.dimensions[0] * scale);
-    
+    }
+
+    SetStats(stats) {
+        if(!stats) {
+            this.stats = {
+
+            };
+
+            return;
+        }
+        this.stats = stats;
     }
 }
 
@@ -42,6 +54,11 @@ export class Enemy extends Client {
     constructor(position, dimensions) {
         super(position, dimensions);
         this.action = {};
+        this.speed = .03;
+        this.velocity = [0, 0];
+
+        this.maxHealth = 10;
+        this.health = this.maxHealth;
     }
 
     Step(t) {
@@ -51,6 +68,44 @@ export class Enemy extends Client {
         }
 
         this.action.time -= t;
+        const s = 1;
+        switch(this.action.direction) {
+            case 1: 
+                this.velocity = [s, 0];
+                break;
+
+            case 2:
+                this.velocity = [s * diagonalScaling, s * diagonalScaling];
+                break;
+
+            case 3:
+                this.velocity = [0, s];
+                break;
+
+            case 4:
+                this.velocity = [s * diagonalScaling, - s * diagonalScaling];
+                break;
+
+            case 5:
+                this.velocity = [0, -s];
+                break;
+
+            case 6:
+                this.velocity = [- s * diagonalScaling, - s * diagonalScaling];
+                break;
+
+            case 7:
+                this.velocity = [-s, 0];
+                break;
+
+            case 8:
+                this.velocity = [- s * diagonalScaling, s * diagonalScaling];
+                break;
+            
+        }
+
+        this.position[0] += this.velocity[0] * this.speed;
+        this.position[1] += this.velocity[1] * this.speed;
     }
 
     Render(ctx, offset, scale) {
@@ -58,7 +113,12 @@ export class Enemy extends Client {
         // Render player 
         ctx.fillStyle = 'rgba(200, 0, 0, 1)';
 
-        ctx.fillRect(this.position[0] * scale + pos[0], this.position[1] * scale + pos[1], this.dimensions[0] * scale, this.dimensions[0] * scale);
+        ctx.fillRect(this.position[0] * scale + pos[0], this.position[1] * scale + pos[1], this.dimensions[0] * scale, this.dimensions[1] * scale);
+
+        // Render enemy health bar
+        const l = this.dimensions[0] * 1.25 * scale / this.maxHealth * this.health;
+        ctx.fillStyle = 'rgba(0, 255, 0, 1)';
+        ctx.fillRect(this.position[0] * scale + pos[0] - this.dimensions[0] * .125 * scale, this.position[1] * scale + pos[1] - 8, l, 5)
     }
 }
 
@@ -115,23 +175,63 @@ export class MagicProjectile extends Client {
         const [x, y] = this.position;
 
         const o = this;
-        const size = o.dimensions[0];
         const vel = o.velocity;
+        const r = o.dimensions[0] * scale / 2;
 
         ctx.beginPath();
-        ctx.arc(o.position[0] * scale + pos[0], o.position[1] * scale + pos[1], size * scale , 0, 2 * Math.PI);
+        ctx.arc(o.position[0] * scale + pos[0] , o.position[1] * scale + pos[1] , r, 0, 2 * Math.PI);
         ctx.fillStyle = 'rgba(0, 0, 0, 1)';
         ctx.fill();
 
         ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
         for(let j = 0; j < 7; j++) {
             ctx.beginPath();
-            ctx.arc(o.position[0] * scale + pos[0] - vel[0] * j *scale * .2, o.position[1] * scale + pos[1] - vel[1] *  j *scale* .2, size * scale , 0, 2 * Math.PI);
+            ctx.arc(o.position[0] * scale + pos[0] - vel[0] * j *scale * .2, o.position[1] * scale + pos[1] - vel[1] *  j * scale * .2 , r, 0, 2 * Math.PI);
             ctx.fill();
         }
     }
 
     Collision(ev) {
         ev.grid.Remove(this);
+        this.grid.InsertClient(new ExplosionParticle(this.position, this.dimensions, [this.dimensions[0], 2.5 * this.dimensions[0]], 10));
+
+        // Damage hit objects 
+        for(let i = 0; i < ev.objects.length; i++) {
+            if(!ev.objects[i].health) continue;
+            ev.objects[i].health -= this.projectile.damage;
+            if(ev.objects[i].health <= 0) this.grid.Remove(ev.objects[i]);
+        }
+    }
+}
+
+class ExplosionParticle extends Client {
+    constructor(position, dimensions, radi, duration) {
+        super(position, dimensions);
+        this.frame = 0;
+        this.radi = radi;
+        this.duration = duration;
+        this.collision.type = 'none';
+    }
+
+    Render(ctx, offset, scale) {
+        // destroy the explosion particle at the end of the animation
+        if(this.frame >= this.duration) {
+            this.grid.Remove(this); 
+            return;
+        }
+        
+        const r = (this.radi[0] + this.frame * ((this.radi[1] - this.radi[0]) / this.duration)) * scale / 2;
+        const x = this.position[0] * scale + offset[0],
+            y = this.position[1] * scale + offset[1];
+        
+
+        ctx.beginPath();
+        ctx.arc(x, y , r, 0, 2 * Math.PI);
+
+        const opacity = .8 - .4 * (this.frame / this.duration);
+        ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
+        ctx.fill();
+
+        this.frame++;   
     }
 }

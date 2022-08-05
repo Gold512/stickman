@@ -198,6 +198,7 @@ export class SpatialHash {
     client._cells.min = i1;
     client._cells.max = i2;
     client._cells.nodes = nodes;
+    client.grid = this;
   }
 }
 
@@ -205,6 +206,7 @@ export class Client {
   constructor(position, dimensions) {
     this.position = position;
     this.dimensions = dimensions;
+    this.grid = null;
     this.collision = {
       type: 'passive', 
       shape: 'rectangle'

@@ -9,6 +9,19 @@
 </head>
 <body>
     <canvas id="canvas"></canvas>
+    <div id="stats">
+        <span class="bar" id="health-bar" style="
+        --color: red;
+        --current: 10;
+        --max: 10;
+        ">
+        </span><br>
+        <span class="bar" id="mana-bar" style="
+        --color: rgb(58, 58, 255);
+        --current: 50;
+        --max: 50;
+        "></span>
+    </div>
     <script src="src/js/main.js" type="module"></script>
 </body>
 </html>
