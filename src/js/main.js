@@ -6,7 +6,8 @@ const grid = new SpatialHash([-30, -30], [60, 60]);
 
 const player = grid.InsertClient(new PlayerClient([0, 0], [.5, .5], {
     health: document.getElementById('health-bar'),
-    mana: document.getElementById('mana-bar')
+    mana: document.getElementById('mana-bar'),
+    xp: document.getElementById('xp-bar')
 }));
 
 grid.InsertClient(new Enemy([3, 3], [.5, .5]));
