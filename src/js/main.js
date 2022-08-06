@@ -73,6 +73,8 @@ document.addEventListener('keyup', ev => {
 });
 
 document.addEventListener('click', ev => {
+    if(player.mana <= 3) return;
+
     let [x, y] = [ev.clientX, ev.clientY];
 
     x -= player.position[0] * scale + width/2;
@@ -84,6 +86,8 @@ document.addEventListener('click', ev => {
     y /= magnitude;
 
     grid.InsertClient(new MagicProjectile([x + player.position[0], y + player.position[1]], .5, [x, y], .3, 1, 'black'));
+
+    player.mana -= 3;
 })
 
 const canvas = document.getElementById('canvas');

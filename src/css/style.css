@@ -38,7 +38,7 @@
 .bar::before {
     display: block;
     content: '';
-    width: calc(100% * (var(--current) / var(--max)));
+    width: min(100%, calc(100% * (var(--current) / var(--max))));
     height: 100%;
     position: absolute;
     left: 0;

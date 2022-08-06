@@ -6,8 +6,40 @@ const diagonalScaling = Math.pow(Math.sqrt(2), -1);
 export class PlayerClient extends Client {
     constructor(position, dimensions, bars) {
         super(position, dimensions);
-        this.manaBar = bars.mana;
-        this.healthBar = bars.health;
+        this.bars = bars;
+        this._health = 20;
+        this._maxHealth = 20;
+
+        this._maxMana = 50;
+        this._mana = this._maxMana;
+
+        this.manaRegen = 5;
+        this.healthRegen = 1;
+
+        this._regen = {health: 0, mana: 0};
+    }
+
+    // Mana and health regen
+    Step(t) { 
+        if(this._health < this._maxHealth) this._regen.health += (t / 1000) * this.healthRegen;
+        if(this._mana < this._maxMana) this._regen.mana += (t / 1000) * this.manaRegen;
+
+        for(let i in this._regen) {
+            if(this._regen[i] >= 1) {
+                this[i]++;
+                this._regen[i]--;
+            }
+        }
+
+        if(this._health > this._maxHealth) {
+            this.health = this._maxHealth
+            this._regen.health = 0;
+        }
+
+        if(this._mana > this._maxMana) {
+            this.mana = this._maxMana
+            this._regen.mana = 0;
+        }
     }
 
     Move(keys, distance) {
@@ -48,6 +80,23 @@ export class PlayerClient extends Client {
         }
         this.stats = stats;
     }
+
+    /**
+     * @param {Number} v
+     */
+    set health(v) {
+        this._health = v;
+        this.bars.health.style.setProperty('--current', v)
+    }
+
+    get health() { return this._health; }
+
+    set mana(v) {
+        this._mana = v;
+        this.bars.mana.style.setProperty('--current', v)
+    }
+
+    get mana() { return this._mana; }
 }
 
 export class Enemy extends Client {
@@ -59,6 +108,17 @@ export class Enemy extends Client {
 
         this.maxHealth = 10;
         this.health = this.maxHealth;
+    }
+
+    ShootAt(pos) {
+        const [x, y] = pos;
+        const [cx, cy] = this.position;
+        let vector = [x - cx, y - cy];
+        const scaler = 1/Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
+        vector[0] *= scaler;
+        vector[1] *= scaler;
+        this.grid.InsertClient(new MagicProjectile([cx + vector[0], cy + vector[1]], .5, vector, .3, 1, 'black'));
+
     }
 
     Step(t) {
@@ -106,6 +166,16 @@ export class Enemy extends Client {
 
         this.position[0] += this.velocity[0] * this.speed;
         this.position[1] += this.velocity[1] * this.speed;
+
+        if(math.rand_int(0, 500 / t) == 0) {
+            let objects = this.grid.FindNear(this.position, [20, 20]);
+            for(let i = 0; i < objects.length; i++) {
+                if(objects[i] instanceof PlayerClient) {
+                    this.ShootAt(objects[i].position)
+                }
+            }
+            
+        }
     }
 
     Render(ctx, offset, scale) {
@@ -199,7 +269,16 @@ export class MagicProjectile extends Client {
         for(let i = 0; i < ev.objects.length; i++) {
             if(!ev.objects[i].health) continue;
             ev.objects[i].health -= this.projectile.damage;
-            if(ev.objects[i].health <= 0) this.grid.Remove(ev.objects[i]);
+            if(ev.objects[i].health <= 0) {
+                this.grid.Remove(ev.objects[i]);
+
+                if(ev.objects[i] instanceof PlayerClient) {
+                    alert('you died')
+                    const o = ev.objects[i];
+                    o.health = o._maxHealth;
+                    this.grid.InsertClient(o);
+                }
+            }
         }
     }
 }
