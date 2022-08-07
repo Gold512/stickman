@@ -96,10 +96,13 @@ document.addEventListener('click', ev => {
     x /= magnitude;
     y /= magnitude;
 
-    const projectile = grid.InsertClient(new MagicProjectile([x + player.position[0], y + player.position[1]], .5, [x, y], .3, 1, 'black'));
+    const projectile = grid.InsertClient(new MagicProjectile([x + player.position[0] + .5 * player.dimensions[0], y + player.position[1] + .5 * player.dimensions[1]], .5, [x, y], .3, 1, 'black'));
     projectile.owner = player.id;
 
     player.mana -= 3;
+
+    document.querySelector('.skill').classList.add('cooldown');
+    setTimeout(() => document.querySelector('.skill').classList.remove('cooldown'), 500)
 })
 
 const canvas = document.getElementById('canvas');

@@ -138,6 +138,10 @@ export class PlayerClient extends Client {
         this.maxMana = this.level * 50;
         this.mana += levelsGained * 50;
 
+        this.healthRegen = this.level * 1;
+        this.manaRegen = this.level * 5;
+
+        this.maxXp = this.level * 3 + 10
     }
 
     get xp() { return this._xp; }
@@ -177,7 +181,7 @@ export class Enemy extends Client {
         const scaler = 1/Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
         vector[0] *= scaler;
         vector[1] *= scaler;
-        this.grid.InsertClient(new MagicProjectile([cx + vector[0], cy + vector[1]], .5, vector, .3, 1, 'black'));
+        this.grid.InsertClient(new MagicProjectile([cx + vector[0] + .5 * this.dimensions[0], cy + vector[1] + .5 * this.dimensions[1]], .5, vector, .3, 1, 'black'));
 
     }
 
