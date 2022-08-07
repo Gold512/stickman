@@ -18,6 +18,7 @@ export class SpatialHash {
     this._queryIds = 0;
     this._step = {};
     this._step_id_counter = 0;
+    this._idTable = {};
   }
 
   /**
@@ -29,6 +30,7 @@ export class SpatialHash {
    */
   NewClient(position, dimensions) {
     const client = new Client(position, dimensions);
+    this._idTable[client.id] = client;
 
     this._Insert(client);
 
@@ -45,6 +47,9 @@ export class SpatialHash {
       client._step_entry_id = step_entry_id;
       this._step[step_entry_id] = client;
     }
+
+    // Set id 
+    this._idTable[client.id] = client;
     
     return client;
   }
@@ -102,8 +107,14 @@ export class SpatialHash {
   }
 
   Remove(client) {
+    if(client.OnRemove) client.OnRemove();
     this._Remove(client);
     if(client._step_entry_id) delete this._step[client._step_entry_id];
+    delete this._idTable[client.id];
+  }
+
+  GetClientById(id) {
+    return this._idTable[id];
   }
 
   _Remove(client) {
@@ -217,6 +228,7 @@ export class Client {
       nodes: null,
     }
     this.__queryId = -1;
+    this.id = Date.now().toString(36) + Math.floor(Math.pow(10, 12) + Math.random() * 9*Math.pow(10, 12)).toString(36);
   }
 
   // All clients must have these functions to work 
@@ -227,4 +239,8 @@ export class Client {
   Collision() {
 
   }
+
+  // OnRemove() {
+  //
+  // }
 }

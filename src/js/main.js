@@ -1,18 +1,29 @@
 import {SpatialHash} from './spacial_hash.js';
-import {PlayerClient, Enemy, MagicProjectile} from './objects.js';
+import {PlayerClient, Enemy, MagicProjectile, Spawner} from './objects.js';
 import {collision} from './collision.js'
+import {initUI} from './ui.js'
 
 const grid = new SpatialHash([-30, -30], [60, 60]);
 
 const player = grid.InsertClient(new PlayerClient([0, 0], [.5, .5], {
     health: document.getElementById('health-bar'),
     mana: document.getElementById('mana-bar'),
-    xp: document.getElementById('xp-bar')
+    xp: document.getElementById('xp-bar'),
+    level: document.getElementById('level')
 }));
 
-grid.InsertClient(new Enemy([3, 3], [.5, .5]));
-grid.InsertClient(new Enemy([3, 3], [.5, .5]));
-grid.InsertClient(new Enemy([3, 3], [.5, .5]));
+grid.InsertClient(new Spawner([0, 0], [12, 12], () => new Enemy([3, 3], [.5, .5]), 3)).Spawn();
+
+
+// grid.InsertClient(new Enemy([3, 3], [.5, .5]));
+// grid.InsertClient(new Enemy([3, 3], [.5, .5]));
+// grid.InsertClient(new Enemy([3, 3], [.5, .5]));
+
+window.spawn = function(n) { 
+    for(let i = 0; i < n; i++) {
+        grid.InsertClient(new Enemy([3, 3], [.5, .5]));
+    }
+}
 
 window.player = player;
 window.grid = grid;
@@ -85,7 +96,8 @@ document.addEventListener('click', ev => {
     x /= magnitude;
     y /= magnitude;
 
-    grid.InsertClient(new MagicProjectile([x + player.position[0], y + player.position[1]], .5, [x, y], .3, 1, 'black'));
+    const projectile = grid.InsertClient(new MagicProjectile([x + player.position[0], y + player.position[1]], .5, [x, y], .3, 1, 'black'));
+    projectile.owner = player.id;
 
     player.mana -= 3;
 })
@@ -128,6 +140,8 @@ let start;
     // Object despawning
     for(let i = 0, k = Object.keys(grid._step); i < k.length; i++) {
         const o = grid._step[k[i]];
+        if(o == undefined) continue;
+
         if(Math.abs(player.position[0] - o.position[0]) >= despawnRange || 
         Math.abs(player.position[1] - o.position[1]) >= despawnRange) {
             grid.Remove(o);
@@ -172,3 +186,5 @@ let start;
 
     window.requestAnimationFrame(frame);
 }();
+
+initUI();

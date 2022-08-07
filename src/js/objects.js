@@ -15,6 +15,11 @@ export class PlayerClient extends Client {
 
         this.manaRegen = 5;
         this.healthRegen = 1;
+        this.skillPoints = 0;
+
+        this._xp = 0;
+        this._maxXp = 10;
+        this._level = 1;
 
         this._regen = {health: 0, mana: 0};
     }
@@ -91,12 +96,67 @@ export class PlayerClient extends Client {
 
     get health() { return this._health; }
 
+    set maxHealth(v) {
+        this._maxHealth = v;
+        this.bars.health.style.setProperty('--max', v)
+    }
+
+    get maxHealth() { return this._maxHealth; }
+
     set mana(v) {
         this._mana = v;
         this.bars.mana.style.setProperty('--current', v)
     }
 
     get mana() { return this._mana; }
+
+    set maxMana(v) {
+        this._maxMana = v;
+        this.bars.mana.style.setProperty('--max', v)
+    }
+
+    get maxMana() { return this._maxMana; }
+
+
+    set xp(v) {
+        let levelsGained = 0;
+        while(v >= this._maxXp) {
+            v -= this._maxXp;
+            levelsGained++;
+        }
+
+        this.skillPoints += levelsGained;
+        this.level += levelsGained;
+
+        this._xp = v;
+        this.bars.xp.style.setProperty('--current', v);
+
+        // Update stats 
+        this.maxHealth = this.level * 20;
+        this.health += levelsGained * 20;
+
+        this.maxMana = this.level * 50;
+        this.mana += levelsGained * 50;
+
+    }
+
+    get xp() { return this._xp; }
+
+    set maxXp(v) {
+        this._maxXp = v;
+        this.bars.xp.style.setProperty('--max', v)
+    }
+
+    get maxXp() { return this._maxXp; }
+
+    set level(v) {
+        this.bars.level.innerText = v;
+        this._level = v;
+    }
+
+    get level() { return this._level; }
+
+    
 }
 
 export class Enemy extends Client {
@@ -106,7 +166,7 @@ export class Enemy extends Client {
         this.speed = .03;
         this.velocity = [0, 0];
 
-        this.maxHealth = 10;
+        this.maxHealth = 5;
         this.health = this.maxHealth;
     }
 
@@ -129,6 +189,7 @@ export class Enemy extends Client {
 
         this.action.time -= t;
         const s = 1;
+
         switch(this.action.direction) {
             case 1: 
                 this.velocity = [s, 0];
@@ -164,6 +225,33 @@ export class Enemy extends Client {
             
         }
 
+        if(this.bounds) {
+            let regenerate;
+            const [topLeft, bottomRight] = this.bounds;
+            if(topLeft[0] >= this.position[0]) {
+                this.velocity[0] = s;
+                regenerate = true;
+            } else if(bottomRight[0] <= this.position[0] + this.dimensions[0]) {
+                this.velocity[0] = -s;
+                regenerate = true;
+            }
+
+            if(topLeft[1] >= this.position[1]) {
+                this.velocity[1] = s;
+                regenerate = true;
+            } else if(bottomRight[1] <= this.position[1] + this.dimensions[1]) {
+                this.velocity[1] = -s;
+                regenerate = true;
+            }
+
+            if(Math.abs(this.velocity[0]) == s && Math.abs(this.velocity[1]) == s) this.velocity = [this.velocity[0] * diagonalScaling, this.velocity[1] * diagonalScaling];
+            
+            if(regenerate) {
+                this.action.direction = math.rand_int(1, 8);
+                this.action.time = math.rand_int(150, 500);
+            }
+        }
+
         this.position[0] += this.velocity[0] * this.speed;
         this.position[1] += this.velocity[1] * this.speed;
 
@@ -190,6 +278,58 @@ export class Enemy extends Client {
         ctx.fillStyle = 'rgba(0, 255, 0, 1)';
         ctx.fillRect(this.position[0] * scale + pos[0] - this.dimensions[0] * .125 * scale, this.position[1] * scale + pos[1] - 8, l, 5)
     }
+
+    OnRemove() {
+        if(!this.spawner) return;
+        this.grid.GetClientById(this.spawner).killed++;
+    }
+}
+
+export class Spawner extends Client {
+    constructor(position, bounds, objectGenerator, count) {
+        super(position, [1, 1]);
+
+        this.collision.type = 'none';
+
+        this.bounds = bounds;
+
+        this.total = count;
+        this._killed = 0;
+
+        this.objectGenerator = objectGenerator;
+        this.count = count;
+    }
+
+    Spawn() {
+        for(let i = 0; i < this.count; i++) {
+            const obj = this.objectGenerator();
+
+            // Make spawned Client position relative to spawner
+            obj.position[0] += this.position[0];
+            obj.position[1] += this.position[1];
+            obj.spawner = this.id;
+            obj.bounds = [
+                [this.position[0] - .5 * this.bounds[0], this.position[1] - .5 * this.bounds[1]],
+                [this.position[0] + .5 * this.bounds[0], this.position[1] + .5 * this.bounds[1]]
+            ];
+            this.grid.InsertClient(obj);
+        }
+    }
+
+    Render(ctx, offset, scale) {
+        ctx.fillStyle = 'rgba(0, 0, 200, 1)';
+        ctx.fillRect(this.position[0] * scale + offset[0], this.position[1] * scale + offset[1], this.dimensions[0] * scale, this.dimensions[1] * scale);
+    }
+
+    set killed(v) {
+        this._killed = v;
+        if(this._killed == this.total) {
+            this.Spawn();
+            this._killed = 0;
+        }
+    }
+
+    get killed() { return this._killed; }
 }
 
 export class MagicProjectile extends Client {
@@ -263,31 +403,51 @@ export class MagicProjectile extends Client {
 
     Collision(ev) {
         ev.grid.Remove(this);
-        this.grid.InsertClient(new ExplosionParticle(this.position, this.dimensions, [this.dimensions[0], 2.5 * this.dimensions[0]], 10));
 
+        const owner = this.grid.GetClientById(this.owner);
         // Damage hit objects 
         for(let i = 0; i < ev.objects.length; i++) {
-            if(!ev.objects[i].health) continue;
-            ev.objects[i].health -= this.projectile.damage;
-            if(ev.objects[i].health <= 0) {
-                this.grid.Remove(ev.objects[i]);
+            const o = ev.objects[i];
 
-                if(ev.objects[i] instanceof PlayerClient) {
+            // If it collides with another bullet make both explode with larger radius
+            if(o instanceof MagicProjectile) {
+                const x1 = this.position[0] + .5 * this.dimensions[0];
+                const y1 = this.position[1] + .5 * this.dimensions[1];
+
+                const x2 = o.position[0] + .5 * o.dimensions[0];
+                const y2 = o.position[1] + .5 * o.dimensions[1];
+
+                this.grid.InsertClient(new ExplosionParticle([(x1 + x2) / 2, (y1 + y2) / 2], this.dimensions, [this.dimensions[0], 5 * this.dimensions[0]], 15));
+                this.grid.Remove(o);
+                return;
+            }
+
+            if(!o.health) continue;
+            o.health -= this.projectile.damage;
+            if(o.health <= 0) {
+                this.grid.Remove(o);
+
+                if(o instanceof PlayerClient) {
                     alert('you died')
-                    const o = ev.objects[i];
                     o.health = o._maxHealth;
                     this.grid.InsertClient(o);
+                } else if(owner && owner instanceof PlayerClient) {
+                    // If killed by player award xp to player
+                    owner.xp += o.xp || 1;
                 }
             }
         }
+        
+        this.grid.InsertClient(new ExplosionParticle(this.position, this.dimensions, [this.dimensions[0], 2.5 * this.dimensions[0]], 10));
+
     }
 }
 
 class ExplosionParticle extends Client {
-    constructor(position, dimensions, radi, duration) {
+    constructor(position, dimensions, radii, duration) {
         super(position, dimensions);
         this.frame = 0;
-        this.radi = radi;
+        this.radii = radii;
         this.duration = duration;
         this.collision.type = 'none';
     }
@@ -299,7 +459,7 @@ class ExplosionParticle extends Client {
             return;
         }
         
-        const r = (this.radi[0] + this.frame * ((this.radi[1] - this.radi[0]) / this.duration)) * scale / 2;
+        const r = (this.radii[0] + this.frame * ((this.radii[1] - this.radii[0]) / this.duration)) * scale / 2;
         const x = this.position[0] * scale + offset[0],
             y = this.position[1] * scale + offset[1];
         
