@@ -1,3 +1,5 @@
+import { downloadSave, loadSaveFile } from "./save.js";
+
 const display = {
     menu: 'block'
 }
@@ -12,6 +14,18 @@ function toggleStatMenu() {
     }
 }
 
-export function initUI() {
-    document.getElementById('stats').addEventListener('click', toggleStatMenu)
+export function initUI(player) {
+    document.getElementById('stats').addEventListener('click', toggleStatMenu);
+    document.querySelector('#stat-menu #close').addEventListener('click', toggleStatMenu);
+
+    document.getElementById('download-save').addEventListener('click', () => downloadSave(player));
+    document.getElementById('load-save').addEventListener('click', () => loadSaveFile(player));
+}
+
+export function updateStats(player) {
+    document.getElementById('max-mana').innerText = player.maxMana;
+    document.getElementById('mana-regen').innerText = player.manaRegen;
+
+    document.getElementById('max-health').innerText = player.maxHealth;
+    document.getElementById('health-regen').innerText = player.healthRegen;
 }

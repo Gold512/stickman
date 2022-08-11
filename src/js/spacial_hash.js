@@ -117,6 +117,16 @@ export class SpatialHash {
     return this._idTable[id];
   }
 
+  ClientSelector(query) {
+    let res = [];
+    const {type} = query;
+    for(let i in this._idTable) {
+      const e = this._idTable[i];
+      if(e.constructor.name == type) res.push(e);
+    }
+    return res;
+  }
+
   _Remove(client) {
     const i1 = client._cells.min;
     const i2 = client._cells.max;
@@ -228,10 +238,24 @@ export class Client {
       nodes: null,
     }
     this.__queryId = -1;
-    this.id = Date.now().toString(36) + Math.floor(Math.pow(10, 12) + Math.random() * 9*Math.pow(10, 12)).toString(36);
+    this.id = Date.now().toString(36) + Math.floor(1e12 + Math.random() * 9e12).toString(36);
+  }
+
+  GetCenter() {
+    return [
+      this.position[0] + .5 * this.dimensions[0],
+      this.position[1] + .5 * this.dimensions[1]
+    ]
   }
 
   // All clients must have these functions to work 
+
+  /**
+   * Renderer for the object
+   * @param {CanvasRenderingContext2D} ctx context to draw the object
+   * @param {Number[]} offset x and y offset in pixels to draw the object 
+   * @param {Number} scale ratio of units to pixels (scale = pixels/unit)
+   */
   Render() {
 
   }

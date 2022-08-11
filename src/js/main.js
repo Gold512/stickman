@@ -1,7 +1,9 @@
 import {SpatialHash} from './spacial_hash.js';
 import {PlayerClient, Enemy, MagicProjectile, Spawner} from './objects.js';
 import {collision} from './collision.js'
-import {initUI} from './ui.js'
+import {initUI, updateStats} from './ui.js'
+import {doubleShot, tripleShot, waveShot, shield} from './skill.js'
+import { loadFromStorage } from './save.js';
 
 const grid = new SpatialHash([-30, -30], [60, 60]);
 
@@ -11,6 +13,7 @@ const player = grid.InsertClient(new PlayerClient([0, 0], [.5, .5], {
     xp: document.getElementById('xp-bar'),
     level: document.getElementById('level')
 }));
+loadFromStorage(player);
 
 grid.InsertClient(new Spawner([0, 0], [12, 12], () => new Enemy([3, 3], [.5, .5]), 3)).Spawn();
 
@@ -40,21 +43,53 @@ document.addEventListener('keydown', ev => {
         case 'w':
         case 'ArrowUp':
             keyState.up = true;
-        break;
+        return;
 
         case 'a':
         case 'ArrowLeft':
             keyState.left = true;
-        break;
+        return;
 
         case 's':
         case 'ArrowDown':
             keyState.down = true;
-        break;
+        return;
 
         case 'd':
         case 'ArrowRight':
             keyState.right = true;
+        return;
+
+        // Attack keys
+    }
+
+    if(ev.repeat) return;
+
+    let [x, y] = mousePos;
+
+    x -= player.position[0] * scale + width/2;
+    y -= player.position[1] * scale + height/2;
+    
+    // Make magnitude always 1 
+    const magnitude = Math.sqrt(x * x + y * y);
+    x /= magnitude;
+    y /= magnitude;
+
+    switch(ev.key) {
+        case 'e':
+            doubleShot(grid, player, [x, y])
+        break;
+
+        case 'f':
+            tripleShot(grid, player, [x, y]);
+        break;
+
+        case 'k':
+            waveShot(grid, player, [x, y]);
+        break;
+
+        case 'q':
+            shield(grid, player, [x, y]);
         break;
     }
 });
@@ -103,7 +138,11 @@ document.addEventListener('click', ev => {
 
     document.querySelector('.skill').classList.add('cooldown');
     setTimeout(() => document.querySelector('.skill').classList.remove('cooldown'), 500)
-})
+});
+
+document.addEventListener('mousemove', ev => {
+    mousePos = [ev.clientX, ev.clientY];
+});
 
 const canvas = document.getElementById('canvas');
 const [width, height] = [window.innerWidth, window.innerHeight]
@@ -113,6 +152,7 @@ const ctx = canvas.getContext('2d');
 const scale = 50; // canvas pixels per grid tile
 const despawnRange = 20;
 let start;
+let mousePos = [];
 
 !function frame(t) {
     let elapsedTime = 0;
@@ -124,7 +164,7 @@ let start;
     }
 
     // player movement 
-    player.Move(keyState, .25);
+    player.Move(keyState, .15);
     grid.UpdateClient(player);
     const offset = [width/2, height/2];
 
@@ -190,4 +230,5 @@ let start;
     window.requestAnimationFrame(frame);
 }();
 
-initUI();
+initUI(player);
+updateStats(player);

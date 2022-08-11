@@ -1,5 +1,7 @@
 import {math} from './math.js';
 import {Client} from './spacial_hash.js';
+import { saveToStorage } from './save.js';
+import {updateStats} from './ui.js'
 
 const diagonalScaling = Math.pow(Math.sqrt(2), -1);
 
@@ -7,42 +9,43 @@ export class PlayerClient extends Client {
     constructor(position, dimensions, bars) {
         super(position, dimensions);
         this.bars = bars;
-        this._health = 20;
-        this._maxHealth = 20;
 
-        this._maxMana = 50;
-        this._mana = this._maxMana;
-
-        this.manaRegen = 5;
-        this.healthRegen = 1;
-        this.skillPoints = 0;
-
-        this._xp = 0;
-        this._maxXp = 10;
-        this._level = 1;
+        this.stats = {
+            health: 20,
+            maxHealth: 20,
+            healthRegen: 1,
+            mana: 50,
+            maxMana: 50,
+            manaRegen: 5,
+            skillPoints: 0, 
+            xp: 0,
+            maxXp: 10,
+            level: 1
+        }
 
         this._regen = {health: 0, mana: 0};
     }
 
     // Mana and health regen
     Step(t) { 
-        if(this._health < this._maxHealth) this._regen.health += (t / 1000) * this.healthRegen;
-        if(this._mana < this._maxMana) this._regen.mana += (t / 1000) * this.manaRegen;
+        if(this.stats.health < this.stats.maxHealth) this._regen.health += (t / 1000) * this.stats.healthRegen;
+        if(this.stats.mana < this.stats.maxMana) this._regen.mana += (t / 1000) * this.stats.manaRegen;
 
         for(let i in this._regen) {
             if(this._regen[i] >= 1) {
-                this[i]++;
-                this._regen[i]--;
+                const regen = Math.trunc(this._regen[i]);
+                this[i] += regen;
+                this._regen[i] -= regen;
             }
         }
 
-        if(this._health > this._maxHealth) {
-            this.health = this._maxHealth
+        if(this.stats.health > this.stats.maxHealth) {
+            this.health = this.stats.maxHealth
             this._regen.health = 0;
         }
 
-        if(this._mana > this._maxMana) {
-            this.mana = this._maxMana
+        if(this.stats.mana > this.stats.maxMana) {
+            this.mana = this.stats.maxMana
             this._regen.mana = 0;
         }
     }
@@ -86,50 +89,15 @@ export class PlayerClient extends Client {
         this.stats = stats;
     }
 
-    /**
-     * @param {Number} v
-     */
-    set health(v) {
-        this._health = v;
-        this.bars.health.style.setProperty('--current', v)
-    }
-
-    get health() { return this._health; }
-
-    set maxHealth(v) {
-        this._maxHealth = v;
-        this.bars.health.style.setProperty('--max', v)
-    }
-
-    get maxHealth() { return this._maxHealth; }
-
-    set mana(v) {
-        this._mana = v;
-        this.bars.mana.style.setProperty('--current', v)
-    }
-
-    get mana() { return this._mana; }
-
-    set maxMana(v) {
-        this._maxMana = v;
-        this.bars.mana.style.setProperty('--max', v)
-    }
-
-    get maxMana() { return this._maxMana; }
-
-
-    set xp(v) {
+    _LevelUp(v) {
         let levelsGained = 0;
-        while(v >= this._maxXp) {
-            v -= this._maxXp;
+        while(v >= this.stats.maxXp) {
+            v -= this.stats.maxXp;
             levelsGained++;
         }
 
-        this.skillPoints += levelsGained;
+        this.stats.skillPoints += levelsGained;
         this.level += levelsGained;
-
-        this._xp = v;
-        this.bars.xp.style.setProperty('--current', v);
 
         // Update stats 
         this.maxHealth = this.level * 20;
@@ -141,26 +109,72 @@ export class PlayerClient extends Client {
         this.healthRegen = this.level * 1;
         this.manaRegen = this.level * 5;
 
-        this.maxXp = this.level * 3 + 10
+        this.maxXp = (this.level - 1) * 3 + 10;
+
+        this.stats.xp = 0;
+        this.bars.xp.style.setProperty('--current', 0);
+        
+        updateStats(this);
+        saveToStorage(this);
     }
 
-    get xp() { return this._xp; }
+    set health(v) {
+        this.stats.health = v;
+        this.bars.health.style.setProperty('--current', v)
+    }
+
+    get health() { return this.stats.health; }
+
+    set maxHealth(v) {
+        this.stats.maxHealth = v;
+        this.bars.health.style.setProperty('--max', v)
+    }
+
+    get maxHealth() { return this.stats.maxHealth; }
+
+    set mana(v) {
+        this.stats.mana = v;
+        this.bars.mana.style.setProperty('--current', v)
+    }
+
+    get mana() { return this.stats.mana; }
+
+    set maxMana(v) {
+        this.stats.maxMana = v;
+        this.bars.mana.style.setProperty('--max', v)
+    }
+
+    get maxMana() { return this.stats.maxMana; }
+
+
+    set xp(v) {
+        this.stats.xp = v;
+        this.bars.xp.style.setProperty('--current', v);
+
+        if(v >= this.stats.maxXp) this._LevelUp(v);
+    }
+
+    get xp() { return this.stats.xp; }
 
     set maxXp(v) {
-        this._maxXp = v;
+        this.stats.maxXp = v;
         this.bars.xp.style.setProperty('--max', v)
     }
 
-    get maxXp() { return this._maxXp; }
+    get maxXp() { return this.stats.maxXp; }
 
     set level(v) {
         this.bars.level.innerText = v;
-        this._level = v;
+        this.stats.level = v;
     }
 
-    get level() { return this._level; }
+    get level() { return this.stats.level; }
 
-    
+    set manaRegen(v) { this.stats.manaRegen = v; }
+    get manaRegen() { return this.stats.manaRegen; }
+
+    set healthRegen(v) { this.stats.healthRegen = v; }
+    get healthRegen() { return this.stats.healthRegen; }
 }
 
 export class Enemy extends Client {
@@ -364,9 +378,25 @@ export class MagicProjectile extends Client {
     /**
      * Change speed of projectile 
      * @param {Number[]} vel the x and y velocity of the projectile 
+     * @chainable this
      */
     SetSpeed(vel) {
         this.velocity = vel;
+        return this;
+    }
+
+    /**
+     * Rotate projectile velocity
+     * @param {Number} ang amount of degrees to rotate
+     * @chainable true
+     */
+    Rotate(ang) {
+        const vec = this.velocity;
+        ang = -ang * (Math.PI/180);
+        let cos = Math.cos(ang);
+        let sin = Math.sin(ang);
+        this.vector = new Array(Math.round(10000*(vec[0] * cos - vec[1] * sin))/10000, Math.round(10000*(vec[0] * sin + vec[1] * cos))/10000);
+        return this;
     }
 
     /**
@@ -393,21 +423,23 @@ export class MagicProjectile extends Client {
         const r = o.dimensions[0] * scale / 2;
 
         ctx.beginPath();
-        ctx.arc(o.position[0] * scale + pos[0] , o.position[1] * scale + pos[1] , r, 0, 2 * Math.PI);
+        ctx.arc(x * scale + pos[0], y * scale + pos[1] , r, 0, 2 * Math.PI);
         ctx.fillStyle = 'rgba(0, 0, 0, 1)';
         ctx.fill();
 
         ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+
+        // Generate trail for the projectile 
+        // Note that x and y are in grid tiles and have to be converted to pixels
         for(let j = 0; j < 7; j++) {
             ctx.beginPath();
-            ctx.arc(o.position[0] * scale + pos[0] - vel[0] * j *scale * .2, o.position[1] * scale + pos[1] - vel[1] *  j * scale * .2 , r, 0, 2 * Math.PI);
+            ctx.arc(x * scale + pos[0] - vel[0] * j * scale * .2, y * scale + pos[1] - vel[1] * j * scale * .2 , r, 0, 2 * Math.PI);
             ctx.fill();
         }
     }
 
     Collision(ev) {
-        ev.grid.Remove(this);
-
+        let remove = true;
         const owner = this.grid.GetClientById(this.owner);
         // Damage hit objects 
         for(let i = 0; i < ev.objects.length; i++) {
@@ -415,6 +447,11 @@ export class MagicProjectile extends Client {
 
             // If it collides with another bullet make both explode with larger radius
             if(o instanceof MagicProjectile) {
+                if(this.owner && this.owner == o.owner) {
+                    remove = false;
+                    continue;
+                }
+
                 const x1 = this.position[0] + .5 * this.dimensions[0];
                 const y1 = this.position[1] + .5 * this.dimensions[1];
 
@@ -423,8 +460,11 @@ export class MagicProjectile extends Client {
 
                 this.grid.InsertClient(new ExplosionParticle([(x1 + x2) / 2, (y1 + y2) / 2], this.dimensions, [this.dimensions[0], 5 * this.dimensions[0]], 15));
                 this.grid.Remove(o);
+                ev.grid.Remove(this);
                 return;
             }
+
+            remove = true;
 
             if(!o.health) continue;
             o.health -= this.projectile.damage;
@@ -433,7 +473,7 @@ export class MagicProjectile extends Client {
 
                 if(o instanceof PlayerClient) {
                     alert('you died')
-                    o.health = o._maxHealth;
+                    o.health = o.maxHealth;
                     this.grid.InsertClient(o);
                 } else if(owner && owner instanceof PlayerClient) {
                     // If killed by player award xp to player
@@ -441,9 +481,108 @@ export class MagicProjectile extends Client {
                 }
             }
         }
-        
-        this.grid.InsertClient(new ExplosionParticle(this.position, this.dimensions, [this.dimensions[0], 2.5 * this.dimensions[0]], 10));
 
+        if(remove) {
+            ev.grid.Remove(this);
+            this.grid.InsertClient(new ExplosionParticle(this.position, this.dimensions, [this.dimensions[0], 2.5 * this.dimensions[0]], 10));
+        }
+    }
+}
+
+export class Shield extends Client {
+    constructor(position, dimensions, owner, health) {
+        super(position, dimensions);
+        this.health = health;
+        this.owner = owner;
+        this.direction = 1; // direction (either 1 or -1)
+        // 1  : right
+        // -1 : left
+        // this.collision.type= 'none';
+    }
+
+    Step() {
+        const owner = this.grid.GetClientById(this.owner);
+        let [cx, cy] = owner.GetCenter();
+        cx += this.direction * owner.dimensions[0];
+        cy -= this.dimensions[1] * .5;
+        this.position = [cx, cy];
+    }
+
+    Render(ctx, offset, scale) {
+        const [cx, cy] = this.GetCenter();
+/*
+        ctx.beginPath();
+
+        // Generate an arc based on points 
+        // p1 - corner of bounding box
+        // p2 - middle of arc
+        // p3 - corner of bounding box
+
+        let p1, p2, p3;
+        // right
+        if(this.direction == 1) {
+            // top left corner
+            p1 = {x: this.position[0] * scale, y: this.position[1] * scale};
+            // bottom left corner
+            p3 = {x: this.position[0] * scale, y: (this.position[1] + this.dimensions[1]) * scale};
+            // offset left from the center of the object
+            p2 = {x: (cx - 1.5 * this.dimensions[0]) * scale, y: cy * scale};
+        } else {
+            // left 
+
+            // top right corner
+            p1 = {x: (this.position[0] + this.dimensions[0]) * scale, y: this.position[1] * scale};
+            // bottom right corner
+            p3 = {x: (this.position[0] + this.dimensions[0]) * scale, y: (this.position[1] + this.dimensions[1]) * scale};
+            // offset right from the center of the object
+            p2 = {x: (cx + 1.5 * this.dimensions[0]) * scale, y: cy * scale};
+        }
+
+        let diffX = p1.x - p2.x,
+        diffY = p1.y - p2.y, 
+        radius = this.radius || Math.abs(Math.sqrt(diffX*diffX + diffY*diffY)),
+        startAngle = this.startAngle || Math.atan2(diffY, diffX),
+        endAngle   = this.endAngle || Math.atan2(p3.y - p2.y, p3.x - p2.x);
+
+        // Save the values for better efficiency
+        // As square root and atan is quite slow 
+        if(!this.radius) this.radius = radius;
+        if(!this.startAngle) this.startAngle = startAngle;
+        if(!this.endAngle) this.endAngle = endAngle;
+
+        ctx.arc(p2.x, p2.y, radius, startAngle, endAngle, false);
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = .1 * scale;
+        ctx.stroke();
+        */
+
+        const x = this.dimensions[0];
+        const y = this.dimensions[1] * .5;
+
+        const r = (x*x + y*y) / (2 * x);
+        // center of arc
+        let center = [this.position[0] - r + this.dimensions[0], this.position[1] + y];
+        const angle = Math.asin(y/r);
+        let startAng = 1 * 2 * Math.PI - angle, endAng = 1 * 2 * Math.PI + angle;
+
+        // If it is left, mirror the angles and center point
+        if(this.direction == -1) {
+            startAng -= Math.PI;
+            endAng -= Math.PI;
+            center[0] += -(2 * r) + x;
+        }
+
+        ctx.beginPath();
+        //console.log(center, r, startAng, endAng);
+        ctx.arc(center[0] * scale + offset[0], center[1] * scale + offset[1], r * scale, startAng, endAng);
+
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = .1 * scale;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // ctx.fillStyle = 'rgb(200, 50, 50)';
+        // ctx.fillRect(this.position[0] * scale + offset[0], this.position[1] * scale + offset[1], this.dimensions[0] * scale, this.dimensions[1] * scale);
     }
 }
 
