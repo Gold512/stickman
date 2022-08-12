@@ -514,51 +514,6 @@ export class Shield extends Client {
 
     Render(ctx, offset, scale) {
         const [cx, cy] = this.GetCenter();
-/*
-        ctx.beginPath();
-
-        // Generate an arc based on points 
-        // p1 - corner of bounding box
-        // p2 - middle of arc
-        // p3 - corner of bounding box
-
-        let p1, p2, p3;
-        // right
-        if(this.direction == 1) {
-            // top left corner
-            p1 = {x: this.position[0] * scale, y: this.position[1] * scale};
-            // bottom left corner
-            p3 = {x: this.position[0] * scale, y: (this.position[1] + this.dimensions[1]) * scale};
-            // offset left from the center of the object
-            p2 = {x: (cx - 1.5 * this.dimensions[0]) * scale, y: cy * scale};
-        } else {
-            // left 
-
-            // top right corner
-            p1 = {x: (this.position[0] + this.dimensions[0]) * scale, y: this.position[1] * scale};
-            // bottom right corner
-            p3 = {x: (this.position[0] + this.dimensions[0]) * scale, y: (this.position[1] + this.dimensions[1]) * scale};
-            // offset right from the center of the object
-            p2 = {x: (cx + 1.5 * this.dimensions[0]) * scale, y: cy * scale};
-        }
-
-        let diffX = p1.x - p2.x,
-        diffY = p1.y - p2.y, 
-        radius = this.radius || Math.abs(Math.sqrt(diffX*diffX + diffY*diffY)),
-        startAngle = this.startAngle || Math.atan2(diffY, diffX),
-        endAngle   = this.endAngle || Math.atan2(p3.y - p2.y, p3.x - p2.x);
-
-        // Save the values for better efficiency
-        // As square root and atan is quite slow 
-        if(!this.radius) this.radius = radius;
-        if(!this.startAngle) this.startAngle = startAngle;
-        if(!this.endAngle) this.endAngle = endAngle;
-
-        ctx.arc(p2.x, p2.y, radius, startAngle, endAngle, false);
-        ctx.strokeStyle = 'black';
-        ctx.lineWidth = .1 * scale;
-        ctx.stroke();
-        */
 
         const x = this.dimensions[0];
         const y = this.dimensions[1] * .5;
