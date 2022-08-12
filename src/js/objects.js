@@ -9,6 +9,8 @@ export class PlayerClient extends Client {
     constructor(position, dimensions, bars) {
         super(position, dimensions);
         this.bars = bars;
+        
+        this.facing = 'right';
 
         this.stats = {
             health: 20,
@@ -64,8 +66,10 @@ export class PlayerClient extends Client {
         if( !(keys.left && keys.right) && (keys.left || keys.right) ) {
             if(keys.right) {
                 this.position[0] += distance;
+                this.facing = 'right';
             } else  {
                 this.position[0] -= distance;
+                this.facing = 'left';
             }
         }
     }
@@ -505,6 +509,7 @@ export class Shield extends Client {
         cx += this.direction * owner.dimensions[0];
         cy -= this.dimensions[1] * .5;
         this.position = [cx, cy];
+        this.direction = owner.facing == 'right' ? 1 : -1;
     }
 
     Render(ctx, offset, scale) {
