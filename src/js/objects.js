@@ -31,22 +31,22 @@ export class PlayerClient extends Client {
         if(this.stats.health < this.stats.maxHealth) this._regen.health += (t / 1000) * this.stats.healthRegen;
         if(this.stats.mana < this.stats.maxMana) this._regen.mana += (t / 1000) * this.stats.manaRegen;
 
+        const keys = {
+            health: 'maxHealth',
+            mana: 'maxMana'
+        };
+
         for(let i in this._regen) {
             if(this._regen[i] >= 1) {
                 const regen = Math.trunc(this._regen[i]);
                 this[i] += regen;
                 this._regen[i] -= regen;
             }
-        }
 
-        if(this.stats.health > this.stats.maxHealth) {
-            this.health = this.stats.maxHealth
-            this._regen.health = 0;
-        }
-
-        if(this.stats.mana > this.stats.maxMana) {
-            this.mana = this.stats.maxMana
-            this._regen.mana = 0;
+            if(this.stats[i] > this.stats[keys[i]]) {
+                this[i] = this.stats[keys[i]];
+                this._regen[i] = 0;
+            }
         }
     }
 
@@ -74,20 +74,19 @@ export class PlayerClient extends Client {
         const pos = offset;
         // Render player 
         ctx.fillStyle = 'rgba(0, 0, 0, 1)';
-
         ctx.fillRect(this.position[0] * scale + pos[0], this.position[1] * scale + pos[1], this.dimensions[0] * scale, this.dimensions[0] * scale);
     }
 
-    SetStats(stats) {
-        if(!stats) {
-            this.stats = {
+    // SetStats(stats) {
+    //     if(!stats) {
+    //         this.stats = {
 
-            };
+    //         };
 
-            return;
-        }
-        this.stats = stats;
-    }
+    //         return;
+    //     }
+    //     this.stats = stats;
+    // }
 
     _LevelUp(v) {
         let levelsGained = 0;
@@ -244,7 +243,7 @@ export class Enemy extends Client {
         }
 
         if(this.bounds) {
-            let regenerate;
+            let regenerate; // Whether to generate a new action or not 
             const [topLeft, bottomRight] = this.bounds;
             if(topLeft[0] >= this.position[0]) {
                 this.velocity[0] = s;
@@ -559,6 +558,7 @@ export class Shield extends Client {
         const x = this.dimensions[0];
         const y = this.dimensions[1] * .5;
 
+        // Generate an arc which intersects corner of bounding box of object
         const r = (x*x + y*y) / (2 * x);
         // center of arc
         let center = [this.position[0] - r + this.dimensions[0], this.position[1] + y];
