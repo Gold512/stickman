@@ -521,7 +521,7 @@ export class Shield extends Client {
         // Generate an arc which intersects corner of bounding box of object
         const r = (x*x + y*y) / (2 * x);
         // center of arc
-        let center = [this.position[0] - r + this.dimensions[0], this.position[1] + y];
+        let center = [this.position[0] - r + this.dimensions[0] * this.direction, this.position[1] + y];
         const angle = Math.asin(y/r);
         let startAng = 1 * 2 * Math.PI - angle, endAng = 1 * 2 * Math.PI + angle;
 
