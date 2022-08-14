@@ -2,7 +2,7 @@ import {SpatialHash} from './spacial_hash.js';
 import {PlayerClient, Enemy, MagicProjectile, Spawner} from './objects.js';
 import {collision} from './collision.js'
 import {initUI, updateStats} from './ui.js'
-import {doubleShot, tripleShot, waveShot, shield} from './skill.js'
+import {doubleShot, tripleShot, waveShot, shield, basicDash} from './skill.js'
 import { loadFromStorage } from './save.js';
 
 const grid = new SpatialHash([-30, -30], [60, 60]);
@@ -15,8 +15,9 @@ const player = grid.InsertClient(new PlayerClient([0, 0], [.5, .5], {
 }));
 loadFromStorage(player);
 
-grid.InsertClient(new Spawner([0, 0], [12, 12], () => new Enemy([3, 3], [.5, .5]), 3)).Spawn();
+// grid.InsertClient(new Spawner([0, 0], [12, 12], () => new Enemy([3, 3], [.5, .5]), 3)).Spawn();
 
+grid.InsertClient(new MagicProjectile([3, 3], .5, [0, 0], 0, 0, 'black'))
 
 // grid.InsertClient(new Enemy([3, 3], [.5, .5]));
 // grid.InsertClient(new Enemy([3, 3], [.5, .5]));
@@ -75,6 +76,8 @@ document.addEventListener('keydown', ev => {
     x /= magnitude;
     y /= magnitude;
 
+    const offset = [width/2, height/2];
+
     switch(ev.key) {
         case 'e':
             doubleShot(grid, player, [x, y])
@@ -90,6 +93,10 @@ document.addEventListener('keydown', ev => {
 
         case 'q':
             shield(grid, player, [x, y]);
+        break;
+
+        case 't':
+            basicDash(ctx, scale, offset, player, [x, y]);
         break;
     }
 });
@@ -118,7 +125,39 @@ document.addEventListener('keyup', ev => {
     }
 });
 
-document.addEventListener('click', ev => {
+!function() {
+    let ticking = false;
+    window.addEventListener('resize', () => {
+        if (ticking) return;
+        ticking = true;
+
+        width = window.innerWidth;
+        height =  window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        // Max of 10 updates per second to prevent whitescreen while resizing
+        setTimeout(() => {
+            ticking = false;
+        }, 100);
+    });
+}();
+
+document.addEventListener('mousemove', ev => {
+    mousePos = [ev.clientX, ev.clientY];
+});
+
+const canvas = document.getElementById('canvas');
+let [width, height] = [window.innerWidth, window.innerHeight]
+canvas.width = width;
+canvas.height = height;
+const ctx = canvas.getContext('2d');
+const scale = 50; // canvas pixels per grid tile
+const despawnRange = 20;
+let start;
+let mousePos = [];
+
+canvas.addEventListener('click', ev => {
     if(player.mana <= 3) return;
 
     let [x, y] = [ev.clientX, ev.clientY];
@@ -140,20 +179,6 @@ document.addEventListener('click', ev => {
     setTimeout(() => document.querySelector('.skill').classList.remove('cooldown'), 500)
 });
 
-document.addEventListener('mousemove', ev => {
-    mousePos = [ev.clientX, ev.clientY];
-});
-
-const canvas = document.getElementById('canvas');
-const [width, height] = [window.innerWidth, window.innerHeight]
-canvas.width = width;
-canvas.height = height;
-const ctx = canvas.getContext('2d');
-const scale = 50; // canvas pixels per grid tile
-const despawnRange = 20;
-let start;
-let mousePos = [];
-
 !function frame(t) {
     let elapsedTime = 0;
     if(!start) {
@@ -168,9 +193,8 @@ let mousePos = [];
     grid.UpdateClient(player);
     const offset = [width/2, height/2];
 
-    grid.Step(elapsedTime);
-    
     ctx.clearRect(0, 0, width, height);
+    grid.Step(elapsedTime);
 
     let objects = grid.FindNear(player.position, [Math.ceil(1.5 * width / scale), Math.ceil(1.5 * height / scale)]);
 

@@ -50,6 +50,37 @@ export function shield(grid, player, vector, foward) {
     grid.InsertClient(new Shield([x, y], [.25, 1], player.id, 10));
 }
 
+export function basicDash(ctx, scale, offset, player, vector) {
+    if(player.modifier.name == 'basicDash' && player.modifier.duration > 20) return;
+
+    const [x, y] = player.GetCenter();
+    player.modifier = {
+        name: 'basicDash',
+        duration: 200,
+        noMove: true,
+        callback: () => {
+            player.position[0] += .5 * vector[0];
+            player.position[1] += .5 * vector[1];
+            
+            const [cx, cy] = player.GetCenter();
+
+            ctx.beginPath();
+            ctx.moveTo(cx * scale + offset[0], cy * scale + offset[1]);
+            ctx.lineTo(x * scale + offset[0], y * scale + offset[1]);
+            ctx.lineWidth = player.dimensions[1] * scale;
+
+            const grd = ctx.createLinearGradient(cx * scale + offset[0], cy * scale + offset[1], x * scale + offset[0], y * scale + offset[1]);
+            grd.addColorStop(0, 'rgba(0,0,0, .5)');
+            grd.addColorStop(.9, 'rgba(0,0,0, .15)');
+            grd.addColorStop(1, 'rgba(0,0,0, 0)');
+
+            ctx.strokeStyle = grd;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+        }
+    }
+}
+
 const waveAngles = [];
 for(let i = 0; i < 360; i++) waveAngles.push(i);
 

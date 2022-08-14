@@ -15,7 +15,7 @@ function toggleStatMenu() {
 }
 
 export function initUI(player) {
-    document.getElementById('stats').addEventListener('click', toggleStatMenu);
+    // document.getElementById('stats').addEventListener('click', toggleStatMenu);
     document.querySelector('#stat-menu #close').addEventListener('click', toggleStatMenu);
 
     document.getElementById('download-save').addEventListener('click', () => downloadSave(player));

@@ -26,6 +26,8 @@ export class PlayerClient extends Client {
         }
 
         this._regen = {health: 0, mana: 0};
+
+        this.modifier = {};
     }
 
     // Mana and health regen
@@ -50,9 +52,14 @@ export class PlayerClient extends Client {
                 this._regen[i] = 0;
             }
         }
+
+        this.modifier.duration -= t;
+        if(this.modifier.duration <= 0) this.modifier = {};
+        if(this.modifier.callback) this.modifier.callback(this);
     }
 
     Move(keys, distance) {
+        if(this.modifier.noMove) return;
         if( (keys.up || keys.down) && (keys.left || keys.right) ) distance *= diagonalScaling;
 
         if( !(keys.up && keys.down) && (keys.up || keys.down) ) {
@@ -425,10 +432,19 @@ export class MagicProjectile extends Client {
         const vel = o.velocity;
         const r = o.dimensions[0] * scale / 2;
 
-        ctx.beginPath();
-        ctx.arc(x * scale + pos[0], y * scale + pos[1] , r, 0, 2 * Math.PI);
+        // const grd = ctx.createRadialGradient(x * scale + pos[0], y * scale + pos[1], r, x * scale + pos[0], y * scale + pos[1], r + .2 * scale)
+        // grd.addColorStop(0, 'rgba(0, 0, 0, .8)');
+        // grd.addColorStop(.5, 'rgba(0, 0, 0, .8)');
+        // grd.addColorStop(.85, 'rgba(0, 0, 0, .4)');
+        // grd.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        // ctx.fillStyle = grd;
+        // ctx.fillRect(x * scale + pos[0] - (r + .2 * scale), y * scale + pos[1] - (r + .2 * scale), 2*(r + .2 * scale), 2*(r + .2 * scale));
+
+        let path = new Path2D();
+        path.arc(x * scale + pos[0], y * scale + pos[1], r, 0, 2 * Math.PI);
+        
         ctx.fillStyle = 'rgba(0, 0, 0, 1)';
-        ctx.fill();
+        ctx.fill(path);
 
         ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
 
@@ -439,6 +455,9 @@ export class MagicProjectile extends Client {
             ctx.arc(x * scale + pos[0] - vel[0] * j * scale * .2, y * scale + pos[1] - vel[1] * j * scale * .2 , r, 0, 2 * Math.PI);
             ctx.fill();
         }
+
+        // Reset style changes 
+        ctx.fillStyle = null;
     }
 
     Collision(ev) {
@@ -506,22 +525,20 @@ export class Shield extends Client {
     Step() {
         const owner = this.grid.GetClientById(this.owner);
         let [cx, cy] = owner.GetCenter();
-        cx += this.direction * owner.dimensions[0];
+        this.direction = owner.facing == 'right' ? 1 : -1;
+        cx += this.direction * owner.dimensions[0] - .5 * this.dimensions[0];
         cy -= this.dimensions[1] * .5;
         this.position = [cx, cy];
-        this.direction = owner.facing == 'right' ? 1 : -1;
     }
 
     Render(ctx, offset, scale) {
-        const [cx, cy] = this.GetCenter();
-
         const x = this.dimensions[0];
         const y = this.dimensions[1] * .5;
 
         // Generate an arc which intersects corner of bounding box of object
         const r = (x*x + y*y) / (2 * x);
         // center of arc
-        let center = [this.position[0] - r + this.dimensions[0] * this.direction, this.position[1] + y];
+        let center = [this.position[0] - r * this.direction + (this.direction == 1 ? this.dimensions[0] : 0), this.position[1] + y];
         const angle = Math.asin(y/r);
         let startAng = 1 * 2 * Math.PI - angle, endAng = 1 * 2 * Math.PI + angle;
 
@@ -529,7 +546,6 @@ export class Shield extends Client {
         if(this.direction == -1) {
             startAng -= Math.PI;
             endAng -= Math.PI;
-            center[0] += -(2 * r) + x;
         }
 
         ctx.beginPath();

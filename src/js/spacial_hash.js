@@ -122,7 +122,11 @@ export class SpatialHash {
     const {type} = query;
     for(let i in this._idTable) {
       const e = this._idTable[i];
-      if(e.constructor.name == type) res.push(e);
+      if(type[0] == '!') {
+        if(e.constructor.name != type.slice(1)) res.push(e);
+      } else {
+        if(e.constructor.name == type) res.push(e);
+      }
     }
     return res;
   }
