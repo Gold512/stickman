@@ -15,9 +15,9 @@ const player = grid.InsertClient(new PlayerClient([0, 0], [.5, .5], {
 }));
 loadFromStorage(player);
 
-// grid.InsertClient(new Spawner([0, 0], [12, 12], () => new Enemy([3, 3], [.5, .5]), 3)).Spawn();
+grid.InsertClient(new Spawner([0, 0], [12, 12], () => new Enemy([3, 3], [.5, .5]), 3)).Spawn();
 
-grid.InsertClient(new MagicProjectile([3, 3], .5, [0, 0], 0, 0, 'black'))
+// grid.InsertClient(new MagicProjectile([3, 3], .5, [0, 0], 0, 0, 'black'))
 
 // grid.InsertClient(new Enemy([3, 3], [.5, .5]));
 // grid.InsertClient(new Enemy([3, 3], [.5, .5]));
