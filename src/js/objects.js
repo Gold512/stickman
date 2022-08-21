@@ -1,7 +1,6 @@
 import {math} from './math.js';
 import {Client} from './spacial_hash.js';
 import { saveToStorage } from './save.js';
-import {updateStats} from './ui.js'
 
 const diagonalScaling = Math.pow(Math.sqrt(2), -1);
 
@@ -28,6 +27,12 @@ export class PlayerClient extends Client {
         this._regen = {health: 0, mana: 0};
 
         this.modifier = {};
+
+        // autosave every 30s
+        setInterval(() => {
+            console.log('autosaving')
+            saveToStorage(this)
+        }, 30e3)
     }
 
     // Mana and health regen
@@ -99,6 +104,17 @@ export class PlayerClient extends Client {
     //     this.stats = stats;
     // }
 
+    UpdateStats() {
+        this.maxHealth = this.stats.maxHealth;
+        this.maxMana = this.stats.maxMana;
+        this.maxXp = this.stats.maxXp;
+
+        this.health = this.stats.health;
+        this.mana = this.stats.mana;
+        this.xp = this.stats.xp;
+        this.level = this.stats.level;
+    }
+
     _LevelUp(v) {
         let levelsGained = 0;
         while(v >= this.stats.maxXp) {
@@ -124,7 +140,6 @@ export class PlayerClient extends Client {
         this.stats.xp = 0;
         this.bars.xp.style.setProperty('--current', 0);
         
-        updateStats(this);
         saveToStorage(this);
     }
 
@@ -517,12 +532,21 @@ export class Shield extends Client {
         this.health = health;
         this.owner = owner;
         this.direction = 1; // direction (either 1 or -1)
+
+        this.velocity = [ , ];
+        this.projectile = false;
+        this.speed = .25;
         // 1  : right
         // -1 : left
         // this.collision.type= 'none';
     }
 
     Step() {
+        if(this.projectile) {
+            this.position[0] += this.velocity[0] * this.speed;
+            this.position[1] += this.velocity[1] * this.speed;
+            return;
+        }
         const owner = this.grid.GetClientById(this.owner);
         let [cx, cy] = owner.GetCenter();
         this.direction = owner.facing == 'right' ? 1 : -1;
@@ -559,6 +583,36 @@ export class Shield extends Client {
 
         // ctx.fillStyle = 'rgb(200, 50, 50)';
         // ctx.fillRect(this.position[0] * scale + offset[0], this.position[1] * scale + offset[1], this.dimensions[0] * scale, this.dimensions[1] * scale);
+    }
+
+    OnRemove() {
+        const owner = this.grid.GetClientById(this.owner);
+        owner.shield = null;
+    }
+
+    Collision(ev) {
+        const owner = this.grid.GetClientById(this.owner);
+        for(let i = 0; i < ev.objects.length; i++) {
+            const o = ev.objects[i];
+            if(o instanceof MagicProjectile) return;
+            if(!o.health) return;
+            o.health -= this.damage;
+            if(o.health <= 0) {
+                this.grid.Remove(o);
+                if(o instanceof PlayerClient) {
+                    o.health = o.maxHealth;
+                    this.grid.InsertClient(o);
+                } else if(owner && owner instanceof PlayerClient) {
+                    // If killed by player award xp to player
+                    owner.xp += o.xp || 1;
+                }
+            }
+        }
+
+        const s = Math.max(this.dimensions[0], this.dimensions[1]);
+        this.grid.InsertClient(new ExplosionParticle(this.position, this.dimensions, [s, 2.5 * s], 10));
+
+        this.grid.Remove(this);
     }
 }
 

@@ -1,0 +1,205 @@
+.stickfigure-icon {
+    width: 10em;
+    height: 10em;
+    position: absolute;
+    left: 50%;
+    top: 20%;
+    transform: translateX(-50%);
+    background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255, 255, 255, .8) 45%, rgba(0,0,0,0) 60%);
+    border-radius: 50%;
+}
+
+.stickfigure-icon > object {
+    width: 100%;
+    height: 100%;
+}
+
+.title {
+    font-size: 2em;    
+    position: relative;
+}
+
+.stroke-title {
+    color: black;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+    text-transform: uppercase;
+    font-family: monospace;
+}
+
+.title > #close {
+    position: absolute;
+    right: .25em;
+    transform: translateY(-15%);
+}
+
+.box.solid {
+    border: 2px solid black;
+    background: rgb(48, 48, 48);
+    color:white;
+}
+
+#mana-box {
+    position: absolute;
+    width: 25%;
+    left: 12%;
+    margin-right: 5em;
+}
+
+#health-box {
+    position: absolute;
+    right: 12%;
+    width: 25%;
+}
+
+#save-box {
+    position: absolute;
+    width: 20%;
+    left: 22%;
+}
+
+#player-box {
+    width: 20%;
+    left: 55%;
+}
+
+#skill-box {
+    position: absolute;
+    width: 90%;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 43%;
+    height: 50%;
+}
+
+#skill-drop {
+    border: 1px solid gray;
+    padding-top: .4em;
+    padding-left: .2em;
+    height: 4.2em;
+    position: relative;
+}
+
+#skill-drop > .skill {
+    filter: invert();
+}
+
+#skill-select {
+    border: 1px solid gray;
+    margin-top: 5px;
+    padding-left: 3px;
+    padding-top: 3px;
+
+    /* width: calc(80% - 5px);
+    margin-right: 5px; */
+    
+    /* display: grid; */
+}
+
+:is(#skill-select, #skill-drop) .skill { 
+    float: left;
+    border: 2px solid white;
+}
+:is(#skill-select, #skill-drop) .skill > * { filter: none; }
+
+/* make element draggable */
+:is(#skill-select, #skill-drop) .skill:before {
+    display: inline-block;
+    content: "";
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    color: transparent;
+    background: none;
+    z-index: 1;
+}
+
+.skill#plus { 
+    filter: none;
+    display: inline-block;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-left: 3px;
+}
+
+.card {
+    display: inline-block;
+    width: 3em;
+    height: 4em;
+    position: relative;
+    background: rgb(25, 25, 25);
+    margin-left: 3px;
+}
+
+.card > .skill {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+.card > .hotkey-input {
+    position: absolute;
+    width: 80%;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* #skill-filter {
+
+} */
+
+/* black magic, do not touch if possible */
+.auto-height {
+    display: flex;
+    flex-flow: column;
+    height: 100%;
+}
+
+.auto-height .row {
+    border: 1px dotted grey;
+}
+
+.auto-height .row.header {
+    flex: 0 1 auto;
+    /* The above is shorthand for:
+    flex-grow: 0,
+    flex-shrink: 1,
+    flex-basis: auto
+    */
+}
+
+.auto-height .row.content {
+    flex: 1 1 auto;
+}
+
+/* end of black magic */
+
+/* make stickfigure appear from the bottom and move to the current place */
+
+
+.animation-spread {
+    /* longhand methods used for readability */
+    animation-name: spread;
+    animation-duration: .3s;
+    animation-timing-function: linear;
+    animation-delay: .3s;
+    animation-iteration-count: 1;
+    animation-direction: normal;
+}
+
+/* then make the boxes expand as they move from the center */
+@keyframes spread {
+    0% {
+        transform: scale(0) translateX(-50%);
+        left: 50%;
+        top: 20%;
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}

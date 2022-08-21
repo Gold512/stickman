@@ -1,0 +1,17 @@
+<svg viewBox="0 0 400 400" width="400px" height="400px" xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <g stroke-width="24" stroke-linecap="round">
+        <path d="M 172 355 C 67 301 67 96 167.3 46" fill="none" stroke="rgb(253, 253, 253)"/>
+    </g>
+
+      <linearGradient id="Gradient1">
+        <stop stop-color="rgb(255, 255, 255)" offset="0%"/>
+        <stop stop-color="rgba(255, 255, 255, 0)" offset="100%"/>
+      </linearGradient>
+    <rect stroke="none" transform="matrix(1,0,0,1,-54.2,-8.1)" x="154.3" y="123.4" width="235.7" height="166.3" fill="url(#Gradient1)"/>
+    <rect fill="url(#Gradient1)" stroke="none" transform="matrix(1,0,0,1,-54.2,-8.1)" x="164.3" y="96.4" width="235.7" height="27.3"/>
+    <rect fill="url(#Gradient1)" stroke="none" transform="matrix(1,0,0,1,-54.2,-8.1)" x="186.3" y="69.4" width="235.7" height="27.3"/>
+    <rect fill="url(#Gradient1)" stroke="none" transform="matrix(1,0,0,1,-54.2,-8.1)" x="173.3" y="289.4" width="235.7" height="27.3"/>
+    <rect fill="url(#Gradient1)" stroke="none" transform="matrix(1,0,0,1,-54.2,-8.1)" x="186.3" y="316.4" width="235.7" height="27.3"/>
+    <rect fill="url(#Gradient1)" stroke="none" transform="matrix(1,0,0,1,-54.2,-8.1)" x="215.3" y="343.4" width="235.7" height="27.3"/>
+    <rect fill="url(#Gradient1)" stroke="none" transform="matrix(1,0,0,1,-54.2,-8.1)" x="218.3" y="43.4" width="235.7" height="27.3"/>
+</svg>

@@ -33,12 +33,10 @@ function saveFile(blob, filename) {
 function load(obj, player) {
     const stats = obj.stats;
     for(let i = 0, k = Object.keys(stats); i < k.length; i++) {
-        if(player[k[i]]) {
-            player[k[i]] = stats[k[i]];
-        } else {
-            player.stats[k[i]] = stats[k[i]];
-        }
+        player.stats[k[i]] = stats[k[i]];
     }
+
+    player.UpdateStats();
 }
 
 export function saveToStorage(player) {

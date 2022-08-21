@@ -1,8 +1,8 @@
 import {SpatialHash} from './spacial_hash.js';
 import {PlayerClient, Enemy, MagicProjectile, Spawner} from './objects.js';
 import {collision} from './collision.js'
-import {initUI, updateStats} from './ui.js'
-import {doubleShot, tripleShot, waveShot, shield, basicDash} from './skill.js'
+import {initUI, keyRegistry, loadSkillBar} from './ui.js'
+import {skills, singleShot, doubleShot, tripleShot, waveShot, shield, shieldShot, basicDash} from './skill.js'
 import { loadFromStorage } from './save.js';
 
 const grid = new SpatialHash([-30, -30], [60, 60]);
@@ -36,10 +36,14 @@ const keyState = {
     up: false,
     down: false,
     left: false,
-    right: false
+    right: false,
+    state: {}
 };
 
-document.addEventListener('keydown', ev => {
+const canvas = document.getElementById('canvas');
+
+document.addEventListener('keydown', function keydown(ev) {
+    if(document.activeElement != document.body) return;
     switch (ev.key) {
         case 'w':
         case 'ArrowUp':
@@ -66,6 +70,12 @@ document.addEventListener('keydown', ev => {
 
     if(ev.repeat) return;
 
+    const skill = skills[keyRegistry[ev.key]];
+    if(skill == undefined) return;
+
+    if(player.mana < skill.mana) return;
+    player.mana -= skill.mana;
+
     let [x, y] = mousePos;
 
     x -= player.position[0] * scale + width/2;
@@ -79,11 +89,15 @@ document.addEventListener('keydown', ev => {
     const offset = [width/2, height/2];
 
     switch(ev.key) {
-        case 'e':
+        case keyRegistry.single_shot:
+            singleShot(grid, player, [x, y])
+        break;
+
+        case keyRegistry.double_shot:
             doubleShot(grid, player, [x, y])
         break;
 
-        case 'f':
+        case keyRegistry.triple_shot:
             tripleShot(grid, player, [x, y]);
         break;
 
@@ -91,14 +105,34 @@ document.addEventListener('keydown', ev => {
             waveShot(grid, player, [x, y]);
         break;
 
-        case 'q':
-            shield(grid, player, [x, y]);
+        case keyRegistry.shield:
+            if(shield(grid, player, [x, y]) === false) player.mana += skill.mana;
         break;
 
-        case 't':
+        case keyRegistry.shield_shot: 
+            if(!player.shield) {
+                player.mana += skill.mana;
+                break;
+            }
+            
+            shieldShot(grid, player, [x, y]);
+        break;
+
+        case keyRegistry.basic_dash:
             basicDash(ctx, scale, offset, player, [x, y]);
         break;
     }
+
+    // Modify keyState 
+    keyState.state[ev.key] = true;
+
+    // cooldown animation
+    const el = document.querySelector(`[data-id="${skill.id}"]`);
+    setTimeout(() => el.classList.add('cooldown'), 1);
+    setTimeout(() => {
+        el.classList.remove('cooldown');
+        if(keyState.state[ev.key]) keydown({key: ev.key}); 
+    }, skill.cd * 1000);
 });
 
 document.addEventListener('keyup', ev => {
@@ -123,6 +157,8 @@ document.addEventListener('keyup', ev => {
             keyState.right = false;
         break;
     }
+
+    if(keyState.state[ev.key]) delete keyState.state[ev.key];
 });
 
 !function() {
@@ -147,7 +183,6 @@ document.addEventListener('mousemove', ev => {
     mousePos = [ev.clientX, ev.clientY];
 });
 
-const canvas = document.getElementById('canvas');
 let [width, height] = [window.innerWidth, window.innerHeight]
 canvas.width = width;
 canvas.height = height;
@@ -217,6 +252,8 @@ canvas.addEventListener('click', ev => {
         if(o.collision.type == 'active') {
             const nearBy = grid.FindNear(o.position, [1, 1]);
             let collisions = [];
+            let limit = o.collision.limit || Infinity; 
+            // limit is the number of collisions to detect for an object
             for(let i = 0; i < nearBy.length; i++) {
                 const e = nearBy[i];
                 if(e == o) continue;
@@ -241,6 +278,7 @@ canvas.addEventListener('click', ev => {
                 }
 
                 if(isCollided) collisions.push(e);
+                if(collisions.length >= limit) break;
             }
 
             if(collisions.length > 0) o.Collision({
@@ -255,4 +293,6 @@ canvas.addEventListener('click', ev => {
 }();
 
 initUI(player);
-updateStats(player);
+// updateStats(player);
+
+loadSkillBar();

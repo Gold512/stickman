@@ -99,10 +99,60 @@
     animation: cooldown calc(1s * var(--cd)) linear 1;
 }
 
-.skill > * {
+.skill > *:not(div) {
     width: 100%;
     height: 100%;
-    user-select: none
+    user-select: none;
+    filter: invert();
+}
+
+.skill:hover > .stat-data { 
+    display: block; 
+    /* transform: translateY(-100%) scale(1);
+    opacity: 1; */
+}
+
+.stat-data {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    border: 2px solid black;
+    border-radius: .25em;
+    background: white;
+    padding: 2px 3px;
+    user-select: none;
+    transform: translateY(-100%);
+    /* animation */
+    /* transform: translateY(0) scale(0);
+    opacity: 0;
+    transition: all 12s ease-out; */
+}
+
+.skill-title {
+    word-wrap: none;
+    white-space: nowrap;
+    font-size: 1.2em;
+    font-weight: bold;
+    text-align: center;
+}
+
+.skill-hotkey {
+    position: absolute;
+    display: block;
+    background: rgb(0 0 0 / 40%);
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 2px 3px;
+    border-radius: .5em;
+    color: white;
+    text-transform: uppercase;
+    font-family: monospace;
+}
+
+.skill-desc {
+    min-width: 10em;
 }
 
 @keyframes cooldown {
@@ -131,6 +181,22 @@
     background: rgb(21, 21, 24);
     border-radius: 1em;
     color: white;
+
+    isolation: isolate;
+}
+
+/* darken background */
+.modal::before {
+    display: block;
+    content: '';
+
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    
+    background: rgba(0, 0, 0, .4);
 }
 
 .box {
@@ -140,7 +206,8 @@
     border-radius: 5px;
     padding: 5px;
     box-sizing: border-box;
-    min-height: calc(1em + 10px)
+    min-height: calc(1em + 10px);
+    position: relative;
 }
 
 .box-header {
@@ -148,6 +215,10 @@
     border-bottom: 1px solid gray;
     font-size: 1.4em;
     margin-bottom: 5px;
+}
+
+.box-header.center {
+    text-align: center; 
 }
 
 .left-align {
@@ -160,27 +231,22 @@
     height: 1em;
 }
 
-.title {
-    font-size: 2em;    
-    position: relative;
-}
-
-.title > .text {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-.title > #close {
-    position: absolute;
-    right: .25em;
-    transform: translateY(-15%);
-}
-
 button {
     background: rgb(51, 51, 51);
     outline: none;
     border: 1px solid gray;
     color: white;
     border-radius: .25em;
+}
+
+.hotkey-input {
+    font-family: monospace;
+    text-align: center;
+    border-radius: .5em;
+    outline: 2px gray dashed;
+    border: none;
+    background: rgba(110, 110, 110, 0.3);
+    color: white;
+
+    transition: outline-color .2s ease-in;
 }

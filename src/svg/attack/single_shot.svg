@@ -1,4 +1,7 @@
 <svg viewBox="0 0 400 400" width="400px" height="400px" xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <ellipse cx="288.5" cy="112" rx="58.5" ry="58" fill="rgb(0, 0, 0)"/>
-    <polyline points="226,89 223,112 224,135 235,155 254,170 280,177 298,177 318,171 44,353" fill="rgb(0, 0, 0)"/>
+    <ellipse cx="288.5" cy="112" rx="58.5" ry="58" fill="rgb(255, 255, 255)"/>
+    <polyline points="226,89 223,112 224,135 235,155 254,170 280,177 298,177 318,171 44,353" fill="white"/>
+    <!-- <linearGradient id="trailcolor" gradientTransform="rotate(120)">
+        <stop offset="0%" stop-color="rgba(255, 255, 255, .75)"/>
+        <stop offset="100%" stop-color="rgba(255, 255, 255, 0)"/></linearGradient> -->
 </svg>

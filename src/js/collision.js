@@ -33,6 +33,11 @@ export const collision = {
         );
     },
 
+    /** collision between rotated rect and unrotated rect */
+    RotatedRect() {
+
+    },
+
     /**
      * Check collision of a rectangle and circle
      * @param {Number} x1 rectangle x coord
@@ -62,3 +67,4 @@ export const collision = {
         return (dx*dx+dy*dy<=(circle.r*circle.r));
     }
 }
+

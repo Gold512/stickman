@@ -20,7 +20,7 @@ function rotateVector(vec, ang) {
 function multiShot(grid, player, vector, foward, deg) {
     const origin = player.position;
     for(let i = 0; i < deg.length; i++) {
-        const vect = deg != 0 ? rotateVector(vector, deg[i]) : deg;
+        const vect = deg != 0 ? rotateVector(vector, deg[i]) : vector;
 
         const x = origin[0] + .5 * player.dimensions[0] + vect[0] * foward;
         const y = origin[1] + .5 * player.dimensions[1] + vect[1] * foward;
@@ -32,9 +32,55 @@ function multiShot(grid, player, vector, foward, deg) {
     }
 }
 
-export function singleShot(grid, origin, destination, foward = 1) {
-    const vector = calculateVector(origin, destination);
-    grid.InsertClient(new MagicProjectile([origin[0] + vector[0] * foward, origin[0] + vector[1] * foward], .5, vector, .3, 1, 'black'));
+export const skills = {
+    single_shot: {
+        name: 'Single Shot',
+        id: 'single_shot',
+        mana: 3,
+        cd: .3
+    },
+    double_shot: {
+        name: 'Double Shot',
+        id: 'double_shot',
+        mana: 6,
+        cd: .3
+    },
+    triple_shot: {
+        name: 'Triple Shot',
+        id: 'triple_shot',
+        mana: 9,
+        cd: .3
+    },
+    curve_shot: {
+        name: 'Curve Shot',
+        id: 'curve_shot',
+        mana: 9,
+        cd: .3
+    },
+    basic_dash: {
+        name: 'Basic Dash',
+        id: 'basic_dash',
+        mana: 10,
+        cd: 2
+    },
+    shield: {
+        name: 'Shield',
+        desc: 'basic defense, press again to shoot shield',
+        id: 'shield',
+        mana: 15,
+        cd: 7
+    },
+    shield_shot: {
+        name: 'Shield Shot',
+        id: 'shield_shot',
+        mana: 15,
+        cd: 0 
+        // Limited by shield cast time as a shield has to be created before it can be shot 
+    }
+}
+
+export function singleShot(grid, player, vector, foward = 1) {
+    multiShot(grid, player, vector, foward, [0]);
 }
 
 export function doubleShot(grid, player, vector, foward = 1) {
@@ -46,8 +92,31 @@ export function tripleShot(grid, player, vector, foward = 1) {
 }
 
 export function shield(grid, player, vector, foward) {
+    if(player.shield == null || player.shield == undefined) return false;
     const [x, y] = player.position;
-    grid.InsertClient(new Shield([x, y], [.25, 1], player.id, 10));
+    player.shield = grid.InsertClient(new Shield([x, y], [.25, 1], player.id, 10));
+}
+
+export function shieldShot(grid, player, vector, foward = 1) {
+    if(!player.shield) return;
+    const shield = player.shield;
+
+    const x = player.position[0];
+    const sx = shield.position[0];
+    
+    // Prevent player from shooting shield in the opposite direction 
+    // that they are facing
+    if(
+        (player.facing == 'left' && sx > x) || 
+        (player.facing == 'right' && sx < x)
+    ) return; 
+
+    shield.velocity = vector;
+    shield.projectile = true;
+    shield.collision.type = 'active';
+    shield.damage = 3;
+
+    player.shield = null;
 }
 
 export function basicDash(ctx, scale, offset, player, vector) {
@@ -69,7 +138,7 @@ export function basicDash(ctx, scale, offset, player, vector) {
             ctx.lineTo(x * scale + offset[0], y * scale + offset[1]);
             ctx.lineWidth = player.dimensions[1] * scale;
 
-            const grd = ctx.createLinearGradient(cx * scale + offset[0], cy * scale + offset[1], x * scale + offset[0], y * scale + offset[1]);
+            const grd = ctx.createLinearGradient(cx * scale + offset[0], cy * scale + offset[1], x * scale + offset[0] + .5 * player.dimensions[1] * scale, y * scale + offset[1]);
             grd.addColorStop(0, 'rgba(0,0,0, .5)');
             grd.addColorStop(.9, 'rgba(0,0,0, .15)');
             grd.addColorStop(1, 'rgba(0,0,0, 0)');
