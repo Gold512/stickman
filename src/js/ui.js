@@ -1,5 +1,7 @@
 import { downloadSave, loadSaveFile } from "./save.js";
 import { skills } from "./skill.js";
+import {newSVG} from "./svg.js";
+import { stat_menu } from "./ui/skill_tree.js";
 
 const display = {
     menu: 'block'
@@ -72,7 +74,9 @@ export function initUI(player) {
         loadSkillBar();
     });
 
-    addSkill.addEventListener('dragover', ev => ev.preventDefault())
+    addSkill.addEventListener('dragover', ev => ev.preventDefault());
+
+    stat_menu.init();
 }
 
 function updateStats(player) {
@@ -102,11 +106,19 @@ export function updateSkills() {
             el.addEventListener('dragstart', ev => {
                 ev.dataTransfer.setData("text", ev.target.id);
             });
+
+            // const svg = document.createElement('svg');
+            //     svg.setAttribute('viewBox', '0 0 400 400');
+
+            // const image = document.createElement('image');
+            //     image.setAttribute('xlink:href', `./src/svg/attack/${e.id}.svg`);
+            //     image.setAttribute('width', '400');
+            //     image.setAttribute('height', '400');
+            //     svg.appendChild(image);
+
+            // el.appendChild(svg);
             
-        const object = document.createElement('object');
-            object.data = `./src/svg/attack/${e.id}.svg`;
-            object.type = "image/svg+xml";
-            el.appendChild(object);
+            el.appendChild(newSVG(`./src/svg/attack/${e.id}.svg`));
         
         list.appendChild(el);
     }
@@ -142,10 +154,7 @@ function createSkillIcon(skill) {
         e.style.setProperty('--cd', skill.cd);
         e.dataset.id = skill.id;
 
-    const svg = document.createElement('object');
-        svg.type = 'image/svg+xml';
-        svg.data = `./src/svg/attack/${skill.id}.svg`;
-    e.appendChild(svg);
+    e.appendChild(newSVG(`./src/svg/attack/${skill.id}.svg`));
 
     const statData = document.createElement('div');
         statData.classList.add('stat-data');

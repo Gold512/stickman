@@ -92,7 +92,7 @@ export function tripleShot(grid, player, vector, foward = 1) {
 }
 
 export function shield(grid, player, vector, foward) {
-    if(player.shield == null || player.shield == undefined) return false;
+    if(player.shield != null || player.shield != undefined) return false;
     const [x, y] = player.position;
     player.shield = grid.InsertClient(new Shield([x, y], [.25, 1], player.id, 10));
 }

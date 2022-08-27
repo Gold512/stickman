@@ -52,8 +52,11 @@
             <span id="close">✖</span>
         </div>
 
-        <div class="stickfigure-icon">
-            <object data="./src/svg/stick_figure.svg" type="image/svg+xml"></object>
+        <div class="stickfigure-icon" id="stat-menu-btn">
+            <svg viewBox="0 0 400 400">
+                <image xlink:href="./src/svg/stick_figure.svg" width="400" height="400"></image>
+            </svg>
+            <!-- <object data="./src/svg/stick_figure.svg" type="image/svg+xml"></object> -->
         </div>
 
         <div class="box" id="save-box">
@@ -91,6 +94,8 @@
             </div>
         </div>
     </div>
-    <script src="src/js/main.js" type="module"></script>
+
+    <div id="menu"></div>
+    <script src="./src/js/main.js" type="module"></script>
 </body>
 </html>

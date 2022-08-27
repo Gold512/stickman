@@ -123,6 +123,8 @@
     padding: 2px 3px;
     user-select: none;
     transform: translateY(-100%);
+    color: black;
+    min-width: 5em;
     /* animation */
     /* transform: translateY(0) scale(0);
     opacity: 0;
@@ -249,4 +251,23 @@ button {
     color: white;
 
     transition: outline-color .2s ease-in;
+}
+
+#menu {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.skill-tree {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+}
+
+.st-canvas {
+    width: 100%;
 }
