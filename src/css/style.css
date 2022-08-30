@@ -106,31 +106,6 @@
     filter: invert();
 }
 
-.skill:hover > .stat-data { 
-    display: block; 
-    /* transform: translateY(-100%) scale(1);
-    opacity: 1; */
-}
-
-.stat-data {
-    display: none;
-    position: absolute;
-    top: 0;
-    left: 0;
-    border: 2px solid black;
-    border-radius: .25em;
-    background: white;
-    padding: 2px 3px;
-    user-select: none;
-    transform: translateY(-100%);
-    color: black;
-    min-width: 5em;
-    /* animation */
-    /* transform: translateY(0) scale(0);
-    opacity: 0;
-    transition: all 12s ease-out; */
-}
-
 .skill-title {
     word-wrap: none;
     white-space: nowrap;
@@ -261,6 +236,12 @@ button {
     top: 0;
 }
 
+.full {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
 .skill-tree {
     width: 100%;
     height: 100%;
@@ -268,6 +249,86 @@ button {
     margin: 0;
 }
 
-.st-canvas {
+.skill-tree::before {
+    content: '';
+    display: block;
+
+    background: #000;
+    position: fixed;
+    left: 0;
+    top: 0;
     width: 100%;
+    height: 100%;
+    z-index:10;
+}
+
+.skill-tree > * {
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    position: absolute;
+    z-index: 20;
+}
+
+.st-skill {
+    position: absolute;
+    border: 2px solid white;
+    border-radius: .25em;
+    box-sizing: border-box;
+}
+
+.tooltip {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    border: 2px solid rgb(100, 100, 100);
+    border-radius: .25em;
+    background: rgb(51, 51, 51);
+    padding: 2px 4px;
+    user-select: none;
+    color: white;
+    min-width: 5em;
+
+    /* zero values have to be set so transitions works properly */
+    transform: translate(-50%, 0) scale(0);
+    opacity: 0;
+    transition: 0.2s opacity cubic-bezier(0.175, 0.885, 0.32, 1.275),
+                0.2s transform cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+    z-index: 100;
+}
+
+.tooltip::before {
+    position: absolute;
+    content: '';
+
+    bottom: 0;
+    left: 50%;
+    
+    border-left: transparent solid 15px;
+    border-right: transparent solid 15px;
+    border-top: rgb(100, 100, 100) solid 15px;
+
+    /* zero values have to be set so transitions works properly */
+    transform: translate(0, 0) scale(0);
+    opacity: 0;
+    transition: 0.1s opacity cubic-bezier(0.175, 0.885, 0.32, 1.275),
+                0.1s transform cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+*:hover > .tooltip {
+    opacity: 1;
+    transform: translate(-50%, calc(-100% - 15px)) scale(1);
+}
+
+*:hover > .tooltip::before {
+    opacity: 1;
+    transform: translate(-50%, 100%) scale(1);
+}
+
+.darken {
+    background: black;
+    padding: 0 3px;
+    border-radius: 0.25em;
 }

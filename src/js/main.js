@@ -101,9 +101,6 @@ document.addEventListener('keydown', function keydown(ev) {
             tripleShot(grid, player, [x, y]);
         break;
 
-        case 'k':
-            waveShot(grid, player, [x, y]);
-        break;
 
         case keyRegistry.shield:
             if(shield(grid, player, [x, y]) === false) player.mana += skill.mana;
@@ -121,6 +118,11 @@ document.addEventListener('keydown', function keydown(ev) {
         case keyRegistry.basic_dash:
             basicDash(ctx, scale, offset, player, [x, y]);
         break;
+
+        case keyRegistry.wave:
+            waveShot(grid, player, [x, y]);
+        break;
+    
     }
 
     // Modify keyState 
@@ -296,3 +298,13 @@ initUI(player);
 // updateStats(player);
 
 loadSkillBar();
+
+// Load dev tools 
+!function() {
+    const url = new URL(location.href);
+    if(url.searchParams.get('dev') == 'true') {
+        window.player = player;
+        window.grid = grid;
+        import('./libs/dev_tools.js').then(o => window.dev = o.dev);
+    }
+}();

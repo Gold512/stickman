@@ -3,7 +3,7 @@ import {newSVG} from '../svg.js'
 
 const SKILL_TREE = [
     'arcane',
-    ['arcane', 'double_shot', 'triple_shot', 'quad_shot', 'penta_shot'],
+    ['single_shot', 'double_shot', 'triple_shot', 'quad_shot', 'penta_shot'],
     ['laser', 'curved_laser'],
     ['shield', 'shield_shot', 'expand_shield'],
     ['basic_dash', 'intermediate_dash', 'advanced_dash']
@@ -18,8 +18,12 @@ function createStatMenu() {
     main.appendChild(canvas);
 
     const skills = document.createElement('div');
-    createSkillTree(skills, canvas, {w: 5, h: 5});
+    createSkillTree(skills, canvas, {w: 6, h: 6, spacing: 2});
     main.appendChild(skills);
+
+    // exit button
+    const exit = document.createElement('div');
+
 
     const container = document.getElementById('menu');
     container.innerHTML = '';
@@ -36,19 +40,27 @@ function createTreeStruct(tree, w, spacing = 3) {
     let res = {};
 
     let parent = null;
-    for(let i = 0, l = SKILL_TREE.length; i < l; i++) {
-        const e = SKILL_TREE[i];
-        if(e instanceof String) {
+
+    let totalInLayer = tree.filter(v => typeof v === 'string').length;
+    console.log(totalInLayer)
+
+    let skippedIndices = 0;
+
+    for(let i = 0, l = tree.length; i < l; i++) {
+        const e = tree[i];
+        if(typeof e === 'string') {
             // The prev string element is the parent
+        console.log(e)
             res[e] = {
                 require: parent ? [parent] : [],
-                x: w / (l + 1) * (i + 1), 
-                y: spacing
+                x: w * ((i + 1) / (totalInLayer + 1)), 
+                y: spacing * i + spacing
             };
 
             parent = e;
+            skippedIndices++;
         } else if(e instanceof Array) {
-            res = Object.assign(res, subParseTreeStrcut(parent, e, w / (l + 1) * (i + 1), spacing));
+            res = Object.assign(res, subParseTreeStrcut(parent, e, w * ((i - skippedIndices + 1) / (tree.length - totalInLayer + 1)), spacing));
         }
     }
 
@@ -56,12 +68,12 @@ function createTreeStruct(tree, w, spacing = 3) {
 }
 
 /**
- * 
- * @param {Object} res 
+ * Parses the vertical skill chains
+ * @param {Object} parent the parent of this skill chain
  * @param {Array} tree for now tree only supports string arrays
  * @param {Number} index index at which this function is ran
  */
-function subParseTreeStrcut(parent, tree, x, spacing) {
+function subParseTreeStrcut(parent, tree, x ,spacing) {
     let res = {};
 
     for(let i = 0; i < tree.length; i++) {
@@ -71,7 +83,7 @@ function subParseTreeStrcut(parent, tree, x, spacing) {
             res[e] = {
                 require: parent ? [parent] : [],
                 x: x,
-                y: i * spacing
+                y: (i + 1) * spacing + spacing
             };
 
             parent = e;
@@ -85,7 +97,7 @@ function subParseTreeStrcut(parent, tree, x, spacing) {
         res[e.id] = {
             require: [parent].concat(e.require),
             x: x,
-            y: i * spacing
+            y: (i + 1) * spacing + spacing
         };
 
         parent = e.id;
@@ -103,39 +115,86 @@ function subParseTreeStrcut(parent, tree, x, spacing) {
 function createSkillTree(cont, canvas, options) {
     const ctx = canvas.getContext('2d');
     const width = window.innerWidth;
+    const vh = window.innerHeight / 100;
+    const height = window.innerHeight;
 
-    const {w, h} = options;
+    const {w, h, spacing} = options;
 
     canvas.width = width;
-    canvas.height = window.innerHeight;
-    const tree = createTreeStruct(SKILL_TREE);
+    canvas.height = height;
+
+    const tree = createTreeStruct(SKILL_TREE, 100, spacing);
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     for(let i = 0, k = Object.keys(tree); i < k.length; i++) {
         const e = tree[k[i]], id = k[i];
         
+        // create skill container
+        const skill = document.createElement('div');
+        skill.classList.add('st-skill');
+        const x = e.x - .5 * w;
+        const y = e.y;
+
+        skill.style.left = `${x * vh}px`;
+        skill.style.bottom = `${y * vh * 5}px`;
+        skill.style.width = `${w * vh}px`;
+        skill.style.height = `${h * vh}px`;
+
         // create svg 
-        const svg = newSVG(`./src/svg/attack/${e.id}.svg`);
-        svg.classList.add('st-skill');
-        svg.style.left = `${e.x - .5 * w}px`;
-        svg.style.top = `${e.y - .5 * h}px`;
-        cont.appendChild(svg);
+        const svg = newSVG(`./src/svg/attack/${id}.svg`);
+            svg.classList.add('full');
+            skill.appendChild(svg);
+
+        // create hover info 
+        const tooltip = document.createElement('div');
+            tooltip.classList.add('tooltip');
+            tooltip.innerText = 'tooltip test text';
+            skill.appendChild(tooltip);
+
+        cont.appendChild(skill);
 
         // Render lines connecting to other skills 
         if(e.require == undefined || e.require.length == 0) continue;
 
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 2;
+
         for(let j = 0; j < e.require.length; j++) {
             console.log(e.require)
             const sk = tree[e.require[j]];
-            let path = new Path2D();
-                path.moveTo(sk.x, sk.y + .5 * h);
-                const midY = ((sk.y + .5 * h) - (e.y - .5 * h))/2;
-                path.lineTo(sk.x, midY);
-                path.lineTo(e.x, midY);
-                path.lineTo(e.x, e.y - .5 * h);
+
+            const path = new Path2D();
+                // sk.y < e.y, y1 < y2
+                const x1 = vh * ( sk.x );
+                const y1 = height - vh * (sk.y * 5 + h);
+                const x2 = vh * ( e.x );
+                const y2 = height - vh * ( e.y * 5);
+
+                path.moveTo(x1, y1);
+                const mid = (y2+y1)/2;
+                path.lineTo(x1, mid);
+                path.lineTo(x2, mid);
+                path.lineTo(x2, y2);
+                
             ctx.stroke(path);
         }
+
+        ctx.strokeStyle = null;
+        ctx.strokeWidth = null;
     }
+
+    // Update the skill tree to fit to new size
+    let ticking = false;
+    window.addEventListener('resize', ev => {
+        // Prevent event from firing too quickly 
+        if(ticking) return;
+        
+        ticking = true;
+        requestAnimationFrame(() => {
+
+            ticking = false;
+        });
+    });
 }
 
 

@@ -157,7 +157,8 @@ function createSkillIcon(skill) {
     e.appendChild(newSVG(`./src/svg/attack/${skill.id}.svg`));
 
     const statData = document.createElement('div');
-        statData.classList.add('stat-data');
+        statData.classList.add('tooltip');
+        
         const title = document.createElement('div');
             title.classList.add('skill-title');
             title.innerText = skill.name;
@@ -175,12 +176,12 @@ function createSkillIcon(skill) {
             // mana and cd is converted to number to make innerHTML secure 
             // They could be strings due to a modified save file and be used
             // to inject script tags into the page
-            mana.innerHTML = `<b>Mana</b>: <span style='color:blue'>${Number(skill.mana)}</span>`;
+            mana.innerHTML = `<b>Mana</b>: <span class='darken' style='color: hsl(240deg 100% 74%);'>${Number(skill.mana)}</span>`;
             statData.appendChild(mana);
 
         const cd = document.createElement('div');
             cd.classList.add('cd');
-            cd.innerHTML = `<b>CD</b>: <span style='color:lightgreen'>${Number(skill.cd)}s</span>`;
+            cd.innerHTML = `<b>CD</b>: <span class='darken' style='color:lightgreen'>${Number(skill.cd)}s</span>`;
             statData.appendChild(cd);
     
     e.appendChild(statData);
