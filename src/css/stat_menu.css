@@ -203,3 +203,41 @@
         transform: scale(1);
     }
 }
+
+
+
+.skill-tree {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+}
+
+.skill-tree::before {
+    content: '';
+    display: block;
+
+    background: #000;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index:10;
+}
+
+.skill-tree > * {
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    position: absolute;
+    z-index: 20;
+}
+
+.st-skill {
+    position: absolute;
+    border: 2px solid white;
+    border-radius: .25em;
+    box-sizing: border-box;
+}

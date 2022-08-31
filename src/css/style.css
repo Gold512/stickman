@@ -1,3 +1,5 @@
+/* this file should contain widely used skills */
+
 #canvas {
     width: 100%; 
     height: 100%;
@@ -33,6 +35,8 @@
     font-family: monospace;
     font-size: 1.2em;
     background: rgb(61, 61, 61);
+
+    content: 'hello world';
 }
 
 .bar::before {
@@ -47,6 +51,7 @@
     transition: width .2s ease-out;
 }
 
+
 .bar::after {
     transform: translateY(-2px);
     counter-reset: current var(--current) max var(--max);
@@ -58,6 +63,28 @@
     top: 0;
     width: 100%;
     height: 100%;
+}
+
+.bar:hover > .regen {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.bar:hover > .regen::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: min(100%, calc(100% * (var(--current) / var(--max))));
+    
+    --diff: calc(var(--max) - var(--current));
+    width: calc(100% * (var(--regen) / var(--max)));
+    height: 100%;
+    transition: left .2s ease-out;
+    background: var(--regen-color);
 }
 
 #skill-container {
@@ -242,43 +269,15 @@ button {
     height: 100%;
 }
 
-.skill-tree {
-    width: 100%;
-    height: 100%;
-    padding: 0;
-    margin: 0;
-}
-
-.skill-tree::before {
-    content: '';
-    display: block;
-
-    background: #000;
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    z-index:10;
-}
-
-.skill-tree > * {
-    width: 100%;
-    height: 100%;
-    left: 0;
-    top: 0;
-    position: absolute;
-    z-index: 20;
-}
-
-.st-skill {
-    position: absolute;
-    border: 2px solid white;
-    border-radius: .25em;
-    box-sizing: border-box;
-}
-
 .tooltip {
+    /* store in vars so it is easier to make directional classes */
+    --main-x: -50%;
+    --main-y: calc(-100% - var(--triangle-size));
+    --t-x: -50%;
+    --t-y: 100%;
+
+    --triangle-size: 10px;
+    
     position: absolute;
     top: 0;
     left: 50%;
@@ -297,6 +296,12 @@ button {
                 0.2s transform cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
     z-index: 100;
+    isolation: isolate;
+}
+
+.tooltip.auto-expand {
+    word-wrap: none;
+    white-space: nowrap;
 }
 
 .tooltip::before {
@@ -306,9 +311,9 @@ button {
     bottom: 0;
     left: 50%;
     
-    border-left: transparent solid 15px;
-    border-right: transparent solid 15px;
-    border-top: rgb(100, 100, 100) solid 15px;
+    border-left: transparent solid var(--triangle-size);
+    border-right: transparent solid var(--triangle-size);
+    border-top: rgb(100, 100, 100) solid var(--triangle-size);
 
     /* zero values have to be set so transitions works properly */
     transform: translate(0, 0) scale(0);
@@ -319,12 +324,30 @@ button {
 
 *:hover > .tooltip {
     opacity: 1;
-    transform: translate(-50%, calc(-100% - 15px)) scale(1);
+    transform: translate(var(--main-x), var(--main-y)) scale(1);
 }
 
 *:hover > .tooltip::before {
     opacity: 1;
-    transform: translate(-50%, 100%) scale(1);
+    transform: translate(var(--t-x), var(--t-y)) scale(1);
+}
+
+/* bottom tooltip */
+.tooltip.bottom::before {
+    border-bottom: rgb(100, 100, 100) solid var(--triangle-size);
+    border-top: none;
+}
+
+.tooltip.bottom {
+    --main-y: calc(100%);
+    --t-y: -100%;
+    bottom: none;
+    top: 0;
+}
+
+.tooltip.bottom::before {
+    bottom: none;
+    top: 0;
 }
 
 .darken {
