@@ -1,4 +1,5 @@
 import * as clients from '../objects.js'
+import { ElementCreator } from './element_creator.js';
 
 function parsePos(s) {
     const pos = s.split(',');

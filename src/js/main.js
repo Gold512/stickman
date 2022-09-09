@@ -4,7 +4,8 @@ import {collision} from './collision.js'
 import {initUI, keyRegistry, loadSkillBar} from './ui.js'
 import {skills, singleShot, doubleShot, tripleShot, waveShot, shield, shieldShot, basicDash} from './skill.js'
 import { loadFromStorage } from './save.js';
-
+import { FPS } from './libs/fps.min.js'
+import { ElementCreator } from './libs/element_creator.js'
 const grid = new SpatialHash([-30, -30], [60, 60]);
 
 const player = grid.InsertClient(new PlayerClient([0, 0], [.5, .5], {
@@ -216,6 +217,9 @@ canvas.addEventListener('click', ev => {
     setTimeout(() => document.querySelector('.skill').classList.remove('cooldown'), 500)
 });
 
+const fps = new FPS({side: 'top-right'});
+
+
 !function frame(t) {
     let elapsedTime = 0;
     if(!start) {
@@ -291,6 +295,7 @@ canvas.addEventListener('click', ev => {
         }
     }
 
+    fps.frame()
     window.requestAnimationFrame(frame);
 }();
 

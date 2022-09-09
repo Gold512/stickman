@@ -23,20 +23,22 @@
 }
 
 .bar {
+    --background: rgb(61, 61, 61);
+    --prefix: '';
     width: 10em;
     height: .8em;
     position: relative;
     min-height: 10px;
     display: inline-block;
     background-clip: border-box;
-    border: solid 2px rgba(0, 0, 0, .42);
+    border: solid 2px rgba(28, 28, 28);
     text-align: center;
     color: white;
     font-family: monospace;
     font-size: 1.2em;
-    background: rgb(61, 61, 61);
+    background: var(--background);
 
-    content: 'hello world';
+    isolation: isolate;
 }
 
 .bar::before {
@@ -51,11 +53,19 @@
     transition: width .2s ease-out;
 }
 
+.bar.reverse::before {
+    left: unset;
+    right: 0;
+}
+
+.bar.no-total::after {
+    content: var(--prefix) counter(current);
+}
 
 .bar::after {
     transform: translateY(-2px);
     counter-reset: current var(--current) max var(--max);
-    content: counter(current) '/' counter(max);
+    content: var(--prefix) counter(current) '/' counter(max);
     display: block;
     z-index: 1;
     position: absolute;
@@ -85,6 +95,11 @@
     height: 100%;
     transition: left .2s ease-out;
     background: var(--regen-color);
+}
+
+.bar:hover > .tooltip::after {
+    content: 'Regen: ' counter(regen) '/s';
+    counter-reset: regen var(--regen);
 }
 
 #skill-container {
@@ -243,6 +258,15 @@ button {
     border-radius: .25em;
 }
 
+button.overlay::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+}
+
 .hotkey-input {
     font-family: monospace;
     text-align: center;
@@ -304,6 +328,18 @@ button {
     white-space: nowrap;
 }
 
+/** make it easier to move cursor from on the hover element
+onto the tooltip without the hover being disabled */
+.tooltip.interactive::after {
+    position: absolute;
+    content: '';
+    left: 50%;
+    top: 100%;
+    transform: translate(var(--t-x), 0);
+    width: 100%;
+    height: var(--triangle-size);
+}
+
 .tooltip::before {
     position: absolute;
     content: '';
@@ -339,14 +375,14 @@ button {
 }
 
 .tooltip.bottom {
-    --main-y: calc(100%);
+    --main-y: calc(100% + var(--triangle-size));
     --t-y: -100%;
-    bottom: none;
-    top: 0;
+    bottom: 0;
+    top: unset;
 }
 
 .tooltip.bottom::before {
-    bottom: none;
+    bottom: unset;
     top: 0;
 }
 
@@ -354,4 +390,38 @@ button {
     background: black;
     padding: 0 3px;
     border-radius: 0.25em;
+}
+
+.text-glow {
+    --start: #e60073; 
+    --end: #ff4da6;
+
+    color: #fff;
+    animation: text-glow 1s ease-in-out infinite alternate;
+}
+
+.box-glow {
+    --start: #e60073; 
+    --end: #ff4da6;
+
+    color: #fff;
+    animation: box-glow 1s ease-in-out infinite alternate;
+}
+
+@keyframes text-glow {
+    from {
+        text-shadow: 0 0 .125em #fff, 0 0 .25em #fff, 0 0 .375em var(--start), 0 0 .5em var(--start), 0 0 .625em var(--start), 0 0 .75em var(--start), 0 0 .875em var(--start);
+    }
+    to {
+        text-shadow: 0 0 .25em #fff, 0 0 .375em var(--end), 0 0 .5em var(--end), 0 0 .625em var(--end), 0 0 .75em var(--end), 0 0 .875em var(--end), 0 0 1em var(--end);
+    }
+}
+
+@keyframes box-glow {
+    from {
+        box-shadow: 0 0 .125em #fff, 0 0 .25em #fff, 0 0 .375em var(--start), 0 0 .5em var(--start), 0 0 .625em var(--start), 0 0 .75em var(--start), 0 0 .875em var(--start);
+    }
+    to {
+        box-shadow: 0 0 .25em #fff, 0 0 .375em var(--end), 0 0 .5em var(--end), 0 0 .625em var(--end), 0 0 .75em var(--end), 0 0 .875em var(--end), 0 0 1em var(--end);
+    }
 }

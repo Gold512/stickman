@@ -1,26 +1,9 @@
 import { MagicProjectile, Shield } from "./objects.js";
-
-function calculateVector(origin, destination) {
-    const [x, y] = destination;
-    const [cx, cy] = origin;
-    let vector = [x - cx, y - cy];
-    const scaler = 1/Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
-    vector[0] *= scaler;
-    vector[1] *= scaler;
-    return vector;
-}
-
-function rotateVector(vec, ang) {
-    ang = -ang * (Math.PI/180);
-    let cos = Math.cos(ang);
-    let sin = Math.sin(ang);
-    return new Array(Math.round(10000*(vec[0] * cos - vec[1] * sin))/10000, Math.round(10000*(vec[0] * sin + vec[1] * cos))/10000);
-}
-
+import { Vector } from "./vector.js"
 function multiShot(grid, player, vector, foward, deg) {
     const origin = player.position;
     for(let i = 0; i < deg.length; i++) {
-        const vect = deg != 0 ? rotateVector(vector, deg[i]) : vector;
+        const vect = deg != 0 ? Vector.rotate(vector, deg[i]) : vector;
 
         const x = origin[0] + .5 * player.dimensions[0] + vect[0] * foward;
         const y = origin[1] + .5 * player.dimensions[1] + vect[1] * foward;
@@ -37,19 +20,22 @@ export const skills = {
         name: 'Single Shot',
         id: 'single_shot',
         mana: 3,
-        cd: .3
+        cd: .3,
+        cost: 0
     },
     double_shot: {
         name: 'Double Shot',
         id: 'double_shot',
         mana: 6,
-        cd: .3
+        cd: .3, 
+        cost: 2
     },
     triple_shot: {
         name: 'Triple Shot',
         id: 'triple_shot',
         mana: 9,
-        cd: .3
+        cd: .3, 
+        cost: 5
     },
     curve_shot: {
         name: 'Curve Shot',
@@ -61,20 +47,23 @@ export const skills = {
         name: 'Basic Dash',
         id: 'basic_dash',
         mana: 10,
-        cd: 2
+        cd: 2,
+        cost: 4
     },
     shield: {
         name: 'Shield',
-        desc: 'basic defense, press again to shoot shield',
+        desc: 'basic defensive barrier, defends against most attacks with durability scaling with MPL of caster',
         id: 'shield',
         mana: 15,
-        cd: 7
+        cd: 7,
+        cost: 7
     },
     shield_shot: {
         name: 'Shield Shot',
         id: 'shield_shot',
         mana: 15,
-        cd: 0 
+        cd: 0 , 
+        cost: 15
         // Limited by shield cast time as a shield has to be created before it can be shot 
     }
 }

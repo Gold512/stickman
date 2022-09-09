@@ -1,5 +1,10 @@
 import {newSVG} from '../svg.js'
-
+import {skills} from '../skill.js'
+import {ElementCreator} from '../libs/element_creator.js'
+import { CreateAnimation } from '../libs/animation.js'
+import { saveToStorage } from '../save.js'
+import { updateSkills } from '../ui.js'
+import { math } from '../math.js'
 
 const SKILL_TREE = [
     'arcane',
@@ -18,15 +23,55 @@ function createStatMenu() {
     main.appendChild(canvas);
 
     const skills = document.createElement('div');
+    skills.classList.add('skill-container');
     createSkillTree(skills, canvas, {w: 6, h: 6, spacing: 2});
     main.appendChild(skills);
 
-    // exit button
-    const exit = document.createElement('div');
+    // Close btn 
+    new ElementCreator('button')
+        .style({
+            position: 'relative',
+            display: 'inline-block',
+            width: '2em',
+            height: '2em',
+            border: 'none',
+            background: 'none',
+            left: '5px',
+            top: '5px',
+        })
+        .class('overlay')
+        .addEventListener('click', ev => {
+            main.remove();
+        })
+        .newChild(newSVG('./src/svg/icons/close.svg'))
+            .style({
+                position: 'absolute',
+                width: '75%',
+                height: '75%',
+                left: '50%', 
+                top: '50%',
+                transform: 'translate(-50%, -50%)'
+            })
+            .end
+        .appendTo(main);
 
+    // Stat point display
+    new ElementCreator('div')
+        .text(`You have `)
+        .newChild('span').id('skill-points').style({fontWeight: 'bold'}).text(player.stats.skillPoints).end
+        .text(" skill points")
+        .class('text-glow')
+        .style({
+            position: 'absolute',
+            bottom: 'calc(.6em + 8px)', 
+            right: 'calc(.6em + 8px)',
+            userSelect: 'none'
+        })
+        .appendTo(main);
 
     const container = document.getElementById('menu');
     container.innerHTML = '';
+    container.style.overflow = 'hidden';    
     container.appendChild(main);
 }
 
@@ -42,7 +87,6 @@ function createTreeStruct(tree, w, spacing = 3) {
     let parent = null;
 
     let totalInLayer = tree.filter(v => typeof v === 'string').length;
-    console.log(totalInLayer)
 
     let skippedIndices = 0;
 
@@ -50,7 +94,6 @@ function createTreeStruct(tree, w, spacing = 3) {
         const e = tree[i];
         if(typeof e === 'string') {
             // The prev string element is the parent
-        console.log(e)
             res[e] = {
                 require: parent ? [parent] : [],
                 x: w * ((i + 1) / (totalInLayer + 1)), 
@@ -110,57 +153,223 @@ function subParseTreeStrcut(parent, tree, x ,spacing) {
  * 
  * @param {HTMLElement} cont skill tree container 
  * @param {HTMLCanvasElement} canvas canvas to render skill tree
- * @param {Object} skills skills to render
+ * @param {Object} options skills to render
+ * @param {Number} options.w - width of the skill icon
+ * @param {Number} options.h - height of the skill icon
+ * @param {Number} options.spacing - spacing of the skill icon
  */
 function createSkillTree(cont, canvas, options) {
+    skillTreeRender(cont, canvas, options)
+
+    // Update the skill tree to fit to new size
+    let ticking = false;
+    window.addEventListener('resize', ev => {
+        // Prevent event from firing too quickly 
+        if(ticking) return;
+        
+        ticking = true;
+        requestAnimationFrame(() => {
+            cont.innerHTML = '';
+            skillTreeRender(cont, canvas, options)
+            setTimeout(() => ticking = false, 100);
+        });
+    });
+}
+
+function skillTreeRender(cont, canvas, options) {
     const ctx = canvas.getContext('2d');
-    const width = window.innerWidth;
     const vh = window.innerHeight / 100;
+    const vw = window.innerWidth / 100;
+    const {w, h} = options;
     const height = window.innerHeight;
-
-    const {w, h, spacing} = options;
-
+    const width = window.innerWidth;
+    
     canvas.width = width;
     canvas.height = height;
 
-    const tree = createTreeStruct(SKILL_TREE, 100, spacing);
+    // Create the icons themselves 
+    const tree = createTreeStruct(SKILL_TREE, 100, options.spacing);
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const unlockedPointsToDraw = [];
+
     for(let i = 0, k = Object.keys(tree); i < k.length; i++) {
         const e = tree[k[i]], id = k[i];
-        
+        const locked = !player.skills.has(id);
+
         // create skill container
         const skill = document.createElement('div');
         skill.classList.add('st-skill');
+        if(locked) skill.classList.add('locked')
+
         const x = e.x - .5 * w;
         const y = e.y;
 
-        skill.style.left = `${x * vh}px`;
-        skill.style.bottom = `${y * vh * 5}px`;
-        skill.style.width = `${w * vh}px`;
-        skill.style.height = `${h * vh}px`;
+        // skill.style.left = `${x * vh}px`;
+        // skill.style.bottom = `${y * vh * 5}px`;
+        // skill.style.width = `${w * vh}px`;
+        // skill.style.height = `${h * vh}px`;
 
-        // create svg 
-        const svg = newSVG(`./src/svg/attack/${id}.svg`);
-            svg.classList.add('full');
-            skill.appendChild(svg);
+        skill.style.left = `${x * vh / vw}vw`;
+        skill.style.bottom = `${y * 5}vh`;
+        skill.style.width = `${w * vh / vw}vw`;
+        skill.style.height = `${h}vh`;
 
-        // create hover info 
-        const tooltip = document.createElement('div');
-            tooltip.classList.add('tooltip');
-            tooltip.innerText = 'tooltip test text';
-            skill.appendChild(tooltip);
+        new ElementCreator('div')
+            .class('skill-icon')
+            .newChild(newSVG(`./src/svg/attack/${id}.svg`))
+                .class('full')
+                .end
+            .appendTo(skill);
+        
+        const sk = skills[id];
+
+        if(sk != undefined) {
+
+            // tooltip
+            new ElementCreator('div')
+                .class(['tooltip', 'skill-tooltip', 'interactive'])
+
+                // tooltip_title
+                .newChild('div')
+                    .class('skill-title')
+                    .text(`${sk.name}`)
+                    .end
+
+                // Skill discription
+                .if(sk.desc, e => {
+                    e.newChild('div')
+                        .class('skill-desc')
+                        .text(sk.desc)
+                        .end
+                })
+
+                // mana bar to show amount of total mana used by this skill
+                .newChild('div')
+                    .class(['bar', 'no-total', 'reverse'])
+                    .styleVariables({
+                        max: player.maxMana,
+                        current: sk.mana,
+                        background: 'rgb(58, 58, 255)',
+                        color: 'skyblue',
+                        prefix: '"Mana: "'
+                    })
+                    .end
+
+                .if(locked, elementCreator => {
+                    elementCreator.newChild('button')
+                        .text('Unlock skill')
+                        .class('skill-buy-btn')
+                        .addEventListener('click', ev => {
+                            if(player.stats.skillPoints < sk.cost) return;
+                            ev.currentTarget.remove();
+                            player.stats.skillPoints -= sk.cost;
+                            document.getElementById('skill-points').innerText = player.stats.skillPoints;
+                            player.skills.add(sk.id);
+                            saveToStorage(player);
+                            updateSkills();
+
+                            // Change connecting line color
+                            CreateAnimation(p => {
+                                ctx.strokeStyle = 'white';
+                                ctx.lineWidth = 2;
+
+                                for(let j = 0; j < e.require.length; j++) {
+                                    const sk = tree[e.require[j]];
+                                
+                                    const path = new Path2D();
+                                        // sk.y < e.y, y1 < y2
+                                        const x1 = vh * ( sk.x );
+                                        const y1 = height - vh * (sk.y * 5 + h);
+                                        const x2 = vh * ( e.x );
+                                        const y2 = height - vh * ( e.y * 5);
+
+                                        const mid = (y2+y1)/2;
+                                        const l1 = Math.abs(mid - y1);
+                                        const l2 = Math.abs(x2 - x1);
+                                        const l3 = Math.abs(y2 - mid);
+                                        const t = l1 + l2 + l3;
+                                        
+                                        const p1 = math.sat(p/(l1/t));
+                                        const p2 = math.sat((p-l1/t)/(l2/t));
+                                        const p3 = math.sat((p-(l1+l2)/t)/(l3/t));
+
+                                        path.moveTo(x1, y1);
+                                        path.lineTo(x1, math.lerp(p1, y1, mid));
+                                        if(p2 > 0) path.lineTo(math.lerp(p2, x1, x2), mid);
+                                        if(p3 > 0) path.lineTo(x2, math.lerp(p3, mid, y2));
+
+                                    ctx.stroke(path);
+                                }
+                            
+                                ctx.strokeStyle = null;
+                                ctx.strokeWidth = null;
+                            }, 800).promise.then(() => {
+                                skill.classList.remove('locked');
+                            })
+                            
+                        })
+                        .newChild('div')
+                            .text(`${sk.cost} SP`)
+                            .style({fontSize: '1.32em'})
+                            .end
+                        .end
+                })
+
+                .appendTo(skill)
+
+            // create hover info 
+            // const tooltip = document.createElement('div');
+            //     tooltip.classList.add('tooltip');
+            //     tooltip.classList.add('skill-tooltip');
+
+
+            //     const tooltip_title = document.createElement('div');
+            //     tooltip_title.classList.add('skill-title');
+            //     tooltip_title.innerText = `${sk.name}`;
+            //     tooltip.appendChild(tooltip_title);
+
+            //     // mana bar to show amount of total mana used by this skill
+            //     const mana = document.createElement('div');
+            //     mana.classList.add('bar');
+            //     mana.classList.add('no-total');
+            //     mana.classList.add('reverse');
+            //     mana.style.setProperty('--max', player.maxMana);
+            //     mana.style.setProperty('--current', sk.mana);
+            //     mana.style.setProperty('--background', 'rgb(58, 58, 255)');
+            //     mana.style.setProperty('--color', 'skyblue');
+            //     mana.style.setProperty('--prefix', '"Mana: "');
+            //     tooltip.appendChild(mana);
+
+            //     skill.appendChild(tooltip);
+
+                
+            
+        }
 
         cont.appendChild(skill);
 
         // Render lines connecting to other skills 
         if(e.require == undefined || e.require.length == 0) continue;
+        
+        if(!locked) {
+            for(let j = 0; j < e.require.length; j++) {
+                const sk = tree[e.require[j]];
+                unlockedPointsToDraw.push({
+                    x1:vh * ( sk.x ),
+                    y1:height - vh * (sk.y * 5 + h),
+                    x2:vh * ( e.x ),
+                    y2:height - vh * ( e.y * 5)
+                });
+            }
+            continue;
+        }
 
-        ctx.strokeStyle = 'white';
+        ctx.strokeStyle = 'rgba(127, 127, 127)';
         ctx.lineWidth = 2;
 
         for(let j = 0; j < e.require.length; j++) {
-            console.log(e.require)
             const sk = tree[e.require[j]];
 
             const path = new Path2D();
@@ -178,23 +387,26 @@ function createSkillTree(cont, canvas, options) {
                 
             ctx.stroke(path);
         }
-
-        ctx.strokeStyle = null;
-        ctx.strokeWidth = null;
     }
 
-    // Update the skill tree to fit to new size
-    let ticking = false;
-    window.addEventListener('resize', ev => {
-        // Prevent event from firing too quickly 
-        if(ticking) return;
-        
-        ticking = true;
-        requestAnimationFrame(() => {
+    // Unlocked skill lines are drawn after to achieve layering
+    ctx.strokeStyle = 'rgba(255, 255, 255, 255)';
+    ctx.lineWidth = 2;
 
-            ticking = false;
-        });
-    });
+    for(let i = 0; i < unlockedPointsToDraw.length; i++) {
+        const {x1, y1, x2, y2} = unlockedPointsToDraw[i];
+        const path = new Path2D();
+            path.moveTo(x1, y1);
+            const mid = (y2+y1)/2;
+            path.lineTo(x1, mid);
+            path.lineTo(x2, mid);
+            path.lineTo(x2, y2);
+                
+        ctx.stroke(path);
+    }
+    
+    ctx.strokeStyle = null;
+    ctx.strokeWidth = null;
 }
 
 

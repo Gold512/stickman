@@ -2,7 +2,8 @@ import {LZString} from "./libs/lzstring.js";
 
 function getSaveJSON(player) {
     return JSON.stringify({
-        stats: player.stats
+        stats: player.stats,
+        skills: [...player.skills]
     });
 }
 
@@ -37,6 +38,9 @@ function load(obj, player) {
     }
 
     player.UpdateStats();
+
+    // update the skills
+    player.skills = new Set(obj.skills || []);
 }
 
 export function saveToStorage(player) {
@@ -70,6 +74,7 @@ export function loadSaveFile(player) {
             v = JSON.parse(v);
             load(v, player);
 
+            // Save file data to localStorage
             saveToStorage(player);
         });
     });

@@ -226,18 +226,46 @@
     z-index:10;
 }
 
-.skill-tree > * {
+.skill-tree > *:where(canvas, .skill-container) {
     width: 100%;
     height: 100%;
     left: 0;
     top: 0;
+}
+
+.skill-tree > * {
+ 
     position: absolute;
     z-index: 20;
 }
 
 .st-skill {
     position: absolute;
+}
+
+.st-skill > .skill-icon {
+    height: 100%;
+    box-sizing: border-box;
     border: 2px solid white;
     border-radius: .25em;
-    box-sizing: border-box;
+    filter: brightness(1);
+    transition: filter 0.3s ease-in-out;
 }
+
+.st-skill.locked > .skill-icon {
+    filter: brightness(50%);
+}
+
+.st-skill.locked .skill-title::after {
+    content: '🔒︎';
+    color: rgb(255, 44, 44);
+}
+
+.skill-buy-btn {
+    width: 100%;
+    font-size: .8em;
+    cursor: pointer;
+    background: rgb(32, 32, 32);
+}
+
+.skill-buy-btn:hover { background: rgb(48, 48, 48); }

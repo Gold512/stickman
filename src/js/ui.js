@@ -96,6 +96,7 @@ export function updateSkills() {
 
     for(let i = 0, k = Object.keys(skills); i < k.length; i++) {
         const e = skills[k[i]];
+        if(!player.skills.has(e.id)) continue;
 
         const el = document.createElement('div');
             el.draggable = 'true';

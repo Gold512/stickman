@@ -1,6 +1,8 @@
 import {math} from './math.js';
 import {Client} from './spacial_hash.js';
 import { saveToStorage } from './save.js';
+import { collision } from './collision.js';
+import { Vector } from './vector.js';
 
 const diagonalScaling = Math.pow(Math.sqrt(2), -1);
 
@@ -32,7 +34,9 @@ export class PlayerClient extends Client {
         setInterval(() => {
             console.log('autosaving')
             saveToStorage(this)
-        }, 30e3)
+        }, 30e3);
+
+        this.skills = new Set();
     }
 
     // Mana and health regen
@@ -104,9 +108,14 @@ export class PlayerClient extends Client {
     //     this.stats = stats;
     // }
 
+    /**
+     * Update UI elements when stats are loaded 
+     */
     UpdateStats() {
         this.maxHealth = this.stats.maxHealth;
+        this.healthRegen = this.stats.healthRegen;
         this.maxMana = this.stats.maxMana;
+        this.manaRegen = this.stats.manaRegen;
         this.maxXp = this.stats.maxXp;
 
         this.health = this.stats.health;
@@ -195,18 +204,24 @@ export class PlayerClient extends Client {
 
     get level() { return this.stats.level; }
 
-    set manaRegen(v) { this.stats.manaRegen = v; }
+    set manaRegen(v) {
+        this.bars.mana.style.setProperty('--regen', v)
+        this.stats.manaRegen = v;
+    }
     get manaRegen() { return this.stats.manaRegen; }
 
-    set healthRegen(v) { this.stats.healthRegen = v; }
+    set healthRegen(v) {
+        this.bars.health.style.setProperty('--regen', v)
+        this.stats.healthRegen = v;
+    }
     get healthRegen() { return this.stats.healthRegen; }
 }
 
 export class Enemy extends Client {
     constructor(position, dimensions) {
         super(position, dimensions);
-        this.action = {};
-        this.speed = .03;
+        this.action = { time: 0 };
+        this.speed = .05;
         this.velocity = [0, 0];
 
         this.maxHealth = 5;
@@ -225,79 +240,223 @@ export class Enemy extends Client {
     }
 
     Step(t) {
-        if(!this.action.time || this.action.time <= 0) {
-            this.action.direction = math.rand_int(1, 8);
-            this.action.time = math.rand_int(150, 500);
-        }
+        // if(!this.action.time || this.action.time <= 0) {
+        //     this.action.direction = math.rand_int(1, 8);
+        //     this.action.time = math.rand_int(150, 500);
+        // }
 
-        this.action.time -= t;
-        const s = 1;
+        // this.action.time -= t;
+        // const s = 1;
 
-        switch(this.action.direction) {
-            case 1: 
-                this.velocity = [s, 0];
-                break;
+        // switch(this.action.direction) {
+        //     case 1: 
+        //         this.velocity = [s, 0];
+        //         break;
 
-            case 2:
-                this.velocity = [s * diagonalScaling, s * diagonalScaling];
-                break;
+        //     case 2:
+        //         this.velocity = [s * diagonalScaling, s * diagonalScaling];
+        //         break;
 
-            case 3:
-                this.velocity = [0, s];
-                break;
+        //     case 3:
+        //         this.velocity = [0, s];
+        //         break;
 
-            case 4:
-                this.velocity = [s * diagonalScaling, - s * diagonalScaling];
-                break;
+        //     case 4:
+        //         this.velocity = [s * diagonalScaling, - s * diagonalScaling];
+        //         break;
 
-            case 5:
-                this.velocity = [0, -s];
-                break;
+        //     case 5:
+        //         this.velocity = [0, -s];
+        //         break;
 
-            case 6:
-                this.velocity = [- s * diagonalScaling, - s * diagonalScaling];
-                break;
+        //     case 6:
+        //         this.velocity = [- s * diagonalScaling, - s * diagonalScaling];
+        //         break;
 
-            case 7:
-                this.velocity = [-s, 0];
-                break;
+        //     case 7:
+        //         this.velocity = [-s, 0];
+        //         break;
 
-            case 8:
-                this.velocity = [- s * diagonalScaling, s * diagonalScaling];
-                break;
+        //     case 8:
+        //         this.velocity = [- s * diagonalScaling, s * diagonalScaling];
+        //         break;
             
+        // }
+
+        // if(this.bounds) {
+        //     let regenerate; // Whether to generate a new action or not 
+        //     const [topLeft, bottomRight] = this.bounds;
+        //     if(topLeft[0] >= this.position[0]) {
+        //         this.velocity[0] = s;
+        //         regenerate = true;
+        //     } else if(bottomRight[0] <= this.position[0] + this.dimensions[0]) {
+        //         this.velocity[0] = -s;
+        //         regenerate = true;
+        //     }
+
+        //     if(topLeft[1] >= this.position[1]) {
+        //         this.velocity[1] = s;
+        //         regenerate = true;
+        //     } else if(bottomRight[1] <= this.position[1] + this.dimensions[1]) {
+        //         this.velocity[1] = -s;
+        //         regenerate = true;
+        //     }
+
+        //     if(Math.abs(this.velocity[0]) == s && Math.abs(this.velocity[1]) == s) this.velocity = [this.velocity[0] * diagonalScaling, this.velocity[1] * diagonalScaling];
+            
+        //     if(regenerate) {
+        //         this.action.direction = math.rand_int(1, 8);
+        //         this.action.time = math.rand_int(150, 500);
+        //     }
+        // }
+
+        // this.position[0] += this.velocity[0] * this.speed;
+        // this.position[1] += this.velocity[1] * this.speed;
+
+        // if(math.rand_int(0, 500 / t) == 0) {
+        //     let objects = this.grid.FindNear(this.position, [20, 20]);
+        //     for(let i = 0; i < objects.length; i++) {
+        //         if(objects[i] instanceof PlayerClient) {
+        //             this.ShootAt(objects[i].position)
+        //         }
+        //     }
+            
+        // }
+
+        /*================+
+        | Movement engine |
+        +=================+
+        Event Priority - Projectile Dodge > Return to bounds > Wandering
+        */
+
+        // wandering 
+        if(this.velocity[0] == 0 && this.velocity[1] == 0 && this.action.time <= 0) {
+            const ang = math.rand_int(0, 360);
+            this.velocity = Vector.create(1, ang);
+            this.action.time = math.rand_int(200, 500);
         }
 
-        if(this.bounds) {
-            let regenerate; // Whether to generate a new action or not 
+        // Return to bounds if idle 
+        if(this.bounds && this.action.type != 'dodge') {
             const [topLeft, bottomRight] = this.bounds;
-            if(topLeft[0] >= this.position[0]) {
-                this.velocity[0] = s;
-                regenerate = true;
-            } else if(bottomRight[0] <= this.position[0] + this.dimensions[0]) {
-                this.velocity[0] = -s;
-                regenerate = true;
+
+            // Distance nearer to center at which the enemy will attempt to return to bounds
+            const dist = .3;
+            let vel = [0, 0];
+
+            // x direction 
+            if(this.position[0] < topLeft[0] + dist) {
+                vel[0] = 1
+            } else if(this.position[0] > bottomRight[0] - dist) {
+                vel[0] = -1;
             }
 
-            if(topLeft[1] >= this.position[1]) {
-                this.velocity[1] = s;
-                regenerate = true;
-            } else if(bottomRight[1] <= this.position[1] + this.dimensions[1]) {
-                this.velocity[1] = -s;
-                regenerate = true;
+            // y direction
+            if(this.position[1] < topLeft[1] + dist) {
+                vel[1] = 1
+            } else if(this.position[1] > bottomRight[1] - dist) {
+                vel[1] = -1;
             }
 
-            if(Math.abs(this.velocity[0]) == s && Math.abs(this.velocity[1]) == s) this.velocity = [this.velocity[0] * diagonalScaling, this.velocity[1] * diagonalScaling];
+            if(vel[0] != 0 && vel[1] != 0) vel = [vel * Math.SQRT1_2, vel * Math.SQRT1_2];
+            if(!(vel[0] == 0 && vel[1] == 0)) this.velocity = vel;
+        }
+
+        // Auto dodge 
+        const PROJECTION_DIST = 5;
+
+        const objects = this.grid.ClientSelector({
+            origin: this.position, 
+            bounds: [6, 6], 
+            type: MagicProjectile, 
+            sort: 'nearest'
+        });
+
+        // this.grid.FindNear([this.position[0], this.position[1]], [6, 6]);
+        for(let i = 0; i < objects.length; i++) {
+            const e = objects[i];
+            const vec = Vector.rotate(e.velocity, 90);
+            const sideVect = [e.dimensions[0] * vec[0], e.dimensions[1] * vec[1]];
             
-            if(regenerate) {
-                this.action.direction = math.rand_int(1, 8);
-                this.action.time = math.rand_int(150, 500);
+            const lx = PROJECTION_DIST * e.velocity[0];
+            const ly = PROJECTION_DIST * e.velocity[1];
+            const willCollide = collision.Polygon([
+                {
+                    x: e.position[0] - sideVect[0],
+                    y: e.position[1] - sideVect[1]
+                },
+                {
+                    x: e.position[0] + sideVect[0],
+                    y: e.position[1] + sideVect[1]
+                },
+                {
+                    x: e.position[0] + sideVect[0] + lx,
+                    y: e.position[1] + sideVect[1] + ly
+                },
+                {
+                    x: e.position[0] - sideVect[0] + lx,
+                    y: e.position[1] - sideVect[1] + ly
+                }
+            ],
+            [
+                {
+                    x: this.position[0], 
+                    y: this.position[1]
+                },
+                {
+                    x: this.position[0] + this.dimensions[0],
+                    y: this.position[1]
+                },
+                {
+                    x: this.position[0] + this.dimensions[0],
+                    y: this.position[1] + this.dimensions[0]
+                },
+                {
+                    x: this.position[0],
+                    y: this.position[1] + this.dimensions[0]
+                }
+            ]);
+
+            if(willCollide) {
+                // Find closest edge of collision projection normal to the 
+                // velocity of the projectile
+
+                const c = this.GetCenter();
+
+                const vect = Vector.normalise(sideVect);
+
+                if(
+                    ((e.position[0] - sideVect[0] - c[0])**2 + (e.position[1] - sideVect[1] - c[1])**2) <=
+                    ((e.position[0] + sideVect[0] - c[0])**2 + (e.position[1] + sideVect[1] - c[1])**2)
+                ) {
+                    this.velocity[0] = -vect[0];
+                    this.velocity[1] = -vect[1];
+                } else {
+                    this.velocity[0] = vect[0];
+                    this.velocity[1] = vect[1];
+                }
+
+                this.action.time = 500;
+                this.action.type = 'dodge'
+                continue;
             }
         }
 
+        // Velocity move 
         this.position[0] += this.velocity[0] * this.speed;
         this.position[1] += this.velocity[1] * this.speed;
+        
+        this.action.time -= t;
+        if(this.action.time <= 0) {
+            this.velocity = [0, 0];
+            this.action.type = '';
+        }
 
+        /*==============+
+        | Attack Engine |
+        +==============*/
+
+        // old basic attack engine while the new one is being developed
         if(math.rand_int(0, 500 / t) == 0) {
             let objects = this.grid.FindNear(this.position, [20, 20]);
             for(let i = 0; i < objects.length; i++) {
@@ -307,6 +466,14 @@ export class Enemy extends Client {
             }
             
         }
+
+        // Handle mana regen
+
+        // Decide what to do randomly 
+        // Giving more weightage to stronger attacks as the stick figure has more mana
+        // or less health
+        // Also use movement and defensive spells more to defend against attacks 
+        // maybe destroy some projectiles that are easy to shoot with magic 
     }
 
     Render(ctx, offset, scale) {
@@ -343,6 +510,9 @@ export class Spawner extends Client {
         this.count = count;
     }
 
+    /**
+     * Enemy spawning event
+     */
     Spawn() {
         for(let i = 0; i < this.count; i++) {
             const obj = this.objectGenerator();
@@ -355,6 +525,7 @@ export class Spawner extends Client {
                 [this.position[0] - .5 * this.bounds[0], this.position[1] - .5 * this.bounds[1]],
                 [this.position[0] + .5 * this.bounds[0], this.position[1] + .5 * this.bounds[1]]
             ];
+            
             this.grid.InsertClient(obj);
         }
     }
@@ -378,9 +549,9 @@ export class Spawner extends Client {
 export class MagicProjectile extends Client {
     /**
      * A regular magic projectile
-     * @param {Number[]} position 
-     * @param {Number[]} dimensions 
-     * @param {Number[]} vel the x and y velocity of the projectile 
+     * @param {[Number, Number]} position 
+     * @param {[Number, Number]} dimensions 
+     * @param {[Number, Number]} vel the x and y velocity of the projectile 
      * @param {Number} dmg The amount of damage on collision with the projectile 
      * @param {Number} size The size of the projectile 
      * @param {String} color a string containing a color (hex or name, most css named colors should work)
@@ -402,7 +573,7 @@ export class MagicProjectile extends Client {
 
     /**
      * Change speed of projectile 
-     * @param {Number[]} vel the x and y velocity of the projectile 
+     * @param {[Number, Number]} vel the x and y velocity of the projectile 
      * @chainable this
      */
     SetSpeed(vel) {
@@ -436,7 +607,7 @@ export class MagicProjectile extends Client {
     /**
      * Renderer for the object
      * @param {CanvasRenderingContext2D} ctx context to draw the object
-     * @param {Number[]} offset x and y offset in pixels to draw the object 
+     * @param {[Number, Number]} offset x and y offset in pixels to draw the object 
      * @param {Number} scale ratio of units to pixels (scale = pixels/unit)
      */
     Render(ctx, offset, scale) {
