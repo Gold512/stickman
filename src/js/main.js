@@ -2,7 +2,7 @@ import {SpatialHash} from './spacial_hash.js';
 import {PlayerClient, Enemy, MagicProjectile, Spawner} from './objects.js';
 import {collision} from './collision.js'
 import {initUI, keyRegistry, loadSkillBar} from './ui.js'
-import {skills, singleShot, doubleShot, tripleShot, waveShot, shield, shieldShot, basicDash} from './skill.js'
+import * as skills from './skill.js'
 import { loadFromStorage } from './save.js';
 import { FPS } from './libs/fps.min.js'
 import { ElementCreator } from './libs/element_creator.js'
@@ -43,6 +43,8 @@ const keyState = {
 
 const canvas = document.getElementById('canvas');
 
+const toCamelCase = s => s.toLowerCase().replace(/[-_][a-z]/g, (group) => group.slice(-1).toUpperCase());
+
 document.addEventListener('keydown', function keydown(ev) {
     if(document.activeElement != document.body) return;
     switch (ev.key) {
@@ -71,7 +73,7 @@ document.addEventListener('keydown', function keydown(ev) {
 
     if(ev.repeat) return;
 
-    const skill = skills[keyRegistry[ev.key]];
+    const skill = skills.skills[keyRegistry[ev.key]];
     if(skill == undefined) return;
 
     if(player.mana < skill.mana) return;
@@ -89,42 +91,63 @@ document.addEventListener('keydown', function keydown(ev) {
 
     const offset = [width/2, height/2];
 
-    switch(ev.key) {
-        case keyRegistry.single_shot:
-            singleShot(grid, player, [x, y])
-        break;
+    skill_selector: {
+        if(ev.key == keyRegistry.shield_shot && !player.shield) {
+            player.mana += skill.mana;
+            break skill_selector;
+        }
 
-        case keyRegistry.double_shot:
-            doubleShot(grid, player, [x, y])
-        break;
+        
+        // switch(ev.key) {
+        //     case keyRegistry.single_shot:
+        //         skills.singleShot(grid, player, [x, y])
+        //     break;
 
-        case keyRegistry.triple_shot:
-            tripleShot(grid, player, [x, y]);
-        break;
+        //     case keyRegistry.double_shot:
+        //         skills.doubleShot(grid, player, [x, y])
+        //     break;
 
+        //     case keyRegistry.triple_shot:
+        //         skills.tripleShot(grid, player, [x, y]);
+        //     break;
 
-        case keyRegistry.shield:
-            if(shield(grid, player, [x, y]) === false) player.mana += skill.mana;
-        break;
+        //     case keyRegistry.shield:
+        //         if(skills.shield(grid, player, [x, y]) === false) player.mana += skill.mana;
+        //     break;
 
-        case keyRegistry.shield_shot: 
-            if(!player.shield) {
-                player.mana += skill.mana;
-                break;
-            }
-            
-            shieldShot(grid, player, [x, y]);
-        break;
+        //     case keyRegistry.shield_shot:
+        //         skills.shieldShot(grid, player, [x, y]);
+        //     break;
 
-        case keyRegistry.basic_dash:
-            basicDash(ctx, scale, offset, player, [x, y]);
-        break;
+        //     case keyRegistry.basic_dash:
+        //         skills.basicDash(ctx, scale, offset, player, [x, y]);
+        //     break;
 
-        case keyRegistry.wave:
-            waveShot(grid, player, [x, y]);
-        break;
-    
-    }
+        //     case keyRegistry.wave:
+        //         skills.waveShot(grid, player, [x, y]);
+        //     break;
+        // }
+
+        let functionName = toCamelCase(keyRegistry[ev.key]);
+        let result = skills[functionName]({
+            grid: grid,
+            caster: player,
+            vector: [x, y], 
+            ctx: ctx,
+            scale: scale,
+            offset: offset
+        });
+
+        // if cast was unsuccessful
+        if(result === false) {
+            player.mana += skill.mana;
+            break skill_selector;
+        }
+        
+        player.stats.magic_affinity += .1 * skill.mana;
+
+    };
+
 
     // Modify keyState 
     keyState.state[ev.key] = true;

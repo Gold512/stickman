@@ -4,8 +4,6 @@ import { saveToStorage } from './save.js';
 import { collision } from './collision.js';
 import { Vector } from './vector.js';
 
-const diagonalScaling = Math.pow(Math.sqrt(2), -1);
-
 export class PlayerClient extends Client {
     constructor(position, dimensions, bars) {
         super(position, dimensions);
@@ -23,7 +21,8 @@ export class PlayerClient extends Client {
             skillPoints: 0, 
             xp: 0,
             maxXp: 10,
-            level: 1
+            level: 1,
+            magic_affinity: 0
         }
 
         this._regen = {health: 0, mana: 0};
@@ -69,7 +68,7 @@ export class PlayerClient extends Client {
 
     Move(keys, distance) {
         if(this.modifier.noMove) return;
-        if( (keys.up || keys.down) && (keys.left || keys.right) ) distance *= diagonalScaling;
+        if( (keys.up || keys.down) && (keys.left || keys.right) ) distance *= Math.SQRT1_2;
 
         if( !(keys.up && keys.down) && (keys.up || keys.down) ) {
             if(keys.down) {
@@ -96,17 +95,6 @@ export class PlayerClient extends Client {
         ctx.fillStyle = 'rgba(0, 0, 0, 1)';
         ctx.fillRect(this.position[0] * scale + pos[0], this.position[1] * scale + pos[1], this.dimensions[0] * scale, this.dimensions[0] * scale);
     }
-
-    // SetStats(stats) {
-    //     if(!stats) {
-    //         this.stats = {
-
-    //         };
-
-    //         return;
-    //     }
-    //     this.stats = stats;
-    // }
 
     /**
      * Update UI elements when stats are loaded 
@@ -218,14 +206,31 @@ export class PlayerClient extends Client {
 }
 
 export class Enemy extends Client {
-    constructor(position, dimensions) {
+    constructor(position, dimensions, {
+        maxHealth = 5,
+        maxMana = 25,
+        healthRegen = .5,
+        manaRegen = 2
+    }={}) {
         super(position, dimensions);
         this.action = { time: 0 };
         this.speed = .05;
         this.velocity = [0, 0];
 
-        this.maxHealth = 5;
-        this.health = this.maxHealth;
+        this.maxHealth = maxHealth;
+        this.health = maxHealth;
+        this.healthRegen = healthRegen;
+
+        this.maxMana = maxMana;
+        this.mana = maxMana;
+        this.manaRegen = manaRegen;
+
+        this._regen = {mana: 0, health: 0}
+        this.stats = {
+            owner: this,
+            get health() { return this.owner.health; },
+            get mana() { return this.owner.mana; }
+        }
     }
 
     ShootAt(pos) {
@@ -240,89 +245,6 @@ export class Enemy extends Client {
     }
 
     Step(t) {
-        // if(!this.action.time || this.action.time <= 0) {
-        //     this.action.direction = math.rand_int(1, 8);
-        //     this.action.time = math.rand_int(150, 500);
-        // }
-
-        // this.action.time -= t;
-        // const s = 1;
-
-        // switch(this.action.direction) {
-        //     case 1: 
-        //         this.velocity = [s, 0];
-        //         break;
-
-        //     case 2:
-        //         this.velocity = [s * diagonalScaling, s * diagonalScaling];
-        //         break;
-
-        //     case 3:
-        //         this.velocity = [0, s];
-        //         break;
-
-        //     case 4:
-        //         this.velocity = [s * diagonalScaling, - s * diagonalScaling];
-        //         break;
-
-        //     case 5:
-        //         this.velocity = [0, -s];
-        //         break;
-
-        //     case 6:
-        //         this.velocity = [- s * diagonalScaling, - s * diagonalScaling];
-        //         break;
-
-        //     case 7:
-        //         this.velocity = [-s, 0];
-        //         break;
-
-        //     case 8:
-        //         this.velocity = [- s * diagonalScaling, s * diagonalScaling];
-        //         break;
-            
-        // }
-
-        // if(this.bounds) {
-        //     let regenerate; // Whether to generate a new action or not 
-        //     const [topLeft, bottomRight] = this.bounds;
-        //     if(topLeft[0] >= this.position[0]) {
-        //         this.velocity[0] = s;
-        //         regenerate = true;
-        //     } else if(bottomRight[0] <= this.position[0] + this.dimensions[0]) {
-        //         this.velocity[0] = -s;
-        //         regenerate = true;
-        //     }
-
-        //     if(topLeft[1] >= this.position[1]) {
-        //         this.velocity[1] = s;
-        //         regenerate = true;
-        //     } else if(bottomRight[1] <= this.position[1] + this.dimensions[1]) {
-        //         this.velocity[1] = -s;
-        //         regenerate = true;
-        //     }
-
-        //     if(Math.abs(this.velocity[0]) == s && Math.abs(this.velocity[1]) == s) this.velocity = [this.velocity[0] * diagonalScaling, this.velocity[1] * diagonalScaling];
-            
-        //     if(regenerate) {
-        //         this.action.direction = math.rand_int(1, 8);
-        //         this.action.time = math.rand_int(150, 500);
-        //     }
-        // }
-
-        // this.position[0] += this.velocity[0] * this.speed;
-        // this.position[1] += this.velocity[1] * this.speed;
-
-        // if(math.rand_int(0, 500 / t) == 0) {
-        //     let objects = this.grid.FindNear(this.position, [20, 20]);
-        //     for(let i = 0; i < objects.length; i++) {
-        //         if(objects[i] instanceof PlayerClient) {
-        //             this.ShootAt(objects[i].position)
-        //         }
-        //     }
-            
-        // }
-
         /*================+
         | Movement engine |
         +=================+
@@ -380,6 +302,9 @@ export class Enemy extends Client {
             
             const lx = PROJECTION_DIST * e.velocity[0];
             const ly = PROJECTION_DIST * e.velocity[1];
+            // Create virtual rectangle rotated in the direction of the 
+            // projectile's velocity and check the collision with self 
+            // to predict if the projectile will collide
             const willCollide = collision.Polygon([
                 {
                     x: e.position[0] - sideVect[0],
@@ -468,6 +393,26 @@ export class Enemy extends Client {
         }
 
         // Handle mana regen
+        if(this.health < this.maxHealth) this._regen.health += (t / 1000) * this.healthRegen;
+        if(this.mana < this.maxMana) this._regen.mana += (t / 1000) * this.manaRegen;
+
+        const keys = {
+            health: 'maxHealth',
+            mana: 'maxMana'
+        };
+
+        for(let i in this._regen) {
+            if(this._regen[i] >= 1) {
+                const regen = Math.trunc(this._regen[i]);
+                this[i] += regen;
+                this._regen[i] -= regen;
+            }
+
+            if(this.stats[i] > this.stats[keys[i]]) {
+                this[i] = this.stats[keys[i]];
+                this._regen[i] = 0;
+            }
+        }
 
         // Decide what to do randomly 
         // Giving more weightage to stronger attacks as the stick figure has more mana
@@ -816,5 +761,36 @@ class ExplosionParticle extends Client {
         ctx.fill();
 
         this.frame++;   
+    }
+}
+
+// Solid object represented by a convex polygon
+class PolySolid extends Client {
+    /**
+     * Create solid from convex list of points
+     * @param {Object[]} points - list of points  
+     * @param {Number} points[].x - x coord of point
+     * @param {Number} points[].y - y coord of point
+     */
+    constructor(points) {
+        if(points.length < 3) throw new Error('cannot construct polygonal figure from less then 3 points')
+        // Find bounds and dimensions 
+        // default values are in the maximum opposite directions of the points
+        const topLeft = [Infinity, Infinity];
+        const bottomRight = [-Infinity, -Infinity];
+
+        for(let i = 0; i < points.length; i++) {
+            const e = points[i];
+            if(e.x > bottomRight[0]) bottomRight[0] = e.x
+                else if(e.x < topLeft[0]) topLeft[0] = e.x;
+
+            if(e.y > bottomRight[1]) bottomRight[1] = e.y
+                else if(e.y < topLeft[1]) topLeft[1] = e.y;
+        }
+
+        super(topLeft, [
+            Math.abs(topLeft[0] - bottomRight[0]),
+            Math.abs(topLeft[1] - bottomRight[1])
+        ]);
     }
 }

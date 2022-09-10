@@ -1,0 +1,2 @@
+// text interaction
+export 
