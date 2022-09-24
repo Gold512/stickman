@@ -7,22 +7,26 @@
     <title>Game</title>
     <link rel="stylesheet" href="src/css/style.css">
     <link rel="stylesheet" href="src/css/stat_menu.css">
+    <link rel="stylesheet" href="src/css/ui.css">
 </head>
 <body style="background: rgb(70, 128, 151);">
     <canvas id="canvas"></canvas>
     <div id="stats">
-        <span class="bar" id="health-bar" style="
-        --color: red;
-        --current: 20;
-        --max: 20;
-        
-        --regen: 5;
-        --regen-color: pink;
-        ">
-            <div class="tooltip auto-expand bottom"></div>
+        <div class="bar-container" id="health-bar" style="
+            --color: red;
+            --current: 20;
+            --max: 20;
+            
+            --regen: 5;
+            --regen-color: pink;
+            ">
+
+            <span class="bar"></span>
+            <div class="tooltip bottom auto-expand uninteractive regen-text"></div>
             <div class="regen"></div>
-        </span><br>
-        <span class="bar" id="mana-bar" style="
+        </div>
+
+        <div class="bar-container" id="mana-bar" style="
         --color: rgb(58, 58, 255);
         --current: 50;
         --max: 50;
@@ -30,8 +34,17 @@
         --regen: 5;
         --regen-color: skyblue;
         ">
-            <div class="tooltip auto-expand"></div>
+            <span class="bar" id="mana-bar"></span>
+            <div class="tooltip bottom auto-expand uninteractive regen-text"></div>
             <div class="regen"></div>
+        </div>
+
+        <span class="bar" id="magic-affinity-bar" style="
+        --color: magenta;
+        --current: 0;
+        --max: 10;
+        ">
+            <div class="tooltip uninteractive auto-expand mpl"></div>
         </span><br>
         <span class="bar" id="xp-bar" style="
         --color: rgb(7, 216, 0);

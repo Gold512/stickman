@@ -240,7 +240,7 @@ export class Enemy extends Client {
         const scaler = 1/Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
         vector[0] *= scaler;
         vector[1] *= scaler;
-        this.grid.InsertClient(new MagicProjectile([cx + vector[0] + .5 * this.dimensions[0], cy + vector[1] + .5 * this.dimensions[1]], .5, vector, .3, 1, 'black'));
+        this.grid.InsertClient(new MagicProjectile([cx + vector[0] + .5 * this.dimensions[0], cy + vector[1] + .5 * this.dimensions[1]], .5, vector, .3, {dmg: 1, color: 'black'}));
 
     }
 
@@ -414,6 +414,9 @@ export class Enemy extends Client {
             }
         }
 
+        if(this.health > this.maxHealth) this.health = this.maxHealth;
+        if(this.mana > this.maxMana) this.mana = this.maxMana;
+
         // Decide what to do randomly 
         // Giving more weightage to stronger attacks as the stick figure has more mana
         // or less health
@@ -436,7 +439,8 @@ export class Enemy extends Client {
 
     OnRemove() {
         if(!this.spawner) return;
-        this.grid.GetClientById(this.spawner).killed++;
+        const spawner = this.grid.GetClientById(this.spawner)
+        if(spawner) spawner.killed++;
     }
 }
 
@@ -495,13 +499,28 @@ export class MagicProjectile extends Client {
     /**
      * A regular magic projectile
      * @param {[Number, Number]} position 
-     * @param {[Number, Number]} dimensions 
+     * @param {Number} options.size The size of the projectile 
      * @param {[Number, Number]} vel the x and y velocity of the projectile 
-     * @param {Number} dmg The amount of damage on collision with the projectile 
-     * @param {Number} size The size of the projectile 
-     * @param {String} color a string containing a color (hex or name, most css named colors should work)
+     * @param {Number} speed the speed of the projectile
+     * @param {Object} options
+     * @param {Number} options.dmg The amount of damage on collision with the projectile 
+     * @param {String} options.color a string containing a color (hex or name, most css named colors should work)
+     * @param {('top-left'|'center'|'bottom-right')} options.anchor The position of the position argument relative to the object
      */
-    constructor(position, size, vel, speed, dmg, color) {
+    constructor(position, size, vel, speed, {
+        dmg = 1,
+        color = 'black',
+        anchor = 'center'
+    } = {}) {
+        switch(anchor) {
+            case 'center': 
+                position = [position[0] - .5 * size, position[1] - .5 * size];
+                break;
+            case 'bottom-right':
+                position = [position[0] - size, position[1] - size];
+                break;
+        }
+
         super(position, [size, size]);
         this.projectile = {
             damage: dmg,
@@ -512,7 +531,8 @@ export class MagicProjectile extends Client {
 
         this.collision = {
             type: 'active', 
-            shape: 'circle'
+            shape: 'circle',
+            solid: false
         }
     }
 
@@ -572,7 +592,7 @@ export class MagicProjectile extends Client {
         // ctx.fillRect(x * scale + pos[0] - (r + .2 * scale), y * scale + pos[1] - (r + .2 * scale), 2*(r + .2 * scale), 2*(r + .2 * scale));
 
         let path = new Path2D();
-        path.arc(x * scale + pos[0], y * scale + pos[1], r, 0, 2 * Math.PI);
+        path.arc(x * scale + pos[0] + r, y * scale + pos[1] + r, r, 0, 2 * Math.PI);
         
         ctx.fillStyle = 'rgba(0, 0, 0, 1)';
         ctx.fill(path);
@@ -583,9 +603,14 @@ export class MagicProjectile extends Client {
         // Note that x and y are in grid tiles and have to be converted to pixels
         for(let j = 0; j < 7; j++) {
             ctx.beginPath();
-            ctx.arc(x * scale + pos[0] - vel[0] * j * scale * .2, y * scale + pos[1] - vel[1] * j * scale * .2 , r, 0, 2 * Math.PI);
+            ctx.arc(x * scale + pos[0] - vel[0] * j * scale * .2 + r, y * scale + pos[1] - vel[1] * j * scale * .2 + r, r, 0, 2 * Math.PI);
             ctx.fill();
         }
+
+        ctx.fillStyle = 'rgba(255, 0, 0, 1)';
+        // highlight collision box 
+        // ctx.fillRect(this.position[0] * scale + pos[0], this.position[1] * scale + pos[1], this.dimensions[0] * scale, this.dimensions[1] * scale);
+
 
         // Reset style changes 
         ctx.fillStyle = null;
@@ -614,7 +639,25 @@ export class MagicProjectile extends Client {
                 this.grid.InsertClient(new ExplosionParticle([(x1 + x2) / 2, (y1 + y2) / 2], this.dimensions, [this.dimensions[0], 5 * this.dimensions[0]], 15));
                 this.grid.Remove(o);
                 ev.grid.Remove(this);
+
                 return;
+            } 
+            
+            if(o instanceof Shield) {
+                // bounce off shield 
+                const c = this.GetCenter();
+                // within y bounds, therefore either on the left or right side
+                if(c[1] > o.position[1] && c[1] < o.position[1] + o.dimensions[1]) {
+                    this.velocity[0] *= -1;
+                } else if(c[0] > o.position[0] && c[0] < o.position[0] + o.dimensions[0]) {
+                    this.velocity[1] *= -1;
+                }
+
+                o.health -= this.projectile.damage;
+
+                if(o.health <= 0) this.grid.Remove(o);
+
+                return
             }
 
             remove = true;
@@ -764,8 +807,24 @@ class ExplosionParticle extends Client {
     }
 }
 
+export class RectSolid extends Client {
+    constructor(position, dimensions) {
+        super(position, dimensions);
+        this.collision.type = 'active';
+    }
+
+    Collision(ev) {
+        for(let i = 0; i < ev.objects.length; i++) {
+            const o = ev.objects[i];
+            if(!o.solid) return;
+
+
+        }
+    }
+}
+
 // Solid object represented by a convex polygon
-class PolySolid extends Client {
+export class PolySolid extends Client {
     /**
      * Create solid from convex list of points
      * @param {Object[]} points - list of points  

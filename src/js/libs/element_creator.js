@@ -32,11 +32,14 @@ export class ElementCreator {
     /**
      * Append this object to a element
      * @param {HTMLElement} element - the element to append 
+     * @param {Boolean} replace - whether to replace the elements currently in the container
      * @returns {HTMLElement} - the element that was appended
      */
-    appendTo(element) {
+    appendTo(element, replace = false) {
         if(this.parent) throw new Error('cannot re-append sub-element');
         if(this.top.unappended != 0) throw new Error('cannot append when there is unappended child elements')
+        
+        if(replace) element.innerHTML = '';
         element.appendChild(this.element);
         return this.element;
     }
@@ -113,7 +116,7 @@ export class ElementCreator {
     /**
      * Add event listener to element 
      * @param {keyof HTMLElementEventMap} event 
-     * @param {Function} callback
+     * @param {function(Event):void} callback
      */
     addEventListener(event, callback) {
         this.element.addEventListener(event, callback);
@@ -123,20 +126,20 @@ export class ElementCreator {
     /**
      * 
      * @param {String} key key of the attribute
-     * @param {String} value value of the attribute
+     * @param {String} [value] value of the attribute, defaults to empty string
      * @returns 
      */
-    attribute(key, value) {
+    attribute(key, value ='') {
         this.element.setAttribute(key, value);
         return this;
     }
 
     /**
      * use function to operate on the element object
-     * @param {function(HTMLElement):void} fn -
+     * @param {function(HTMLElement,ElementCreator):void} fn -
      */
     exec(fn) {
-        fn(this.element);
+        fn(this.element, this);
         return this;
     }
 
@@ -147,6 +150,7 @@ export class ElementCreator {
      * @returns {ElementCreator} - reference to this object
      */
     if(bool, callback) {
+        // if(typeof bool === 'function') bool = bool();
         if(!bool) return this;
         if(typeof callback !== 'function') throw new Error('callback must be a function');
         callback(this)

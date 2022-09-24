@@ -12,6 +12,7 @@ const player = grid.InsertClient(new PlayerClient([0, 0], [.5, .5], {
     health: document.getElementById('health-bar'),
     mana: document.getElementById('mana-bar'),
     xp: document.getElementById('xp-bar'),
+    magic_affinity: document.getElementById('magic-affinity-bar'),
     level: document.getElementById('level')
 }));
 loadFromStorage(player);
@@ -38,7 +39,8 @@ const keyState = {
     down: false,
     left: false,
     right: false,
-    state: {}
+    state: {},
+    timeouts: {}
 };
 
 const canvas = document.getElementById('canvas');
@@ -97,37 +99,6 @@ document.addEventListener('keydown', function keydown(ev) {
             break skill_selector;
         }
 
-        
-        // switch(ev.key) {
-        //     case keyRegistry.single_shot:
-        //         skills.singleShot(grid, player, [x, y])
-        //     break;
-
-        //     case keyRegistry.double_shot:
-        //         skills.doubleShot(grid, player, [x, y])
-        //     break;
-
-        //     case keyRegistry.triple_shot:
-        //         skills.tripleShot(grid, player, [x, y]);
-        //     break;
-
-        //     case keyRegistry.shield:
-        //         if(skills.shield(grid, player, [x, y]) === false) player.mana += skill.mana;
-        //     break;
-
-        //     case keyRegistry.shield_shot:
-        //         skills.shieldShot(grid, player, [x, y]);
-        //     break;
-
-        //     case keyRegistry.basic_dash:
-        //         skills.basicDash(ctx, scale, offset, player, [x, y]);
-        //     break;
-
-        //     case keyRegistry.wave:
-        //         skills.waveShot(grid, player, [x, y]);
-        //     break;
-        // }
-
         let functionName = toCamelCase(keyRegistry[ev.key]);
         let result = skills[functionName]({
             grid: grid,
@@ -155,9 +126,13 @@ document.addEventListener('keydown', function keydown(ev) {
     // cooldown animation
     const el = document.querySelector(`[data-id="${skill.id}"]`);
     setTimeout(() => el.classList.add('cooldown'), 1);
-    setTimeout(() => {
+
+    // Replace old timeout to fire 
+    if(keyState.timeouts[ev.key] != undefined) clearTimeout(keyState.timeouts[ev.key]);
+    keyState.timeouts[ev.key] = setTimeout(() => {
         el.classList.remove('cooldown');
         if(keyState.state[ev.key]) keydown({key: ev.key}); 
+        delete keyState.timeouts[ev.key];
     }, skill.cd * 1000);
 });
 
@@ -219,25 +194,19 @@ let start;
 let mousePos = [];
 
 canvas.addEventListener('click', ev => {
-    if(player.mana <= 3) return;
+    // Convert screen click coords to grid coordinates
+    const offset = [width/2, height/2];
+    // tile at top left of the screen
+    const pos = [(ev.clientX - offset[0])/scale, (ev.clientY - offset[1])/scale];
+    const clicked = grid.ClientSelector({
+        origin: pos, 
+        bounds: [1, 1],
+        sort: 'nearest'
+    })[0];
 
-    let [x, y] = [ev.clientX, ev.clientY];
-
-    x -= player.position[0] * scale + width/2;
-    y -= player.position[1] * scale + height/2;
-
-    // Make magnitude always 1 
-    const magnitude = Math.sqrt(x * x + y * y);
-    x /= magnitude;
-    y /= magnitude;
-
-    const projectile = grid.InsertClient(new MagicProjectile([x + player.position[0] + .5 * player.dimensions[0], y + player.position[1] + .5 * player.dimensions[1]], .5, [x, y], .3, 1, 'black'));
-    projectile.owner = player.id;
-
-    player.mana -= 3;
-
-    document.querySelector('.skill').classList.add('cooldown');
-    setTimeout(() => document.querySelector('.skill').classList.remove('cooldown'), 500)
+    if(clicked && clicked.Interaction) {
+        clicked.Interaction();
+    }
 });
 
 const fps = new FPS({side: 'top-right'});
@@ -260,7 +229,7 @@ const fps = new FPS({side: 'top-right'});
     ctx.clearRect(0, 0, width, height);
     grid.Step(elapsedTime);
 
-    let objects = grid.FindNear(player.position, [Math.ceil(1.5 * width / scale), Math.ceil(1.5 * height / scale)]);
+    let objects = grid.FindNear([0, 0], [Math.ceil(1.5 * width / scale), Math.ceil(1.5 * height / scale)]);
 
     // Render the objects 
     for(let i = 0; i < objects.length; i++) {
@@ -290,15 +259,17 @@ const fps = new FPS({side: 'top-right'});
 
                 const operation = `${o.collision.shape}+${e.collision.shape}`;
                 let isCollided = false;
+                const r1 = o.dimensions[0]/2;
+                const r2 = e.dimensions[0]/2;
                 switch(operation) {
                     case 'circle+circle':
-                        isCollided = collision.Circles(o.position[0], o.position[1], o.dimensions[0]/2, e.position[0], e.position[1], e.dimensions[0]/2);
+                        isCollided = collision.Circles(o.position[0] + r1, o.position[1] + r1, o.dimensions[0]/2, e.position[0] + r2, e.position[1] + r2, e.dimensions[0]/2);
                         break;
                     case 'rectangle+circle':
-                        isCollided = collision.RectAndCircle(o.position[0], o.position[1], o.dimensions[0], o.dimensions[1], e.position[0], e.position[1], e.dimensions[0]/2);
+                        isCollided = collision.RectAndCircle(o.position[0], o.position[1], o.dimensions[0], o.dimensions[1], e.position[0] + r2, e.position[1] + r2, e.dimensions[0]/2);
                         break;
                     case 'circle+rectangle':
-                        isCollided = collision.RectAndCircle(e.position[0], e.position[1], e.dimensions[0], e.dimensions[1], o.position[0], o.position[1], o.dimensions[0]/2);
+                        isCollided = collision.RectAndCircle(e.position[0], e.position[1], e.dimensions[0], e.dimensions[1], o.position[0] + r1, o.position[1] + r1, o.dimensions[0]/2);
                         break;
                     case 'rectangle+rectangle':
                         isCollided = collision.Rects(o.position[0], o.position[1], o.dimensions[0], o.dimensions[1], e.position[0], e.position[1], e.dimensions[0], e.dimensions[1]);

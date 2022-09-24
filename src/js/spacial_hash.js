@@ -246,7 +246,7 @@ export class SpatialHash {
           }
         }
 
-        if(clients.length >= limit) break for_x;
+        if(clients.length >= limit && sort == 'arbitrary') break for_x;
       }
     }
 
@@ -254,10 +254,12 @@ export class SpatialHash {
     if(sort != 'arbitrary') {
       switch(sort) {
         case 'nearest':
-          clients.sort((a, b) => a.position[0]**2 + a.position[1]**2 - (b.position[0]**2 + b.position[1]**2));
+          clients.sort((a, b) => (a.position[0] + .5 * a.dimensions[0] - x)**2 + (a.position[1] + .5 * a.dimensions[1] - y)**2 - ((b.position[0] + .5 * b.dimensions[0] - x)**2 + (b.position[1] + .5 * b.dimensions[1] - y)**2));
           break;
       }
-      
+
+      // Remove clients above limit
+      if(clients.length > limit) clients.length = limit;
     }
 
     return clients;
@@ -405,7 +407,9 @@ export class Client {
       /** @type {('active'|'passive'|'none')} */
       type: 'passive', 
       /** @type {('rectangle'|'circle')} */
-      shape: 'rectangle'
+      shape: 'rectangle',
+      /** @type {Boolean} */
+      solid: true
     }
     
     this._cells = {
@@ -450,6 +454,8 @@ export class Client {
   Collision(ev) {
 
   }
+
+  Interaction = null
 
   // OnRemove() {
   //

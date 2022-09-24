@@ -40,8 +40,8 @@ export const dev = {
     },
 
     clear: () => {
-        for(let i = 0, k = Object.keys(grid._step); i < k.length; i++) {
-            const e = grid._step[k[i]];
+        for(let i = 0, k = Object.keys(grid._idTable); i < k.length; i++) {
+            const e = grid._idTable[k[i]];
             if(!(e instanceof clients.PlayerClient)) grid.Remove(e);
         }
     }

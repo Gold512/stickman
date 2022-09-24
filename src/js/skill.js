@@ -3,12 +3,12 @@ import { Vector } from "./vector.js"
 function multiShot(grid, caster, vector, foward, deg) {
     const origin = caster.position;
     for(let i = 0; i < deg.length; i++) {
-        const vect = deg != 0 ? Vector.rotate(vector, deg[i]) : vector;
+        const vect = deg[i] != 0 ? Vector.rotate(vector, deg[i]) : vector;
 
         const x = origin[0] + .5 * caster.dimensions[0] + vect[0] * foward;
         const y = origin[1] + .5 * caster.dimensions[1] + vect[1] * foward;
         
-        const projectile = new MagicProjectile([x, y], .5, vect, .3, 1, 'black');
+        const projectile = new MagicProjectile([x, y], .5, vect, .3, {dmg: 1, color: 'black'});
         projectile.owner = caster.id;
 
         grid.InsertClient(projectile);
@@ -43,10 +43,10 @@ export const skills = {
         mana: 9,
         cd: .3
     },
-    basic_dash: {
-        name: 'Basic Dash',
-        id: 'basic_dash',
-        mana: 10,
+    super_speed: {
+        name: 'Super Speed',
+        id: 'super_speed',
+        mana: 50,
         cd: 2,
         cost: 4
     },
@@ -108,15 +108,15 @@ export function shieldShot({ caster, vector } = {}) {
     caster.shield = null;
 }
 
-export function basicDash({ ctx, scale, offset, caster, vector } = {}) {
+export function superSpeed({ ctx, scale, offset, caster, vector } = {}) {
     // Cast will fail if remaining duration is less then 20ms or 
     // another modifier is present
-    if((caster.modifier.name == 'basicDash' && caster.modifier.duration > 20)
-    || (caster.modifier.name && caster.modifier.name != 'basicDash')) return false;
+    if((caster.modifier.name == 'superSpeed' && caster.modifier.duration > 20)
+    || (caster.modifier.name && caster.modifier.name != 'superSpeed')) return false;
 
     const [x, y] = caster.GetCenter();
     caster.modifier = {
-        name: 'basicDash',
+        name: 'superSpeed',
         duration: 200,
         noMove: true,
         callback: () => {

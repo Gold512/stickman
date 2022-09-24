@@ -1,0 +1,97 @@
+/* bar */
+
+/* container element if supporting elements are to be used */
+.bar-container {
+    position: relative; 
+    height: .8em; 
+    margin-bottom: .5em;
+}
+
+.bar {
+    --default-background: rgb(61, 61, 61);
+    --default-prefix: '';
+    width: 10em;
+    height: .8em;
+    position: relative;
+    min-height: 10px;
+    display: inline-block;
+    background-clip: border-box;
+    border: solid 2px rgba(28, 28, 28);
+    text-align: center;
+    color: white;
+    font-family: monospace;
+    font-size: 1.2em;
+    background: var(--background, var(--default-background));
+
+    isolation: isolate;
+}
+
+.bar::before {
+    display: block;
+    content: '';
+    width: min(100%, calc(100% * (var(--current) / var(--max))));
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    background-color: var(--color);
+    transition: width .2s ease-out;
+}
+
+.bar.reverse::before {
+    left: unset;
+    right: 0;
+}
+
+.bar.no-total::after {
+    content: var(--prefix, var(--default-prefix)) counter(current);
+}
+
+.bar::after {
+    transform: translateY(-2px);
+    counter-reset: current var(--current) max var(--max);
+    content: var(--prefix, var(--default-prefix)) counter(current) '/' counter(max);
+    display: block;
+    z-index: 1;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.bar:hover > .regen {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.bar:hover > .regen::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: min(100%, calc(100% * (var(--current) / var(--max))));
+    
+    --diff: calc(var(--max) - var(--current));
+    width: calc(100% * (var(--regen) / var(--max)));
+    height: 100%;
+    transition: left .2s ease-out;
+    background: var(--regen-color);
+}
+
+.tooltip.regen-text::after {
+    content: 'Regen: ' counter(regen) '/s';
+    counter-reset: regen var(--regen);
+}
+
+.bar:hover > .tooltip.mpl::after {
+    content: 'MPL: ' counter(mpl);
+    counter-reset: mpl var(--mpl, 1);
+}
+
+.tooltip.uninteractive {
+    pointer-events: none;
+}

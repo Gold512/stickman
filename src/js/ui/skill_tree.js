@@ -11,10 +11,13 @@ const SKILL_TREE = [
     ['single_shot', 'double_shot', 'triple_shot', 'quad_shot', 'penta_shot'],
     ['laser', 'curved_laser'],
     ['shield', 'shield_shot', 'expand_shield'],
-    ['basic_dash', 'intermediate_dash', 'advanced_dash']
+    ['levitation', 'flight', 'super_speed', 'hyperspeed']
 ]
 
+const menu_container = document.getElementById('menu')
+
 function createStatMenu() {
+    menu_container.style.display = 'block';
     const main = document.createElement('div');
     main.classList.add('skill-tree');
 
@@ -42,6 +45,7 @@ function createStatMenu() {
         .class('overlay')
         .addEventListener('click', ev => {
             main.remove();
+            menu_container.style.display = '';
         })
         .newChild(newSVG('./src/svg/icons/close.svg'))
             .style({
@@ -97,13 +101,14 @@ function createTreeStruct(tree, w, spacing = 3) {
             res[e] = {
                 require: parent ? [parent] : [],
                 x: w * ((i + 1) / (totalInLayer + 1)), 
-                y: spacing * i + spacing
+                y: spacing * i + spacing,
+
             };
 
             parent = e;
             skippedIndices++;
         } else if(e instanceof Array) {
-            res = Object.assign(res, subParseTreeStrcut(parent, e, w * ((i - skippedIndices + 1) / (tree.length - totalInLayer + 1)), spacing));
+            res = Object.assign(res, subParseTreeStruct(parent, e, w * ((i - skippedIndices + 1) / (tree.length - totalInLayer + 1)), spacing));
         }
     }
 
@@ -116,7 +121,7 @@ function createTreeStruct(tree, w, spacing = 3) {
  * @param {Array} tree for now tree only supports string arrays
  * @param {Number} index index at which this function is ran
  */
-function subParseTreeStrcut(parent, tree, x ,spacing) {
+function subParseTreeStruct(parent, tree, x ,spacing) {
     let res = {};
 
     for(let i = 0; i < tree.length; i++) {
@@ -126,7 +131,9 @@ function subParseTreeStrcut(parent, tree, x ,spacing) {
             res[e] = {
                 require: parent ? [parent] : [],
                 x: x,
-                y: (i + 1) * spacing + spacing
+                y: (i + 1) * spacing + spacing,
+                child: tree[i+1] || null,
+                unlocked: player.skills.has(e)
             };
 
             parent = e;
@@ -140,7 +147,8 @@ function subParseTreeStrcut(parent, tree, x ,spacing) {
         res[e.id] = {
             require: [parent].concat(e.require),
             x: x,
-            y: (i + 1) * spacing + spacing
+            y: (i + 1) * spacing + spacing,
+            child: tree[i+1].id || null
         };
 
         parent = e.id;
@@ -197,10 +205,20 @@ function skillTreeRender(cont, canvas, options) {
     for(let i = 0, k = Object.keys(tree); i < k.length; i++) {
         const e = tree[k[i]], id = k[i];
         const locked = !player.skills.has(id);
+        const unlockable = (() => {
+            console.log(e)
+            for(let i = 0; i < e.require.length; i++) {
+                if(tree[e.require[i]].unlocked == false) return false;
+            }
+
+            return true;
+        })();
+        console.log(unlockable)
 
         // create skill container
         const skill = document.createElement('div');
         skill.classList.add('st-skill');
+        skill.id = 'st_' + id;
         if(locked) skill.classList.add('locked')
 
         const x = e.x - .5 * w;
@@ -245,6 +263,11 @@ function skillTreeRender(cont, canvas, options) {
                         .end
                 })
 
+                .if(!unlockable, elementCreator => {
+                    // One of the required skills to unlock are not unlocked
+                    skill.classList.add('not-unlockable');
+                })
+
                 // mana bar to show amount of total mana used by this skill
                 .newChild('div')
                     .class(['bar', 'no-total', 'reverse'])
@@ -261,6 +284,9 @@ function skillTreeRender(cont, canvas, options) {
                     elementCreator.newChild('button')
                         .text('Unlock skill')
                         .class('skill-buy-btn')
+                        .if(!unlockable, elementCreator => {
+                            elementCreator.attribute('disabled');
+                        })
                         .addEventListener('click', ev => {
                             if(player.stats.skillPoints < sk.cost) return;
                             ev.currentTarget.remove();
@@ -307,6 +333,13 @@ function skillTreeRender(cont, canvas, options) {
                                 ctx.strokeWidth = null;
                             }, 800).promise.then(() => {
                                 skill.classList.remove('locked');
+
+                                // make child elements unlockable 
+                                const child_skill = cont.querySelector(`#st_${e.child}`);
+                                
+                                if(!child_skill) return;
+                                child_skill.classList.remove('non-unlockable');
+                                child_skill.querySelector('.skill-buy-btn').removeAttribute('disabled');
                             })
                             
                         })
@@ -318,34 +351,6 @@ function skillTreeRender(cont, canvas, options) {
                 })
 
                 .appendTo(skill)
-
-            // create hover info 
-            // const tooltip = document.createElement('div');
-            //     tooltip.classList.add('tooltip');
-            //     tooltip.classList.add('skill-tooltip');
-
-
-            //     const tooltip_title = document.createElement('div');
-            //     tooltip_title.classList.add('skill-title');
-            //     tooltip_title.innerText = `${sk.name}`;
-            //     tooltip.appendChild(tooltip_title);
-
-            //     // mana bar to show amount of total mana used by this skill
-            //     const mana = document.createElement('div');
-            //     mana.classList.add('bar');
-            //     mana.classList.add('no-total');
-            //     mana.classList.add('reverse');
-            //     mana.style.setProperty('--max', player.maxMana);
-            //     mana.style.setProperty('--current', sk.mana);
-            //     mana.style.setProperty('--background', 'rgb(58, 58, 255)');
-            //     mana.style.setProperty('--color', 'skyblue');
-            //     mana.style.setProperty('--prefix', '"Mana: "');
-            //     tooltip.appendChild(mana);
-
-            //     skill.appendChild(tooltip);
-
-                
-            
         }
 
         cont.appendChild(skill);
