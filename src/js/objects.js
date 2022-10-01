@@ -3,6 +3,7 @@ import {Client} from './spacial_hash.js';
 import { saveToStorage } from './save.js';
 import { collision } from './collision.js';
 import { Vector } from './vector.js';
+import { newInteractive } from './ui/interaction.js';
 
 export class PlayerClient extends Client {
     constructor(position, dimensions, bars) {
@@ -129,18 +130,21 @@ export class PlayerClient extends Client {
         this.maxMana = this.level * 50;
         this.mana += levelsGained * 50;
 
-        this.healthRegen = this.level * 1;
+        this.healthRegen = this.level * .25;
         this.manaRegen = this.level * 5;
 
         this.maxXp = (this.level - 1) * 3 + 10;
 
-        this.stats.xp = 0;
-        this.bars.xp.style.setProperty('--current', 0);
+        this.stats.xp = v;
+        this.bars.xp.style.setProperty('--current', v);
         
         saveToStorage(this);
     }
 
     set health(v) {
+        const diff = this.stats.health - v;
+        this._regen.health = Math.min(-diff * 3, this._regen.health);
+
         this.stats.health = v;
         this.bars.health.style.setProperty('--current', v)
     }
@@ -203,6 +207,12 @@ export class PlayerClient extends Client {
         this.stats.healthRegen = v;
     }
     get healthRegen() { return this.stats.healthRegen; }
+
+    set magicAffinity(v) { 
+        this.bars.magic_affinity.style.setProperty('--current', v);
+        this.stats.magic_affinity = v;
+    }
+    get magicAffinity() { return this.stats.magic_affinity; }
 }
 
 export class Enemy extends Client {
@@ -459,29 +469,52 @@ export class Spawner extends Client {
         this.count = count;
     }
 
+    Interaction(ev) {
+        newInteractive('this is an interactive ui', {x: ev.client[0], y: ev.client[1]})
+    }
+
     /**
      * Enemy spawning event
      */
     Spawn() {
         for(let i = 0; i < this.count; i++) {
             const obj = this.objectGenerator();
-
-            // Make spawned Client position relative to spawner
-            obj.position[0] += this.position[0];
-            obj.position[1] += this.position[1];
-            obj.spawner = this.id;
-            obj.bounds = [
+            const bounds = [
                 [this.position[0] - .5 * this.bounds[0], this.position[1] - .5 * this.bounds[1]],
                 [this.position[0] + .5 * this.bounds[0], this.position[1] + .5 * this.bounds[1]]
             ];
+
+            if(obj.position == null) {
+                // random position within bounds
+                obj.position = [
+                    math.rand_int(bounds[0][0], bounds[1][0]),
+                    math.rand_int(bounds[0][1], bounds[1][1])
+                ];
+
+            } else {
+                // Make spawned Client position relative to spawner
+                obj.position[0] += this.position[0];
+                obj.position[1] += this.position[1];
+            }
+
+            obj.spawner = this.id;
+            obj.bounds = bounds;
             
             this.grid.InsertClient(obj);
         }
     }
 
     Render(ctx, offset, scale) {
-        ctx.fillStyle = 'rgba(0, 0, 200, 1)';
+        ctx.fillStyle = 'rgba(50, 50, 200, 1)';
+        ctx.strokeStyle = 'rgba(0, 0, 140, 1)';
+        ctx.lineWidth = 5;
+
         ctx.fillRect(this.position[0] * scale + offset[0], this.position[1] * scale + offset[1], this.dimensions[0] * scale, this.dimensions[1] * scale);
+        ctx.strokeRect(this.position[0] * scale + offset[0], this.position[1] * scale + offset[1], this.dimensions[0] * scale, this.dimensions[1] * scale);
+
+        ctx.fillStyle = null;
+        ctx.strokeStyle = null;
+        ctx.lineWidth = null;
     }
 
     set killed(v) {
@@ -512,14 +545,7 @@ export class MagicProjectile extends Client {
         color = 'black',
         anchor = 'center'
     } = {}) {
-        switch(anchor) {
-            case 'center': 
-                position = [position[0] - .5 * size, position[1] - .5 * size];
-                break;
-            case 'bottom-right':
-                position = [position[0] - size, position[1] - size];
-                break;
-        }
+        position = anchorPosition(anchor, position, size);
 
         super(position, [size, size]);
         this.projectile = {
@@ -630,13 +656,10 @@ export class MagicProjectile extends Client {
                     continue;
                 }
 
-                const x1 = this.position[0] + .5 * this.dimensions[0];
-                const y1 = this.position[1] + .5 * this.dimensions[1];
+                const [x1, y1] = this.GetCenter();
+                const [x2, y2] = o.GetCenter();
 
-                const x2 = o.position[0] + .5 * o.dimensions[0];
-                const y2 = o.position[1] + .5 * o.dimensions[1];
-
-                this.grid.InsertClient(new ExplosionParticle([(x1 + x2) / 2, (y1 + y2) / 2], this.dimensions, [this.dimensions[0], 5 * this.dimensions[0]], 15));
+                this.grid.InsertClient(new ExplosionParticle([(x1 + x2) / 2, (y1 + y2) / 2], [this.dimensions[0], 5 * this.dimensions[0]], 15));
                 this.grid.Remove(o);
                 ev.grid.Remove(this);
 
@@ -680,7 +703,7 @@ export class MagicProjectile extends Client {
 
         if(remove) {
             ev.grid.Remove(this);
-            this.grid.InsertClient(new ExplosionParticle(this.position, this.dimensions, [this.dimensions[0], 2.5 * this.dimensions[0]], 10));
+            this.grid.InsertClient(new ExplosionParticle(this.GetCenter(), [this.dimensions[0], 2.5 * this.dimensions[0]], 10));
         }
     }
 }
@@ -769,31 +792,39 @@ export class Shield extends Client {
         }
 
         const s = Math.max(this.dimensions[0], this.dimensions[1]);
-        this.grid.InsertClient(new ExplosionParticle(this.position, this.dimensions, [s, 2.5 * s], 10));
+        this.grid.InsertClient(new ExplosionParticle(this.GetCenter(), [s, 2.5 * s], 10));
 
         this.grid.Remove(this);
     }
 }
 
 class ExplosionParticle extends Client {
-    constructor(position, dimensions, radii, duration) {
-        super(position, dimensions);
+    constructor(position, diameters, duration, {
+        anchor = "center"
+    } = {}) {
+        let dimension = Math.max(...diameters);
+        let size = [dimension, dimension];
+        position = anchorPosition(anchor, position, size)
+
+        super(position, size);
+
         this.frame = 0;
-        this.radii = radii;
+        this.diameters = diameters;
         this.duration = duration;
         this.collision.type = 'none';
     }
 
     Render(ctx, offset, scale) {
+        // this.showBoundingBox(ctx, offset, scale)
         // destroy the explosion particle at the end of the animation
         if(this.frame >= this.duration) {
             this.grid.Remove(this); 
             return;
         }
-        
-        const r = (this.radii[0] + this.frame * ((this.radii[1] - this.radii[0]) / this.duration)) * scale / 2;
-        const x = this.position[0] * scale + offset[0],
-            y = this.position[1] * scale + offset[1];
+        const center = this.GetCenter();
+        const r = .5 * (this.diameters[0] + this.frame * ((this.diameters[1] - this.diameters[0]) / this.duration)) * scale;
+        const x = center[0] * scale + offset[0],
+            y = center[1] * scale + offset[1];
         
 
         ctx.beginPath();
@@ -852,4 +883,27 @@ export class PolySolid extends Client {
             Math.abs(topLeft[1] - bottomRight[1])
         ]);
     }
+}
+
+/**
+ * Positional anchor of object
+ * @param {('top-left'|'center'|'bottom-right')} anchor - point to anchor to
+ * @param {[Number, Number]} position - position of object to anchor 
+ * @param {[Number, Number]} size - size of the object 
+ * @returns {[Number, Number]} - numbered position
+ */
+function anchorPosition(anchor, position, size) {
+    if(!Array.isArray(size)) size = [size, size];
+
+    switch (anchor) {
+        case 'top-left': return position;
+        case 'center':
+            position = [position[0] - .5 * size[0], position[1] - .5 * size[1]];
+            break;
+        case 'bottom-right':
+            position = [position[0] - size[0], position[1] - size[1]];
+            break;
+        default: throw new Error('invalid position anchor')
+    }
+    return position;
 }

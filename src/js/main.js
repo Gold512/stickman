@@ -17,7 +17,7 @@ const player = grid.InsertClient(new PlayerClient([0, 0], [.5, .5], {
 }));
 loadFromStorage(player);
 
-grid.InsertClient(new Spawner([0, 0], [12, 12], () => new Enemy([3, 3], [.5, .5]), 3)).Spawn();
+grid.InsertClient(new Spawner([0, 0], [12, 12], () => new Enemy(null, [.5, .5]), 3).SetZIndex(-1)).Spawn();
 
 // grid.InsertClient(new MagicProjectile([3, 3], .5, [0, 0], 0, 0, 'black'))
 
@@ -93,6 +93,8 @@ document.addEventListener('keydown', function keydown(ev) {
 
     const offset = [width/2, height/2];
 
+    const clickedGridTile = [(mousePos[0] - offset[0])/scale, (mousePos[1] - offset[1])/scale];
+
     skill_selector: {
         if(ev.key == keyRegistry.shield_shot && !player.shield) {
             player.mana += skill.mana;
@@ -103,7 +105,8 @@ document.addEventListener('keydown', function keydown(ev) {
         let result = skills[functionName]({
             grid: grid,
             caster: player,
-            vector: [x, y], 
+            vector: [x, y],
+            tile: clickedGridTile, 
             ctx: ctx,
             scale: scale,
             offset: offset
@@ -115,7 +118,7 @@ document.addEventListener('keydown', function keydown(ev) {
             break skill_selector;
         }
         
-        player.stats.magic_affinity += .1 * skill.mana;
+        player.magicAffinity += skill.mana;
 
     };
 
@@ -204,8 +207,13 @@ canvas.addEventListener('click', ev => {
         sort: 'nearest'
     })[0];
 
+    console.log(clicked);
+
     if(clicked && clicked.Interaction) {
-        clicked.Interaction();
+        clicked.Interaction({
+            client: [ev.clientX, ev.clientY],
+            tile: pos
+        });
     }
 });
 
@@ -230,6 +238,7 @@ const fps = new FPS({side: 'top-right'});
     grid.Step(elapsedTime);
 
     let objects = grid.FindNear([0, 0], [Math.ceil(1.5 * width / scale), Math.ceil(1.5 * height / scale)]);
+    objects.sort((a, b) => a.zIndex - b.zIndex);
 
     // Render the objects 
     for(let i = 0; i < objects.length; i++) {

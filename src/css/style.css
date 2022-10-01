@@ -215,6 +215,10 @@ button.overlay::after {
 }
 
 .tooltip {
+    /** EXTERNAL VARIABLES */
+    --border-color: rgb(100, 100, 100);
+
+
     /* store in vars so it is easier to make directional classes */
     --main-x: -50%;
     --main-y: calc(-100% - var(--triangle-size));
@@ -226,7 +230,7 @@ button.overlay::after {
     position: absolute;
     top: 0;
     left: 50%;
-    border: 2px solid rgb(100, 100, 100);
+    border: 2px solid var(--border-color);
     border-radius: .25em;
     background: rgb(51, 51, 51);
     padding: 2px 4px;
@@ -261,6 +265,10 @@ onto the tooltip without the hover being disabled */
     height: var(--triangle-size);
 }
 
+.tooltip:not(.interactive) {
+    pointer-events: none;
+}
+
 .tooltip::before {
     position: absolute;
     content: '';
@@ -270,13 +278,32 @@ onto the tooltip without the hover being disabled */
     
     border-left: transparent solid var(--triangle-size);
     border-right: transparent solid var(--triangle-size);
-    border-top: rgb(100, 100, 100) solid var(--triangle-size);
+    border-top: var(--border-color) solid var(--triangle-size);
 
     /* zero values have to be set so transitions works properly */
     transform: translate(0, 0) scale(0);
     opacity: 0;
     transition: 0.1s opacity cubic-bezier(0.175, 0.885, 0.32, 1.275),
                 0.1s transform cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* skill tooltip */
+.tooltip.skill-tooltip {
+    --border-color: rgb(100, 100, 100, 1);
+    
+    /* background-clip: border-box;
+    background-origin: border-box; */
+    background-image: linear-gradient(0deg, var(--color, white) 0px, black 20px);
+    padding-bottom: 10px;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-top: 2px;
+
+    box-shadow: 0px 0px 5px 5px black;
+}
+
+.tooltip.skill-tooltip > .skill-title {
+
 }
 
 *:hover > .tooltip {

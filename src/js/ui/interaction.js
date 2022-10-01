@@ -13,11 +13,20 @@ import { ElementCreator } from '../libs/element_creator.js'
  * @param {Function} options.options[].callback - option click handler
  */
 export function newInteractive(text, {x, y, options = []} = {}) {
+    const container = document.getElementById('menu');
+
     new ElementCreator('div')
         .class('interactive')
+        .style({
+            transform: `translate(${x}px, ${y}px)`
+        })
+
         // text container
         .newChild('div')
+            .class('text')
             .text(text)
+            .end
+
         .newChild('div')
             .class('buttons')
             .exec((_, o) => {
@@ -32,7 +41,19 @@ export function newInteractive(text, {x, y, options = []} = {}) {
                         .end
                     
                 }
+
+                // close button
+                o.newChild('button')
+                    .text('Close')
+                    .addEventListener('click', ev => {
+                        ev.currentTarget.parentElement.parentElement.remove();
+                        document.getElementById('menu').style.display = '';
+                    })
+                    .end
             })
             .end
-        .appendTo(document.getElementById('menu'), true)
+
+        .appendTo(container, true);
+
+    container.style.display = 'block';
 }

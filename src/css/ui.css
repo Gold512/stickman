@@ -49,7 +49,7 @@
 
 .bar::after {
     transform: translateY(-2px);
-    counter-reset: current var(--current) max var(--max);
+    counter-reset: current calc(var(--current)) max var(--max);
     content: var(--prefix, var(--default-prefix)) counter(current) '/' counter(max);
     display: block;
     z-index: 1;
@@ -92,6 +92,54 @@
     counter-reset: mpl var(--mpl, 1);
 }
 
-.tooltip.uninteractive {
-    pointer-events: none;
+#level-container {
+    font-size: .8em;
+    display: inline-block;
+    min-width: 65%;
+    transform: translateY(-6px);
+    border-left: 2px solid black;
+    border-bottom: 2px solid black;
+    border-top: 2px solid black;
+    padding-left: 3px;
+    padding-top: 0;
+    padding-bottom: 0;
+    background: rgb(30, 30, 30);
+    color: white;
+    font: monospace;
+    
+}
+
+#level-container::after {
+    content: '';
+    display: inline-block;
+    position: absolute;
+    right: 0;
+    width: 0;
+    height: 0;
+    transform: translateX(100%);
+
+    --size: calc(.5em + 2px);
+    border-left: var(--size) solid black;
+    border-top: var(--size) solid black;
+    border-bottom: var(--size) solid transparent;
+    border-right: var(--size) solid transparent;
+}
+
+.interactive {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 10;
+}
+
+.interactive > .text {
+    border: 3px solid black;
+    border-radius: 3px;
+    padding: 2px 3px;
+    background: lightgray;
+}
+
+.interactive > .buttons > button {
+    
 }

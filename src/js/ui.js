@@ -1,5 +1,5 @@
 import { downloadSave, loadSaveFile } from "./save.js";
-import { skills } from "./skill.js";
+import { mpl_colors, skills } from "./skill.js";
 import {newSVG} from "./svg.js";
 import { stat_menu } from "./ui/skill_tree.js";
 
@@ -70,7 +70,6 @@ export function initUI(player) {
 
         ev.currentTarget.parentElement.insertBefore(card, dropped);
         EQUIPPED_SKILLS.add(clone.dataset.id);
-        console.log(EQUIPPED_SKILLS)
         loadSkillBar();
     });
 
@@ -134,7 +133,7 @@ export const keyRegistry = {
 
 }
 
-const EQUIPPED_SKILLS = new Set();
+export const EQUIPPED_SKILLS = new Set();
 
 const RESERVED_HOTKEYS = [
     'w', 'a', 's', 'd'
@@ -159,6 +158,8 @@ function createSkillIcon(skill) {
 
     const statData = document.createElement('div');
         statData.classList.add('tooltip');
+        statData.classList.add('skill-tooltip');
+        statData.style.setProperty('--color', mpl_colors[skill.mpl]);
         
         const title = document.createElement('div');
             title.classList.add('skill-title');

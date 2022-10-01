@@ -1,5 +1,5 @@
 import {newSVG} from '../svg.js'
-import {skills} from '../skill.js'
+import {skills, mpl_colors} from '../skill.js'
 import {ElementCreator} from '../libs/element_creator.js'
 import { CreateAnimation } from '../libs/animation.js'
 import { saveToStorage } from '../save.js'
@@ -300,6 +300,9 @@ function skillTreeRender(cont, canvas, options) {
                             CreateAnimation(p => {
                                 ctx.strokeStyle = 'white';
                                 ctx.lineWidth = 2;
+
+                                // ease function
+                                p = math.smootherstep(p, 0, 1);
 
                                 for(let j = 0; j < e.require.length; j++) {
                                     const sk = tree[e.require[j]];

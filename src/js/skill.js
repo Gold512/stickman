@@ -21,34 +21,63 @@ export const skills = {
         id: 'single_shot',
         mana: 3,
         cd: .3,
-        cost: 0
+        cost: 0,
+        mpl: 1
     },
     double_shot: {
         name: 'Double Shot',
         id: 'double_shot',
         mana: 6,
         cd: .3, 
-        cost: 2
+        cost: 2,
+        mpl: 2
     },
     triple_shot: {
         name: 'Triple Shot',
         id: 'triple_shot',
         mana: 9,
         cd: .3, 
-        cost: 5
+        cost: 5,
+        mpl: 2
     },
     curve_shot: {
         name: 'Curve Shot',
         id: 'curve_shot',
         mana: 9,
-        cd: .3
+        cd: .3,
+        mpl: 3
+    },
+    levitation: {
+        name: 'Levitation',
+        id: 'levitation',
+        mana: 3,
+        cd: 2,
+        cost: 3,
+        mpl: 2
+    },
+    flight: {
+        name: 'Flight',
+        id: 'levitation',
+        mana: 8,
+        cd: 2,
+        cost: 8,
+        mpl: 3
     },
     super_speed: {
         name: 'Super Speed',
         id: 'super_speed',
-        mana: 50,
+        mana: 20,
         cd: 2,
-        cost: 4
+        cost: 20,
+        mpl: 6
+    },
+    hyperspeed: {
+        name: 'Hyperspeed',
+        id: 'hyperspeed',
+        mana: 150,
+        cd: 1,
+        cost: 50,
+        mpl: 8
     },
     shield: {
         name: 'Shield',
@@ -56,17 +85,37 @@ export const skills = {
         id: 'shield',
         mana: 15,
         cd: 7,
-        cost: 7
+        cost: 5,
+        mpl: 2
+    },
+    shield_expand: {
+        name: 'Shield Expand',
+        id: 'shield_expand',
+        mana: 3,
+        cd: 0,
+        cost: 8,
+        mpl: 3
     },
     shield_shot: {
         name: 'Shield Shot',
         id: 'shield_shot',
         mana: 15,
         cd: 0 , 
-        cost: 15
+        cost: 15,
+        mpl: 5
         // Limited by shield cast time as a shield has to be created before it can be shot 
     }
 }
+
+export const mpl_colors = [
+    'pink',
+    'lime',
+    'yellow',
+    'red',
+    'blue',
+    'purple',
+    'gray'
+]
 
 export function singleShot({ grid, caster, vector, foward = 1 } = {}) {
     multiShot(grid, caster, vector, foward, [0]);
@@ -108,21 +157,33 @@ export function shieldShot({ caster, vector } = {}) {
     caster.shield = null;
 }
 
-export function superSpeed({ ctx, scale, offset, caster, vector } = {}) {
+export function superSpeed({ ctx, scale, offset, caster, vector, tile } = {}) {
     // Cast will fail if remaining duration is less then 20ms or 
     // another modifier is present
     if((caster.modifier.name == 'superSpeed' && caster.modifier.duration > 20)
     || (caster.modifier.name && caster.modifier.name != 'superSpeed')) return false;
 
+    const speed = .5;
+
+    // calculate amount of time required to reach clicked point
+    let dist = [caster.position[0] - tile[0], caster.position[1] - tile[1]];
+    let time = speed * Math.sqrt(dist[0]**2 + dist[1]**2) * 60;
+
     const [x, y] = caster.GetCenter();
     caster.modifier = {
         name: 'superSpeed',
-        duration: 200,
+        duration: time,
         noMove: true,
         callback: () => {
-            caster.position[0] += .5 * vector[0];
-            caster.position[1] += .5 * vector[1];
-            
+            if(caster.mana < 1) {
+                caster.modifier = {};
+                return;
+            }
+
+            caster.position[0] += speed * vector[0];
+            caster.position[1] += speed * vector[1];
+            caster.mana -= 1;
+
             const [cx, cy] = caster.GetCenter();
 
             ctx.beginPath();
@@ -142,9 +203,9 @@ export function superSpeed({ ctx, scale, offset, caster, vector } = {}) {
     }
 }
 
-const waveAngles = [];
-for(let i = 0; i < 360; i++) waveAngles.push(i);
+// const waveAngles = [];
+// for(let i = 0; i < 360; i++) waveAngles.push(i);
 
-export function waveShot({ grid, caster, vector, foward = 1 } = {}) {
-    multiShot(grid, caster, vector, foward, waveAngles);
-}
+// export function waveShot({ grid, caster, vector, foward = 1 } = {}) {
+//     multiShot(grid, caster, vector, foward, waveAngles);
+// }

@@ -1,9 +1,11 @@
 import {LZString} from "./libs/lzstring.js";
+import {EQUIPPED_SKILLS} from "./ui.js";
 
 function getSaveJSON(player) {
     return JSON.stringify({
         stats: player.stats,
-        skills: [...player.skills]
+        skills: [...player.skills],
+        equipped_skills: Array.from(EQUIPPED_SKILLS),
     });
 }
 
@@ -41,6 +43,10 @@ function load(obj, player) {
 
     // update the skills
     player.skills = new Set(obj.skills || []);
+
+    // update equipped skills
+    const equipped = obj.equipped_skills || [];
+    
 }
 
 export function saveToStorage(player) {

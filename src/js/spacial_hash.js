@@ -411,6 +411,9 @@ export class Client {
       /** @type {Boolean} */
       solid: true
     }
+
+    /** @type {Number} */
+    this.zIndex = 0;
     
     this._cells = {
       min: null,
@@ -419,6 +422,11 @@ export class Client {
     }
     this.__queryId = -1;
     this.id = Date.now().toString(36) + Math.floor(1e12 + Math.random() * 9e12).toString(36);
+  }
+
+  SetZIndex(v) {
+    this.zIndex = v;
+    return this;
   }
 
   /**
@@ -455,9 +463,13 @@ export class Client {
 
   }
 
-  Interaction = null
-
   // OnRemove() {
   //
   // }
+
+  // debug methods
+  showBoundingBox(ctx, offset, scale) {
+    ctx.fillStyle = 'rgb(200, 50, 50)';
+    ctx.fillRect(this.position[0] * scale + offset[0], this.position[1] * scale + offset[1], this.dimensions[0] * scale, this.dimensions[1] * scale);
+  }
 }
