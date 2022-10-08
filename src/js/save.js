@@ -1,11 +1,18 @@
 import {LZString} from "./libs/lzstring.js";
-import {EQUIPPED_SKILLS} from "./ui.js";
+import { skills } from "./skill.js";
+import {keyRegistry, EQUIPPED_SKILLS, loadSkillBar} from "./ui.js";
 
 function getSaveJSON(player) {
+    if(!player.stats) return;
+    const skills = Array.from(EQUIPPED_SKILLS);
+
+    const skillKeys = {};
+    for(let i = 0; i < skills.length; i++) skillKeys[skills[i]] = keyRegistry[skills[i]]; 
+
     return JSON.stringify({
         stats: player.stats,
         skills: [...player.skills],
-        equipped_skills: Array.from(EQUIPPED_SKILLS),
+        equipped_skills: skillKeys,
     });
 }
 
@@ -45,8 +52,14 @@ function load(obj, player) {
     player.skills = new Set(obj.skills || []);
 
     // update equipped skills
-    const equipped = obj.equipped_skills || [];
-    
+    const equipped = obj.equipped_skills || {};
+    for(let i = 0, k = Object.keys(equipped); i < k.length; i++) {
+        keyRegistry[k[i]] = equipped[k[i]];
+        keyRegistry[equipped[k[i]]] = k[i];
+        EQUIPPED_SKILLS.add(k[i]);
+    }
+
+    loadSkillBar(false);
 }
 
 export function saveToStorage(player) {

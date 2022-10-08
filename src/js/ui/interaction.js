@@ -16,7 +16,7 @@ export function newInteractive(text, {x, y, options = []} = {}) {
     const container = document.getElementById('menu');
 
     new ElementCreator('div')
-        .class('interactive')
+        .class('interactive-ui')
         .style({
             transform: `translate(${x}px, ${y}px)`
         })
@@ -30,26 +30,39 @@ export function newInteractive(text, {x, y, options = []} = {}) {
         .newChild('div')
             .class('buttons')
             .exec((_, o) => {
+                function close(ev) {
+                    if(ev && ev.target.matches('#menu *')) return;
+                    const menu = document.getElementById('menu');
+
+                    menu.children[0].remove();
+                    menu.style.display = '';
+                    document.removeEventListener('click', close);
+                }
+                
                 for (let i = 0; i < options.length; i++) {
                     const e = options[i];
                     o.newChild('button')
                         .text(e.text)
-                        .addEventListener('onclick', ev => {
-                            if(e.close === undefined || e.close === true) ev.currentTarget.parentElement.remove();
+                        .addEventListener('click', ev => {
+                            if(e.close === undefined || e.close === true) close();
                             e.callback(ev);
                         })
                         .end
                     
                 }
 
+
                 // close button
                 o.newChild('button')
                     .text('Close')
-                    .addEventListener('click', ev => {
-                        ev.currentTarget.parentElement.parentElement.remove();
-                        document.getElementById('menu').style.display = '';
-                    })
+                    .addEventListener('click', () => close())
                     .end
+
+                // click anywhere else to close as well
+                // add listener after this function is complete so that 
+                // it will not be instantly closed due to the click needed
+                // to open the menu
+                setTimeout( () => document.addEventListener('click', close), 1);
             })
             .end
 

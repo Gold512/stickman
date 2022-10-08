@@ -1,3 +1,4 @@
+import quickselect from './libs/quick_select.js';
 import {math} from './math.js';
 
 export class SpatialHash {
@@ -252,9 +253,13 @@ export class SpatialHash {
 
     // Sort if not arbitrary order
     if(sort != 'arbitrary') {
+      // subtract 1 from limit as it is based on element index which starts from 0 
+      // note that array is partial sorted in place, no assignment needed
+      const place = limit == Infinity ? clients.length - 1 : limit - 1
       switch(sort) {
         case 'nearest':
-          clients.sort((a, b) => (a.position[0] + .5 * a.dimensions[0] - x)**2 + (a.position[1] + .5 * a.dimensions[1] - y)**2 - ((b.position[0] + .5 * b.dimensions[0] - x)**2 + (b.position[1] + .5 * b.dimensions[1] - y)**2));
+          // clients.sort((a, b) => (a.position[0] + .5 * a.dimensions[0] - x)**2 + (a.position[1] + .5 * a.dimensions[1] - y)**2 - ((b.position[0] + .5 * b.dimensions[0] - x)**2 + (b.position[1] + .5 * b.dimensions[1] - y)))
+          quickselect(clients, place, null, null, (a, b) => (a.position[0] + .5 * a.dimensions[0] - x)**2 + (a.position[1] + .5 * a.dimensions[1] - y)**2 - ((b.position[0] + .5 * b.dimensions[0] - x)**2 + (b.position[1] + .5 * b.dimensions[1] - y)**2));
           break;
       }
 
@@ -273,7 +278,7 @@ export class SpatialHash {
     for(let i = 0, k = Object.keys(this._step); i < k.length; i++) {
       if(!this._step[k[i]]) continue; // object no longer exists
       this._step[k[i]].Step(t);
-      this.UpdateClient(this._step[k[i]]); // Automatically update the object
+      if(this._step[k[i]]) this.UpdateClient(this._step[k[i]]); // Automatically update the object
     }
   }
 

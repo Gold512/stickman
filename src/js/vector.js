@@ -32,19 +32,31 @@ export const Vector = {
       let sin = Math.sin(ang);
       return new Array(Math.round(10000*(vec[0] * cos - vec[1] * sin))/10000, Math.round(10000*(vec[0] * sin + vec[1] * cos))/10000);
     },
+    
+    add(vec1, vec2) {
+      return [vec1[0] + vec2[0], vec1[1] + vec2[1]];
+    },
+
+    sub(vec1, vec2) {
+      return [vec1[0] - vec2[0], vec1[1] - vec2[1]];
+    },
+
+    multiply(vec, x) {
+      return [vec[0] * x, vec[1] * x];
+    },
 
     /**
      * Create x,y vector from magnitude and angle
-     * @param {Number} magnitude - The magnitude of the vector
      * @param {Number} angle - the angle of the angle in degrees 
+     * @param {Number} magnitude - The magnitude of the vector
      * @returns {VectorArray}
      */
-    create(magnitude, angle) {
+    create(angle, magnitude = 1) {
       angle = angle * this.DEG_TO_RAD_SCALE;
       
       return [
-        magnitude * Math.sin(angle),
-        magnitude * Math.cos(angle)
+        magnitude * Math.cos(angle),
+        magnitude * Math.sin(angle)
       ];
     },
 

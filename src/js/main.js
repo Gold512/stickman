@@ -6,6 +6,8 @@ import * as skills from './skill.js'
 import { loadFromStorage } from './save.js';
 import { FPS } from './libs/fps.min.js'
 import { ElementCreator } from './libs/element_creator.js'
+import { Vector } from './vector.js';
+import { math } from './math.js';
 const grid = new SpatialHash([-30, -30], [60, 60]);
 
 const player = grid.InsertClient(new PlayerClient([0, 0], [.5, .5], {
@@ -102,7 +104,8 @@ document.addEventListener('keydown', function keydown(ev) {
         }
 
         let functionName = toCamelCase(keyRegistry[ev.key]);
-        let result = skills[functionName]({
+        let result = false;
+        if(skills.keydown[functionName]) result = skills.keydown[functionName]({
             grid: grid,
             caster: player,
             vector: [x, y],
@@ -197,23 +200,77 @@ let start;
 let mousePos = [];
 
 canvas.addEventListener('click', ev => {
+    ev.preventDefault();
+
     // Convert screen click coords to grid coordinates
     const offset = [width/2, height/2];
     // tile at top left of the screen
     const pos = [(ev.clientX - offset[0])/scale, (ev.clientY - offset[1])/scale];
+
+    const keys = Object.keys(keyState.state);
+    if(keys.length > 0) {
+        const vector = Vector.normalise([
+            ev.clientX - (player.position[0] * scale + offset[0]),
+            ev.clientY - (player.position[1] * scale + offset[1])
+        ]);
+
+        for(let i = 0; i < keys.length; i++) {
+            const skillName = toCamelCase(keyRegistry[keys[i]]);
+            if(skills.click[skillName]) skills.click[skillName]({
+                grid, ctx, scale, offset, vector,
+                caster: player,
+                tile: pos
+            });
+        }
+
+        return;
+    }
+
     const clicked = grid.ClientSelector({
         origin: pos, 
         bounds: [1, 1],
         sort: 'nearest'
     })[0];
 
-    console.log(clicked);
-
     if(clicked && clicked.Interaction) {
         clicked.Interaction({
             client: [ev.clientX, ev.clientY],
             tile: pos
         });
+    }
+});
+
+document.addEventListener("wheel", ev => {
+    let ticking;
+    const offset = [width/2, height/2];
+    // tile at top left of the screen
+    // const pos = [(ev.clientX - offset[0])/scale, (ev.clientY - offset[1])/scale];
+    if (!ticking) {
+        window.requestAnimationFrame(() => {
+            
+            const keys = Object.keys(keyState.state);
+            if(keys.length > 0) {
+                const vector = Vector.normalise([
+                    ev.clientX - (player.position[0] * scale + offset[0]),
+                    ev.clientY - (player.position[1] * scale + offset[1])
+                ]);
+            
+                for(let i = 0; i < keys.length; i++) {
+                    const skillName = toCamelCase(keyRegistry[keys[i]]);
+                    if(skills.scroll[skillName]) skills.scroll[skillName]({
+                        grid, ctx, scale, offset, vector,
+                        caster: player,
+                        scrollDelta: ev.deltaY
+                    });
+                }
+            
+                return;
+            }
+
+            ticking = false;
+        });
+  
+        ticking = true;
     }
 });
 
@@ -244,6 +301,23 @@ const fps = new FPS({side: 'top-right'});
     for(let i = 0; i < objects.length; i++) {
         const o = objects[i];
         o.Render(ctx, offset, scale);
+    }
+
+    // execute tick functions if skill key is being held down 
+    const keys = Object.keys(keyState.state);
+    if(keys.length > 0) {
+        const tilePos = [(mousePos[0] - offset[0])/scale, (mousePos[1] - offset[1])/scale];
+        for(let i = 0; i < keys.length; i++) {
+            const skillName = toCamelCase(keyRegistry[keys[i]]);
+
+            if(skills.tick[skillName]) skills.tick[skillName]({
+                ctx,
+                offset,
+                scale,
+                tile: tilePos,
+                caster: player
+            });
+        }
     }
 
     // Object despawning

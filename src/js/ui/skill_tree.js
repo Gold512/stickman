@@ -9,6 +9,7 @@ import { math } from '../math.js'
 const SKILL_TREE = [
     'arcane',
     ['single_shot', 'double_shot', 'triple_shot', 'quad_shot', 'penta_shot'],
+    ['curve_shot'],
     ['laser', 'curved_laser'],
     ['shield', 'shield_shot', 'expand_shield'],
     ['levitation', 'flight', 'super_speed', 'hyperspeed']

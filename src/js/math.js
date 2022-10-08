@@ -17,6 +17,10 @@ export const math = (function() {
       return x * (b - a) + a;
     },
 
+    lerp2d: function(x, a, b) {
+      return [x * (b[0] - a[0]) + a[0], x * (b[1] - a[1]) + a[1]];
+    },
+
     smoothstep: function(x, a, b) {
       x = x * x * (3.0 - 2.0 * x);
       return x * (b - a) + a;
@@ -49,6 +53,10 @@ export const math = (function() {
           break;
       
       return options[i].item;
+    },
+
+    line_length: function(a, b) {
+      return Math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2);
     }
   };
 })();

@@ -1,9 +1,9 @@
 import {math} from './math.js';
 import {Client} from './spacial_hash.js';
 import { saveToStorage } from './save.js';
-import { collision } from './collision.js';
-import { Vector } from './vector.js';
 import { newInteractive } from './ui/interaction.js';
+import { AI } from './classes/AI.js';
+import { Vector } from './vector.js';
 
 export class PlayerClient extends Client {
     constructor(position, dimensions, bars) {
@@ -64,7 +64,7 @@ export class PlayerClient extends Client {
 
         this.modifier.duration -= t;
         if(this.modifier.duration <= 0) this.modifier = {};
-        if(this.modifier.callback) this.modifier.callback(this);
+        if(this.modifier.callback) this.modifier.callback(this, t);
     }
 
     Move(keys, distance) {
@@ -223,8 +223,7 @@ export class Enemy extends Client {
         manaRegen = 2
     }={}) {
         super(position, dimensions);
-        this.action = { time: 0 };
-        this.speed = .05;
+        this.speed = 3;
         this.velocity = [0, 0];
 
         this.maxHealth = maxHealth;
@@ -241,6 +240,12 @@ export class Enemy extends Client {
             get health() { return this.owner.health; },
             get mana() { return this.owner.mana; }
         }
+
+        this.AI = new AI(this, {
+            wander: true,
+            stayWithin: true,
+            dodge: 'low'
+        })
     }
 
     ShootAt(pos) {
@@ -250,157 +255,12 @@ export class Enemy extends Client {
         const scaler = 1/Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
         vector[0] *= scaler;
         vector[1] *= scaler;
-        this.grid.InsertClient(new MagicProjectile([cx + vector[0] + .5 * this.dimensions[0], cy + vector[1] + .5 * this.dimensions[1]], .5, vector, .3, {dmg: 1, color: 'black'}));
+        this.grid.InsertClient(new MagicProjectile([cx + vector[0] + .5 * this.dimensions[0], cy + vector[1] + .5 * this.dimensions[1]], 3, vector, .3, {dmg: 1, color: 'black'}));
 
     }
 
     Step(t) {
-        /*================+
-        | Movement engine |
-        +=================+
-        Event Priority - Projectile Dodge > Return to bounds > Wandering
-        */
-
-        // wandering 
-        if(this.velocity[0] == 0 && this.velocity[1] == 0 && this.action.time <= 0) {
-            const ang = math.rand_int(0, 360);
-            this.velocity = Vector.create(1, ang);
-            this.action.time = math.rand_int(200, 500);
-        }
-
-        // Return to bounds if idle 
-        if(this.bounds && this.action.type != 'dodge') {
-            const [topLeft, bottomRight] = this.bounds;
-
-            // Distance nearer to center at which the enemy will attempt to return to bounds
-            const dist = .3;
-            let vel = [0, 0];
-
-            // x direction 
-            if(this.position[0] < topLeft[0] + dist) {
-                vel[0] = 1
-            } else if(this.position[0] > bottomRight[0] - dist) {
-                vel[0] = -1;
-            }
-
-            // y direction
-            if(this.position[1] < topLeft[1] + dist) {
-                vel[1] = 1
-            } else if(this.position[1] > bottomRight[1] - dist) {
-                vel[1] = -1;
-            }
-
-            if(vel[0] != 0 && vel[1] != 0) vel = [vel * Math.SQRT1_2, vel * Math.SQRT1_2];
-            if(!(vel[0] == 0 && vel[1] == 0)) this.velocity = vel;
-        }
-
-        // Auto dodge 
-        const PROJECTION_DIST = 5;
-
-        const objects = this.grid.ClientSelector({
-            origin: this.position, 
-            bounds: [6, 6], 
-            type: MagicProjectile, 
-            sort: 'nearest'
-        });
-
-        // this.grid.FindNear([this.position[0], this.position[1]], [6, 6]);
-        for(let i = 0; i < objects.length; i++) {
-            const e = objects[i];
-            const vec = Vector.rotate(e.velocity, 90);
-            const sideVect = [e.dimensions[0] * vec[0], e.dimensions[1] * vec[1]];
-            
-            const lx = PROJECTION_DIST * e.velocity[0];
-            const ly = PROJECTION_DIST * e.velocity[1];
-            // Create virtual rectangle rotated in the direction of the 
-            // projectile's velocity and check the collision with self 
-            // to predict if the projectile will collide
-            const willCollide = collision.Polygon([
-                {
-                    x: e.position[0] - sideVect[0],
-                    y: e.position[1] - sideVect[1]
-                },
-                {
-                    x: e.position[0] + sideVect[0],
-                    y: e.position[1] + sideVect[1]
-                },
-                {
-                    x: e.position[0] + sideVect[0] + lx,
-                    y: e.position[1] + sideVect[1] + ly
-                },
-                {
-                    x: e.position[0] - sideVect[0] + lx,
-                    y: e.position[1] - sideVect[1] + ly
-                }
-            ],
-            [
-                {
-                    x: this.position[0], 
-                    y: this.position[1]
-                },
-                {
-                    x: this.position[0] + this.dimensions[0],
-                    y: this.position[1]
-                },
-                {
-                    x: this.position[0] + this.dimensions[0],
-                    y: this.position[1] + this.dimensions[0]
-                },
-                {
-                    x: this.position[0],
-                    y: this.position[1] + this.dimensions[0]
-                }
-            ]);
-
-            if(willCollide) {
-                // Find closest edge of collision projection normal to the 
-                // velocity of the projectile
-
-                const c = this.GetCenter();
-
-                const vect = Vector.normalise(sideVect);
-
-                if(
-                    ((e.position[0] - sideVect[0] - c[0])**2 + (e.position[1] - sideVect[1] - c[1])**2) <=
-                    ((e.position[0] + sideVect[0] - c[0])**2 + (e.position[1] + sideVect[1] - c[1])**2)
-                ) {
-                    this.velocity[0] = -vect[0];
-                    this.velocity[1] = -vect[1];
-                } else {
-                    this.velocity[0] = vect[0];
-                    this.velocity[1] = vect[1];
-                }
-
-                this.action.time = 500;
-                this.action.type = 'dodge'
-                continue;
-            }
-        }
-
-        // Velocity move 
-        this.position[0] += this.velocity[0] * this.speed;
-        this.position[1] += this.velocity[1] * this.speed;
-        
-        this.action.time -= t;
-        if(this.action.time <= 0) {
-            this.velocity = [0, 0];
-            this.action.type = '';
-        }
-
-        /*==============+
-        | Attack Engine |
-        +==============*/
-
-        // old basic attack engine while the new one is being developed
-        if(math.rand_int(0, 500 / t) == 0) {
-            let objects = this.grid.FindNear(this.position, [20, 20]);
-            for(let i = 0; i < objects.length; i++) {
-                if(objects[i] instanceof PlayerClient) {
-                    this.ShootAt(objects[i].position)
-                }
-            }
-            
-        }
+        this.AI.Tick(t);
 
         // Handle mana regen
         if(this.health < this.maxHealth) this._regen.health += (t / 1000) * this.healthRegen;
@@ -427,6 +287,15 @@ export class Enemy extends Client {
         if(this.health > this.maxHealth) this.health = this.maxHealth;
         if(this.mana > this.maxMana) this.mana = this.maxMana;
 
+        // Velocity move 
+        /*
+            speed: tiles/s
+            t: time(ms) 
+        */
+        const ts = t * 0.001;
+        this.position[0] += this.velocity[0] * this.speed * ts;
+        this.position[1] += this.velocity[1] * this.speed * ts;
+
         // Decide what to do randomly 
         // Giving more weightage to stronger attacks as the stick figure has more mana
         // or less health
@@ -442,9 +311,23 @@ export class Enemy extends Client {
         ctx.fillRect(this.position[0] * scale + pos[0], this.position[1] * scale + pos[1], this.dimensions[0] * scale, this.dimensions[1] * scale);
 
         // Render enemy health bar
-        const l = this.dimensions[0] * 1.25 * scale / this.maxHealth * this.health;
+        const tl = this.dimensions[0] * 1.25 * scale;
+        const l = tl / this.maxHealth * this.health;
+        const health_bar = [this.position[0] * scale + pos[0] - this.dimensions[0] * .125 * scale, this.position[1] * scale + pos[1] - 10];
+        
+        ctx.fillStyle = 'rgba(120, 120, 120, 1)';
+        ctx.fillRect(health_bar[0], health_bar[1], tl, 5);
+
         ctx.fillStyle = 'rgba(0, 255, 0, 1)';
-        ctx.fillRect(this.position[0] * scale + pos[0] - this.dimensions[0] * .125 * scale, this.position[1] * scale + pos[1] - 8, l, 5)
+        ctx.fillRect(health_bar[0], health_bar[1], l, 5);
+
+        ctx.strokeStyle = 'rgba(80, 80, 80)';
+        ctx.lineWidth = 3
+        ctx.strokeRect(health_bar[0] - 1, health_bar[1] - 1, tl + 2, 7)
+
+        // Render enemy display name 
+        // ctx.font = `${.25 * scale}px serif`;
+        // ctx.fillText('Hello world', this.position[0] * scale + pos[0] - this.dimensions[0] * .125 * scale, this.position[1] * scale + pos[1] - 12);
     }
 
     OnRemove() {
@@ -470,7 +353,15 @@ export class Spawner extends Client {
     }
 
     Interaction(ev) {
-        newInteractive('this is an interactive ui', {x: ev.client[0], y: ev.client[1]})
+        newInteractive('Spawning Portal', {x: ev.client[0], y: ev.client[1], options: [
+            {
+                close: true,
+                text: 'Beginner',
+                callback() {
+
+                }
+            }
+        ]})
     }
 
     /**
@@ -538,12 +429,15 @@ export class MagicProjectile extends Client {
      * @param {Object} options
      * @param {Number} options.dmg The amount of damage on collision with the projectile 
      * @param {String} options.color a string containing a color (hex or name, most css named colors should work)
+     * @param {String} options.owner ID of creator of the projectile
      * @param {('top-left'|'center'|'bottom-right')} options.anchor The position of the position argument relative to the object
      */
     constructor(position, size, vel, speed, {
         dmg = 1,
         color = 'black',
-        anchor = 'center'
+        anchor = 'center',
+        owner = null,
+        curve = null
     } = {}) {
         position = anchorPosition(anchor, position, size);
 
@@ -559,6 +453,20 @@ export class MagicProjectile extends Client {
             type: 'active', 
             shape: 'circle',
             solid: false
+        }
+
+        if(owner) this.owner = owner;
+        if(curve) {
+            const circumference = 2 * Math.PI * curve.radius;
+            this.curve = {
+                circumference: circumference,
+                angle: curve.angle,
+                center: curve.center,
+                radius: curve.radius,
+                angleChange: curve.direction * (this.speed / circumference) * 360,
+                distanceTraveled: curve.distance
+            };
+            console.log(this.curve)
         }
     }
 
@@ -590,9 +498,24 @@ export class MagicProjectile extends Client {
      * Run each frame, used for running things that HAS to run each frame
      * such as projectile movement 
      */
-    Step() {
-        this.position[0] += this.velocity[0] * this.speed;
-        this.position[1] += this.velocity[1] * this.speed;
+    Step(t) {
+        const ts = t * 0.001;
+
+        if(this.curve) {
+            const d = this.curve.angleChange * ts;
+            this.curve.angle += d;
+            this.curve.distanceTraveled += Math.abs(d);
+            if(this.curve.angle > 360) this.curve.angle -= 360;
+            const vector = Vector.create(this.curve.angle);
+            this.velocity = Vector.rotate(vector, -90);
+            
+            this.position = Vector.add(this.curve.center, Vector.multiply(vector, this.curve.radius));
+            if(this.curve.distanceTraveled > 270) this.grid.Remove(this);
+            return;
+        }
+
+        this.position[0] += this.velocity[0] * this.speed * ts;
+        this.position[1] += this.velocity[1] * this.speed * ts;
     }
 
     /**
@@ -623,8 +546,41 @@ export class MagicProjectile extends Client {
         ctx.fillStyle = 'rgba(0, 0, 0, 1)';
         ctx.fill(path);
 
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
 
+        // render curved path trail 
+        if(this.curve) {
+            ctx.lineCap = 'round';
+            ctx.lineWidth = scale * this.dimensions[0];
+
+            // half a second distance worth of trail
+            const ang1 = Vector.DEG_TO_RAD_SCALE * (this.curve.angle - .2 * this.curve.angleChange),
+                ang2 = Vector.DEG_TO_RAD_SCALE * this.curve.angle;
+
+            // const grd = ctx.createConicGradient(
+            //     this.position[0] * scale + offset[0],
+            //     this.position[1] * scale + offset[1],
+            //     0,
+            //     math.PI * 2
+            // );
+
+            // grd.addColorStop(0, 'rgba(0,0,0, .5)');
+            // grd.addColorStop(.9, 'rgba(0,0,0, .15)');
+            // grd.addColorStop(1, 'rgba(0,0,0, 0)');
+
+            ctx.strokeStyle = 'rgba(0,0,0, .5)';
+
+            
+            ctx.beginPath();
+            ctx.arc((this.curve.center[0] + this.dimensions[0] * .5) * scale + offset[0], (this.curve.center[1] + this.dimensions[1] * .5) * scale + offset[1], this.curve.radius * scale, Math.min(ang1, ang2), Math.max(ang1, ang2));
+            ctx.stroke();
+
+            ctx.strokeStyle = null;
+            ctx.lineCap = null;
+            
+            return;
+        }
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
         // Generate trail for the projectile 
         // Note that x and y are in grid tiles and have to be converted to pixels
         for(let j = 0; j < 7; j++) {
@@ -633,7 +589,6 @@ export class MagicProjectile extends Client {
             ctx.fill();
         }
 
-        ctx.fillStyle = 'rgba(255, 0, 0, 1)';
         // highlight collision box 
         // ctx.fillRect(this.position[0] * scale + pos[0], this.position[1] * scale + pos[1], this.dimensions[0] * scale, this.dimensions[1] * scale);
 
@@ -723,10 +678,12 @@ export class Shield extends Client {
         // this.collision.type= 'none';
     }
 
-    Step() {
+    Step(t) {
+        const ts = t * 0.001;
+
         if(this.projectile) {
-            this.position[0] += this.velocity[0] * this.speed;
-            this.position[1] += this.velocity[1] * this.speed;
+            this.position[0] += this.velocity[0] * this.speed * ts;
+            this.position[1] += this.velocity[1] * this.speed * ts;
             return;
         }
         const owner = this.grid.GetClientById(this.owner);

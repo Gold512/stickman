@@ -1,4 +1,4 @@
-import { downloadSave, loadSaveFile } from "./save.js";
+import { downloadSave, loadSaveFile, saveToStorage } from "./save.js";
 import { mpl_colors, skills } from "./skill.js";
 import {newSVG} from "./svg.js";
 import { stat_menu } from "./ui/skill_tree.js";
@@ -89,6 +89,11 @@ function updateStats(player) {
     document.getElementById('player-xp').innerText = player.xp;
 }
 
+// update the localStorage save data
+function updateSave() {
+    saveToStorage(ref.player);
+}
+
 export function updateSkills() {
     const list = document.getElementById('skill-select');
     list.innerHTML = '';
@@ -127,6 +132,7 @@ export function updateSkills() {
 function updateSkillHotkey(id) {
     const bar = document.getElementById('skill-bar');
     bar.querySelector('.skill[data-id="' + id + '"] .skill-hotkey').innerText = keyRegistry[id];
+    updateSave();
 }
 
 export const keyRegistry = {
@@ -139,13 +145,15 @@ const RESERVED_HOTKEYS = [
     'w', 'a', 's', 'd'
 ]
 
-export function loadSkillBar() { 
+export function loadSkillBar(save = true) { 
     const bar = document.getElementById('skill-bar');
     bar.innerHTML = '';
+    console.log(EQUIPPED_SKILLS);
     for(let i of EQUIPPED_SKILLS) {
         const skill = skills[i];
         bar.appendChild(createSkillIcon(skill))
     }
+    if(save) updateSave();
 }
 
 function createSkillIcon(skill) {
