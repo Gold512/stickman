@@ -9,7 +9,7 @@ import { math } from '../math.js'
 const SKILL_TREE = [
     'arcane',
     ['single_shot', 'double_shot', 'triple_shot', 'quad_shot', 'penta_shot'],
-    ['curve_shot'],
+    ['curve_shot', 'double_curve_shot'],
     ['laser', 'curved_laser'],
     ['shield', 'shield_shot', 'expand_shield'],
     ['levitation', 'flight', 'super_speed', 'hyperspeed']
@@ -249,6 +249,7 @@ function skillTreeRender(cont, canvas, options) {
             // tooltip
             new ElementCreator('div')
                 .class(['tooltip', 'skill-tooltip', 'interactive'])
+                .styleVariables({color: mpl_colors[sk.mpl]})
 
                 // tooltip_title
                 .newChild('div')
@@ -289,7 +290,13 @@ function skillTreeRender(cont, canvas, options) {
                             elementCreator.attribute('disabled');
                         })
                         .addEventListener('click', ev => {
-                            if(player.stats.skillPoints < sk.cost) return;
+                            if(player.stats.skillPoints < sk.cost) {
+                                // shake animation on buy fail 
+                                ev.currentTarget.classList.add('shake');
+                                setTimeout(() => ev.currentTarget.classList.remove('shake'), 500);
+                                return;
+                            }
+                            
                             ev.currentTarget.remove();
                             player.stats.skillPoints -= sk.cost;
                             document.getElementById('skill-points').innerText = player.stats.skillPoints;

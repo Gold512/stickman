@@ -35,47 +35,54 @@ export function initUI(player) {
     addSkill.addEventListener('drop', ev => {
         ev.preventDefault();
 
-        const card = document.createElement('div');
-            card.classList.add('card');
-
         const dragged = document.getElementById(ev.dataTransfer.getData("text"));
         const dropped = ev.currentTarget;
+        const id = `skill-equipped-${dragged.dataset.id}`;
+        if(document.getElementById(id)) return;
 
         if(dragged == null) {
-            alert('just what did you try to equip as a skill?!');
+            alert("That's not a skill!");
             return;
         }
-        
-        let clone = dragged.cloneNode(true);
 
-        const id = `skill-equipped-${clone.dataset.id}`;
-        if(document.getElementById(id)) return;
-        clone.id = id;
-        clone.draggable = '';
-
-        clone.addEventListener('click', ev => {
-            const e = ev.currentTarget.parentElement;
-
-            const id = ev.currentTarget.dataset.id;
-            delete keyRegistry[keyRegistry[id]];
-            delete keyRegistry[id];
-
-            e.parentElement.removeChild(e);
-            EQUIPPED_SKILLS.delete(id);
-            loadSkillBar();
-        });
-
-        card.appendChild(clone);
-        card.appendChild(newHotkeyInput());
+        let card = createSkillCard(dragged, id);
 
         ev.currentTarget.parentElement.insertBefore(card, dropped);
-        EQUIPPED_SKILLS.add(clone.dataset.id);
+        EQUIPPED_SKILLS.add(dragged.dataset.id);
         loadSkillBar();
     });
 
     addSkill.addEventListener('dragover', ev => ev.preventDefault());
 
     stat_menu.init();
+}
+
+export function createSkillCard(icon, id, currentKey = '') {
+    const card = document.createElement('div');
+    card.classList.add('card');
+    let clone = icon.cloneNode(true);
+
+    clone.id = id;
+    clone.draggable = '';
+
+    clone.addEventListener('click', ev => {
+        const e = ev.currentTarget.parentElement;
+
+        const id = ev.currentTarget.dataset.id;
+        delete keyRegistry[keyRegistry[id]];
+        delete keyRegistry[id];
+
+        e.parentElement.removeChild(e);
+        EQUIPPED_SKILLS.delete(id);
+        loadSkillBar();
+    });
+
+    card.appendChild(clone);
+
+    const hotkeyInput = newHotkeyInput(currentKey);
+    if(currentKey) hotkeyInput.value = currentKey;
+    card.appendChild(hotkeyInput);
+    return card;
 }
 
 function updateStats(player) {
@@ -102,11 +109,23 @@ export function updateSkills() {
         const e = skills[k[i]];
         if(!player.skills.has(e.id)) continue;
 
-        const el = document.createElement('div');
-            el.draggable = 'true';
-            el.classList.add('skill');
+        // const el = document.createElement('div');
+        //     el.draggable = 'true';
+        //     el.classList.add('skill');
+        //     el.dataset.id = e.id;
+        //     el.id = `skill-${e.id}`;
+
+        let el = createSkillIcon(skills[e.id]);
+            el.draggable = 'true'; 
             el.dataset.id = e.id;
             el.id = `skill-${e.id}`;
+
+            // handle tooltip on drag
+            el.addEventListener('mousedown', ev => ev.target.classList.add('dragged') );
+        
+            el.addEventListener('dragend', ev => {
+                setTimeout(() => ev.target.classList.remove('dragged'), 500);
+            });
 
             el.addEventListener('dragstart', ev => {
                 ev.dataTransfer.setData("text", ev.target.id);
@@ -123,9 +142,19 @@ export function updateSkills() {
 
             // el.appendChild(svg);
             
-            el.appendChild(newSVG(`./src/svg/attack/${e.id}.svg`));
+            // el.appendChild(createSkillIcon(skills[e.id]));
         
         list.appendChild(el);
+    }
+}
+
+export function loadEquippedSKills() {
+    const skillDrop = document.getElementById('skill-drop');
+    const skillDropPlus = skillDrop.querySelector('#plus')
+    for(let id of EQUIPPED_SKILLS.values()) {
+        console.log(id)
+        const card = createSkillCard(createSkillIcon(skills[id]), `skill-equipped-${id}`, keyRegistry[id].toUpperCase());
+        skillDrop.insertBefore(card, skillDropPlus);
     }
 }
 
@@ -151,7 +180,13 @@ export function loadSkillBar(save = true) {
     console.log(EQUIPPED_SKILLS);
     for(let i of EQUIPPED_SKILLS) {
         const skill = skills[i];
-        bar.appendChild(createSkillIcon(skill))
+        let skillIcon = createSkillIcon(skill);
+            const hotkey = document.createElement('div');
+            hotkey.classList.add('skill-hotkey');
+            hotkey.innerHTML = keyRegistry[skill.id] || '&nbsp;';
+            skillIcon.appendChild(hotkey);
+
+        bar.appendChild(skillIcon)
     }
     if(save) updateSave();
 }
@@ -195,11 +230,6 @@ function createSkillIcon(skill) {
             statData.appendChild(cd);
     
     e.appendChild(statData);
-
-    const hotkey = document.createElement('div');
-        hotkey.classList.add('skill-hotkey');
-        hotkey.innerHTML = keyRegistry[skill.id] || '&nbsp;';
-        e.appendChild(hotkey);
 
     return e;
 }

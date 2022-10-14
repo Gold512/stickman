@@ -310,6 +310,11 @@ onto the tooltip without the hover being disabled */
 
 }
 
+.dragged > .tooltip {
+    display: none;
+    transition: none !important;
+}
+
 *:hover > .tooltip {
     opacity: 1;
     transform: translate(var(--main-x), var(--main-y)) scale(1);
@@ -380,4 +385,8 @@ onto the tooltip without the hover being disabled */
 
 .skill-hotkey {
     user-select: none;
+}
+
+.casting {
+    box-shadow: 0px 0px 3px 3px #fff;
 }

@@ -33,16 +33,35 @@ export const Vector = {
       return new Array(Math.round(10000*(vec[0] * cos - vec[1] * sin))/10000, Math.round(10000*(vec[0] * sin + vec[1] * cos))/10000);
     },
     
+    /**
+     * Add the axes of each vector together
+     * @param {VectorArray} vec1 - first vector 
+     * @param {VectorArray} vec2 - second vector
+     * @returns {VectorArray}
+     */
     add(vec1, vec2) {
       return [vec1[0] + vec2[0], vec1[1] + vec2[1]];
     },
 
+    /**
+     * Subtract axes of second vector from the first vector
+     * @param {VectorArray} vec1 - first vector 
+     * @param {VectorArray} vec2 - second vector
+     * @returns {VectorArray}
+     */
     sub(vec1, vec2) {
       return [vec1[0] - vec2[0], vec1[1] - vec2[1]];
     },
 
+    /**
+     * Multiply axes of the first vector by x
+     * @param {VectorArray} vec1 - first vector 
+     * @param {VectorArray} x - multiplier
+     * @returns {VectorArray}
+     */
     multiply(vec, x) {
-      return [vec[0] * x, vec[1] * x];
+      x = (typeof x === 'number') ? [x, x] : x;
+      return [vec[0] * x[0], vec[1] * x[0]];
     },
 
     /**

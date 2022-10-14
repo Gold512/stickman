@@ -22,3 +22,16 @@ export function newSVG(url) {
 
     return object;
 }
+
+export async function getSVG(url) {
+    if(url.slice(0, 2) != './') url = './' + url;
+    if(window.SVG_CACHE[url] != undefined) return window.SVG_CACHE[url];
+    return await fetch(url)
+        .then(function(response) {
+            return response.text();
+        }).then(function(data) {
+            return data; // this will be a string
+        });;
+}
+
+window.getSVG = getSVG

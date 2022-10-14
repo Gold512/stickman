@@ -93,17 +93,16 @@ document.addEventListener('keydown', function keydown(ev) {
     x /= magnitude;
     y /= magnitude;
 
-    const offset = [width/2, height/2];
-
     const clickedGridTile = [(mousePos[0] - offset[0])/scale, (mousePos[1] - offset[1])/scale];
 
+    let functionName = toCamelCase(keyRegistry[ev.key]);
+    
     skill_selector: {
         if(ev.key == keyRegistry.shield_shot && !player.shield) {
             player.mana += skill.mana;
             break skill_selector;
         }
 
-        let functionName = toCamelCase(keyRegistry[ev.key]);
         let result = false;
         if(skills.keydown[functionName]) result = skills.keydown[functionName]({
             grid: grid,
@@ -128,6 +127,11 @@ document.addEventListener('keydown', function keydown(ev) {
 
     // Modify keyState 
     keyState.state[ev.key] = true;
+
+    if(skills.tick[functionName]) {
+        document.querySelector(`[data-id="${skill.id}"]`).classList.add('casting')
+        return;
+    }
 
     // cooldown animation
     const el = document.querySelector(`[data-id="${skill.id}"]`);
@@ -166,6 +170,15 @@ document.addEventListener('keyup', ev => {
     }
 
     if(keyState.state[ev.key]) delete keyState.state[ev.key];
+
+
+    
+    if(keyRegistry[ev.key]) {
+        const skillName = toCamelCase(keyRegistry[ev.key]);
+        if(!skills.tick[skillName]) return;
+        document.querySelector(`[data-id="${keyRegistry[ev.key]}"]`).classList.remove('casting')
+        return;
+    }
 });
 
 !function() {
@@ -198,13 +211,35 @@ const scale = 50; // canvas pixels per grid tile
 const despawnRange = 20;
 let start;
 let mousePos = [];
+const offset = [width/2, height/2];
+let focusedClient;
+
+canvas.addEventListener('contextmenu', ev => {
+    ev.preventDefault();
+    const pos = [(ev.clientX - offset[0])/scale, (ev.clientY - offset[1])/scale];
+    const clicked = grid.ClientSelector({
+        origin: pos, 
+        bounds: [1, 1],
+        sort: 'nearest'
+    })[0];
+
+    if(clicked && clicked.Interaction) {
+        clicked.Interaction({
+            client: [ev.clientX, ev.clientY],
+            tile: pos,
+            onClose: () => focusedClient = null
+        });
+
+        focusedClient = clicked;
+    }
+});
 
 canvas.addEventListener('click', ev => {
     ev.preventDefault();
 
     // Convert screen click coords to grid coordinates
-    const offset = [width/2, height/2];
     // tile at top left of the screen
+
     const pos = [(ev.clientX - offset[0])/scale, (ev.clientY - offset[1])/scale];
 
     const keys = Object.keys(keyState.state);
@@ -225,24 +260,10 @@ canvas.addEventListener('click', ev => {
 
         return;
     }
-
-    const clicked = grid.ClientSelector({
-        origin: pos, 
-        bounds: [1, 1],
-        sort: 'nearest'
-    })[0];
-
-    if(clicked && clicked.Interaction) {
-        clicked.Interaction({
-            client: [ev.clientX, ev.clientY],
-            tile: pos
-        });
-    }
 });
 
 document.addEventListener("wheel", ev => {
     let ticking;
-    const offset = [width/2, height/2];
     // tile at top left of the screen
     // const pos = [(ev.clientX - offset[0])/scale, (ev.clientY - offset[1])/scale];
     if (!ticking) {
@@ -287,15 +308,27 @@ const fps = new FPS({side: 'top-right'});
     }
 
     // player movement 
-    player.Move(keyState, .15);
+    if(!player.HasTag('NoMovement')) player.Move(keyState, .15);
     grid.UpdateClient(player);
-    const offset = [width/2, height/2];
+
+    // camera movement 
+    const center = player.GetCenter();
+    offset[0] = width/2 - center[0] * scale;
+    offset[1] = height/2 - center[1] * scale;
+
+    // next use vector math to project the next place
+    // the player will be and make the camera slightly behind the 
+    // player by lerping time based on duration move keys are held down
 
     ctx.clearRect(0, 0, width, height);
     grid.Step(elapsedTime);
 
-    let objects = grid.FindNear([0, 0], [Math.ceil(1.5 * width / scale), Math.ceil(1.5 * height / scale)]);
+    let objects = grid.FindNear(center, [Math.ceil(1.5 * width / scale), Math.ceil(1.5 * height / scale)]);
     objects.sort((a, b) => a.zIndex - b.zIndex);
+
+    if(focusedClient && focusedClient.OnFocusBeforeRender) {
+        focusedClient.OnFocusBeforeRender(ctx, offset, scale)
+    }
 
     // Render the objects 
     for(let i = 0; i < objects.length; i++) {

@@ -51,6 +51,18 @@ export const skills = {
         cost: 3,
         desc: 'using mana to change the trojectory of the projectile, an arc path can be achieved\nClick - fire\nScroll - change arc degree',
 
+        curve: 60,
+        direction: 1
+    },
+    double_curve_shot: {
+        name: 'Double Curve Shot',
+        id: 'double_curve_shot',
+        mana: 15,
+        cd: .3,
+        cost: 8,
+        mpl: 4,
+        desc: 'by using 2 curve shots, a larger explosion can be created where aimed at',
+
         curve: 60
     },
     levitation: {
@@ -199,7 +211,7 @@ export const keydown = (function() {
         if((caster.modifier.name == 'superSpeed' && caster.modifier.duration > 20)
         || (caster.modifier.name && caster.modifier.name != 'superSpeed')) return false;
 
-        const speed = 5;
+        const speed = 15;
 
         // calculate amount of time required to reach clicked point
         let dist = [caster.position[0] - tile[0], caster.position[1] - tile[1]];
@@ -240,7 +252,15 @@ export const keydown = (function() {
         }
     }
 
-    return {singleShot, doubleShot, tripleShot, shield, shieldShot, superSpeed}
+    function volleyShot({ ctx, scale, offset, caster, vector, tile } = {}) {
+        
+    }
+
+    function recursiveShot({ ctx, scale, offset, caster, vector, tile } = {}) {
+        
+    }
+
+    return {singleShot, doubleShot, tripleShot, shield, shieldShot, superSpeed, recursiveShot}
 }());
 
 export const tick = (function() {
@@ -256,8 +276,8 @@ export const tick = (function() {
         ctx.arc(arc.center[0] * scale + offset[0], arc.center[1] * scale + offset[1], arc.radius * scale, arc.angleA * Vector.DEG_TO_RAD_SCALE, arc.angleB * Vector.DEG_TO_RAD_SCALE);
         ctx.stroke();
 
-        ctx.strokeStyle = 'rgba(0,255,0, 1)';
-        ctx.lineWidth = 3;
+        // ctx.strokeStyle = 'rgba(0,255,0, 1)';
+        // ctx.lineWidth = 3;
 
         // ctx.beginPath();
         // ctx.moveTo(...p(caster.GetCenter()));
@@ -286,11 +306,32 @@ export const tick = (function() {
         // ctx.lineWidth = null;
         // ctx.lineCap = null;
     }
-    return {curveShot}
+
+    function doubleCurveShot({ ctx, scale, offset, caster, tile } = {}) {
+        const center = caster.GetCenter();
+        // console.log(caster.GetCenter(), tile)
+        let arc = curveShotArc(center, tile, skills.double_curve_shot.curve);
+        // console.log(arc)
+        ctx.strokeStyle = 'rgba(0,0,0, .5)';
+        ctx.lineWidth = 5;
+        ctx.lineCap = 'round';
+
+        ctx.beginPath();
+        ctx.arc(arc.center[0] * scale + offset[0], arc.center[1] * scale + offset[1], arc.radius * scale, arc.angleA * Vector.DEG_TO_RAD_SCALE, arc.angleB * Vector.DEG_TO_RAD_SCALE);
+        ctx.stroke();
+
+        arc = curveShotArc(tile, center, skills.double_curve_shot.curve);
+        ctx.beginPath();
+        ctx.arc(arc.center[0] * scale + offset[0], arc.center[1] * scale + offset[1], arc.radius * scale, arc.angleA * Vector.DEG_TO_RAD_SCALE, arc.angleB * Vector.DEG_TO_RAD_SCALE);
+        ctx.stroke();
+
+    }
+
+    return {curveShot, doubleCurveShot}
 })();
 
 export const click = (function() {
-    function curveShot({ ctx, scale, offset, caster, tile, grid, vector } = {}) {
+    function curveShot({ caster, tile, grid, vector } = {}) {
         if(caster.mana < skills.curve_shot.mana) return;
 
         caster.mana -= skills.curve_shot.mana;
@@ -300,12 +341,11 @@ export const click = (function() {
 
         let size = .5;
 
-        let direction = 1;
-
         const circumference = 2 * Math.PI * arc.radius;
         // initial angle of player relative to center of arc
         let angle = Vector.getAngle(Vector.sub(center, arc.center));
         const speed = 15;
+        const direction = skills.curve_shot.direction;
 
         angle += direction * (size / circumference * 360);
         const pos = Vector.add(arc.center, Vector.create(angle, arc.radius));
@@ -320,11 +360,48 @@ export const click = (function() {
                 distance: Math.abs(Vector.getAngle(Vector.sub(center, arc.center)) - angle)
             }
         }));
+    }
 
-        
+    function doubleCurveShot({ caster, tile, grid, vector } = {}) {
+        if(caster.mana < skills.double_curve_shot.mana) return;
+
+        caster.mana -= skills.double_curve_shot.mana;
+        const center = caster.GetCenter();
+        const speed = 15;
+        let size = .5;
+
+        const points = [
+            [center, tile],
+            [tile, center]
+        ]
+
+        for(let i = 0; i < 2; i++) {
+            const arc = curveShotArc(...points[i], skills.double_curve_shot.curve);
+            // initial angle of player relative to center of arc
+            let angle = Vector.getAngle(Vector.sub(center, arc.center));
+
+            const circumference = 2 * Math.PI * arc.radius;
+            // convert i into 1 or -1 instead of 1 or 0
+            const direction = -(i*2-1);
+
+            angle += direction * (size / circumference * 360);
+            const pos = Vector.add(arc.center, Vector.create(angle, arc.radius));
+            grid.InsertClient(new MagicProjectile(pos, size, vector, speed, {
+                dmg: 2,
+                color: 'black',
+                curve: {
+                    center: Vector.sub(arc.center, [.5 * size, .5 * size]),
+                    radius: arc.radius,
+                    angle: angle,
+                    direction: direction,
+                    distance: Math.abs(Vector.getAngle(Vector.sub(center, arc.center)) - angle)
+                }
+            }));
+
+        }
     }
     
-    return {curveShot}
+    return {curveShot, doubleCurveShot}
 })();
 
 export const scroll = (function() {
@@ -333,7 +410,12 @@ export const scroll = (function() {
         skills.curve_shot.curve = math.clamp(skills.curve_shot.curve, 1, 50)
     }
 
-    return {curveShot}
+    function doubleCurveShot({scrollDelta} = {}) {
+        skills.double_curve_shot.curve -= scrollDelta/100 * 3.6;
+        skills.double_curve_shot.curve = math.clamp(skills.double_curve_shot.curve, 1, 50)
+    }
+
+    return {curveShot, doubleCurveShot}
 })();
 
 // export const keyup = (function() {

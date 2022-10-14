@@ -352,16 +352,33 @@ export class Spawner extends Client {
         this.count = count;
     }
 
-    Interaction(ev) {
-        newInteractive('Spawning Portal', {x: ev.client[0], y: ev.client[1], options: [
-            {
-                close: true,
-                text: 'Beginner',
-                callback() {
+    OnFocusBeforeRender(ctx, offset, scale) {
+        if(!this.bounds) return;
+        ctx.fillStyle = 'rgb(255, 20, 20, .3)';
+        const center = this.GetCenter();
+        ctx.fillRect(
+            (center[0] - .5 * this.bounds[0]) * scale + offset[0],
+            (center[1] - .5 * this.bounds[1]) * scale + offset[1],
+            this.bounds[0] * scale,
+            this.bounds[1] * scale);
+        ctx.fillStyle = null;
+    }
 
-                }
-            }
-        ]})
+    Interaction(ev) {
+        newInteractive('Spawning Portal (Showing enemy bounds)', {x: ev.client[0], y: ev.client[1],
+            onClose() {
+                ev.onClose();
+            }, 
+            // options: [
+            //     {
+            //         close: true,
+            //         text: 'Beginner',
+            //         callback() {
+
+            //         }
+            //     }
+            // ]
+        })
     }
 
     /**
@@ -466,7 +483,6 @@ export class MagicProjectile extends Client {
                 angleChange: curve.direction * (this.speed / circumference) * 360,
                 distanceTraveled: curve.distance
             };
-            console.log(this.curve)
         }
     }
 

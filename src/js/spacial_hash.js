@@ -429,6 +429,33 @@ export class Client {
     this.id = Date.now().toString(36) + Math.floor(1e12 + Math.random() * 9e12).toString(36);
   }
 
+  /**
+   * Add tags to client which changes how it behaves
+   * @param {...('NoGravity'|'NoMovement'|'Static')} tags - all parameters will be added to tags obejct
+   */
+  AddTag(...tags) {
+    if(!this.tags) this.tags = new Set();
+    for(let i = 0; i < tags.length; i++) this.tags.add(tags[i]);
+  }
+
+  /**
+   * Remove tags from client which changes how it behaves
+   * @param {...('NoGravity'|'NoMovement'|'Static')} tags - all parameters will be added to tags obejct
+   */
+  RemoveTag(...tags) {
+    if(!this.tags) this.tags = new Set();
+    for(let i = 0; i < tags.length; i++) this.tags.delete(tags[i]);
+  }
+
+  /**
+   * Check if the client has a given tag
+   * @param {String} tag - the tag to check the presence of
+   * @returns {Boolean}
+   */
+  HasTag(tag) {
+    return this.tags ? this.tags.has(tag) : false;
+  }
+
   SetZIndex(v) {
     this.zIndex = v;
     return this;

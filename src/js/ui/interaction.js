@@ -9,10 +9,11 @@ import { ElementCreator } from '../libs/element_creator.js'
  * @param {Number} [options.y] - y position of interactive element
  * @param {Object[]} [options.options] - options for interaction
  * @param {Boolean} [options.options[].close] - whether to close interactive element when option chosen, defaults to true
+ * @param {Boolean} [options.options[].onClose] - called when interactive UI is closed
  * @param {String} options.options[].text - option text
  * @param {Function} options.options[].callback - option click handler
  */
-export function newInteractive(text, {x, y, options = []} = {}) {
+export function newInteractive(text, {x, y, options = [], onClose = null} = {}) {
     const container = document.getElementById('menu');
 
     new ElementCreator('div')
@@ -37,6 +38,7 @@ export function newInteractive(text, {x, y, options = []} = {}) {
                     menu.children[0].remove();
                     menu.style.display = '';
                     document.removeEventListener('click', close);
+                    if(onClose) onClose();
                 }
                 
                 for (let i = 0; i < options.length; i++) {
