@@ -352,6 +352,7 @@ export const click = (function() {
         grid.InsertClient(new MagicProjectile(pos, size, vector, speed, {
             dmg: 2,
             color: 'black',
+            owner: caster.id,
             curve: {
                 center: Vector.sub(arc.center, [.5 * size, .5 * size]),
                 radius: arc.radius,
@@ -389,12 +390,13 @@ export const click = (function() {
             grid.InsertClient(new MagicProjectile(pos, size, vector, speed, {
                 dmg: 2,
                 color: 'black',
+                owner: caster.id,
                 curve: {
                     center: Vector.sub(arc.center, [.5 * size, .5 * size]),
                     radius: arc.radius,
                     angle: angle,
                     direction: direction,
-                    distance: Math.abs(Vector.getAngle(Vector.sub(center, arc.center)) - angle)
+                    distance: Math.abs(Vector.getAngle(Vector.sub(center, arc.center)) - angle),
                 }
             }));
 

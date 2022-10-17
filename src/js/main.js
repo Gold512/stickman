@@ -83,15 +83,10 @@ document.addEventListener('keydown', function keydown(ev) {
     if(player.mana < skill.mana) return;
     player.mana -= skill.mana;
 
-    let [x, y] = mousePos;
-
-    x -= player.position[0] * scale + width/2;
-    y -= player.position[1] * scale + height/2;
-    
-    // Make magnitude always 1 
-    const magnitude = Math.sqrt(x * x + y * y);
-    x /= magnitude;
-    y /= magnitude;
+    let [x, y] = Vector.normalise([
+        mousePos[0] - (player.position[0] * scale + offset[0]),
+        mousePos[1] - (player.position[1] * scale + offset[1])
+    ]);
 
     const clickedGridTile = [(mousePos[0] - offset[0])/scale, (mousePos[1] - offset[1])/scale];
 
@@ -357,6 +352,7 @@ const fps = new FPS({side: 'top-right'});
     for(let i = 0, k = Object.keys(grid._step); i < k.length; i++) {
         const o = grid._step[k[i]];
         if(o == undefined) continue;
+        if(!(o instanceof MagicProjectile)) continue;
 
         if(Math.abs(player.position[0] - o.position[0]) >= despawnRange || 
         Math.abs(player.position[1] - o.position[1]) >= despawnRange) {

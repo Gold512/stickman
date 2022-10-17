@@ -94,6 +94,10 @@ export const Vector = {
       // or lines are directly overlapping at which again, no point of intersection
       if(m1 == m2) return null;
 
+      // if line is vertical, the form of the equation is x = c, so just subsitute x
+      if(m1 == Infinity) return [o1[0], m2 * o1[0] + o2[1] - m2 * o2[0]];
+      if(m2 == Infinity) return [o2[0], m1 * o2[0] + o1[1] - m1 * o1[0]];
+      
       // line intersection formula 
       const x = (o2[1] - o1[1] + m1*o1[0] - m2*o2[0]) / (m1 - m2);
 

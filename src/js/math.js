@@ -1,3 +1,7 @@
+/**
+ * @typedef {[Number, Number]} Position
+ */
+
 export const math = (function() {
   return {
     rand_range: function(a, b) {
