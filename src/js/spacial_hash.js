@@ -1,5 +1,5 @@
 import quickselect from './libs/quick_select.js';
-import {math} from './math.js';
+import {math} from './module/math.js';
 
 export class SpatialHash {
   /**

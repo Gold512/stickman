@@ -1,6 +1,6 @@
 import { downloadSave, loadSaveFile, saveToStorage } from "./save.js";
 import { mpl_colors, skills } from "./skill.js";
-import {newSVG} from "./svg.js";
+import {newSVG} from "./module/svg.js";
 import { stat_menu } from "./ui/skill_tree.js";
 
 const display = {
@@ -152,7 +152,6 @@ export function loadEquippedSKills() {
     const skillDrop = document.getElementById('skill-drop');
     const skillDropPlus = skillDrop.querySelector('#plus')
     for(let id of EQUIPPED_SKILLS.values()) {
-        console.log(id)
         const card = createSkillCard(createSkillIcon(skills[id]), `skill-equipped-${id}`, keyRegistry[id].toUpperCase());
         skillDrop.insertBefore(card, skillDropPlus);
     }
@@ -177,7 +176,6 @@ const RESERVED_HOTKEYS = [
 export function loadSkillBar(save = true) { 
     const bar = document.getElementById('skill-bar');
     bar.innerHTML = '';
-    console.log(EQUIPPED_SKILLS);
     for(let i of EQUIPPED_SKILLS) {
         const skill = skills[i];
         let skillIcon = createSkillIcon(skill);

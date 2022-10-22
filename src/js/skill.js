@@ -1,19 +1,54 @@
 import { MagicProjectile, Shield } from "./objects.js";
-import { Vector } from "./vector.js";
-import { math } from "./math.js";
-function multiShot(grid, caster, vector, foward, deg) {
-    const origin = caster.position;
+import { Vector } from "./module/vector.js";
+import { math } from "./module/math.js";
+function multiShot(grid, caster, vector, deg) {
+    const origin = caster.GetCenter();
     for(let i = 0; i < deg.length; i++) {
         const vect = deg[i] != 0 ? Vector.rotate(vector, deg[i]) : vector;
 
-        const x = origin[0] + .5 * caster.dimensions[0] + vect[0] * foward;
-        const y = origin[1] + .5 * caster.dimensions[1] + vect[1] * foward;
+        const stats = getOrbStats(caster.mpl)
+        const x = origin[0] + .5 * caster.dimensions[0] + vect[0] * stats.size * .5;
+        const y = origin[1] + .5 * caster.dimensions[1] + vect[1] * stats.size * .5;
+
         
-        grid.InsertClient(new MagicProjectile([x, y], .5, vect, 15, {
-            dmg: 1,
+        grid.InsertClient(new MagicProjectile([x, y], stats.size, vect, 15, {
+            dmg: stats.dmg,
             color: 'black',
-            owner: caster.id
+            owner: caster.id,
+            mpl: caster.mpl
         }));
+    }
+}
+
+function getFiredObjectPosition(caster, radius, vector) {
+    const origin = caster.GetCenter();
+    // use left and top edges of box to check which 'section' the object will be in
+    const intersect_x = Vector.intersection(origin, vector, caster.position, [1, 0]),
+        intersect_y = Vector.intersection(origin, vector, caster.position, [0, 1]);
+
+    // in corner, should be quite rare though
+    // intersect_x code should give a good enough approximation
+    // of the position if it were in the corner
+    // if(intersect_x && intersect_y) {
+
+    //     return;
+    // }
+    
+    if(intersect_x) {
+
+        return;
+    }
+
+    if(intersect_y) {
+
+        return;
+    }
+}
+
+function getOrbStats(mpl) {
+    return {
+        dmg: Math.round((mpl + 2)**(1.8) * .5),
+        size: Math.round(( (2 ** (mpl - 1)) / Math.PI) ** (1/3) * 50) / 100
     }
 }
 
@@ -124,6 +159,17 @@ export const skills = {
         // Limited by shield cast time as a shield has to be created before it can be shot 
     },
 
+    volley_shot: {
+        name: 'Volley Shot',
+        desc: 'An effective sphere of compressed energy that is charged for a period of time, increasingly becoming larger then quickly firing out an inaccurate barrage of usual shots that slowly shrink over time.',
+
+        id: 'volley_shot',
+        mana: 25,
+        cd: 0, 
+        cost: 20,
+        mpl: 5
+    }
+
 }
 
 export const mpl_colors = [
@@ -166,15 +212,15 @@ function curveShotArc(a, b, angle) {
 
 export const keydown = (function() {
     function singleShot({ grid, caster, vector, foward = 1 } = {}) {
-        multiShot(grid, caster, vector, foward, [0]);
+        multiShot(grid, caster, vector, [0]);
     }
 
     function doubleShot({ grid, caster, vector, foward = 1 } = {}) {
-        multiShot(grid, caster, vector, foward, [5, -5]);
+        multiShot(grid, caster, vector, [5, -5]);
     }
 
     function tripleShot({ grid, caster, vector, foward = 1 } = {}) {
-        multiShot(grid, caster, vector, foward, [8, 0, -8])
+        multiShot(grid, caster, vector, [8, 0, -8])
     }
 
     function shield({ grid, caster } = {}) {
@@ -222,7 +268,7 @@ export const keydown = (function() {
             name: 'superSpeed',
             duration: time,
             noMove: true,
-            callback: (_, t) => {
+            callback: (t) => {
                 const ts = t * 0.001;
                 if(caster.mana < 1) {
                     caster.modifier = {};
@@ -253,14 +299,32 @@ export const keydown = (function() {
     }
 
     function volleyShot({ ctx, scale, offset, caster, vector, tile } = {}) {
-        
+        // caster.AddTag('NoMovement');
+
+        // first a orb will have to be built then charged to the size of a orb 2 MPLs higher then normal shots
+        // then when the charge is complete the orb will shrink and shoot out the orbs
+        const chargeOrb = new MagicProjectile()
+        caster.modifier = {
+            name: 'volleyShot',
+            duration: 1500,
+            noMove: true,
+            callback: (t) => {
+                // the orb was destroyed preventing the cast from being completed
+                if(!chargeOrb.position) {
+                    caster.modifier = null;
+                    return;
+                } 
+
+
+            }
+        }
     }
 
     function recursiveShot({ ctx, scale, offset, caster, vector, tile } = {}) {
         
     }
 
-    return {singleShot, doubleShot, tripleShot, shield, shieldShot, superSpeed, recursiveShot}
+    return {singleShot, doubleShot, tripleShot, shield, shieldShot, superSpeed, recursiveShot, volleyShot}
 }());
 
 export const tick = (function() {
@@ -339,7 +403,7 @@ export const click = (function() {
 
         const arc = curveShotArc(center, tile, skills.curve_shot.curve);
 
-        let size = .5;
+        let {size, dmg} = getOrbStats(caster.mpl);
 
         const circumference = 2 * Math.PI * arc.radius;
         // initial angle of player relative to center of arc
@@ -350,9 +414,10 @@ export const click = (function() {
         angle += direction * (size / circumference * 360);
         const pos = Vector.add(arc.center, Vector.create(angle, arc.radius));
         grid.InsertClient(new MagicProjectile(pos, size, vector, speed, {
-            dmg: 2,
+            dmg: dmg,
             color: 'black',
             owner: caster.id,
+            mpl: caster.mpl,
             curve: {
                 center: Vector.sub(arc.center, [.5 * size, .5 * size]),
                 radius: arc.radius,
@@ -369,7 +434,7 @@ export const click = (function() {
         caster.mana -= skills.double_curve_shot.mana;
         const center = caster.GetCenter();
         const speed = 15;
-        let size = .5;
+        let {size, dmg} = getOrbStats(caster.mpl);
 
         const points = [
             [center, tile],
@@ -388,9 +453,10 @@ export const click = (function() {
             angle += direction * (size / circumference * 360);
             const pos = Vector.add(arc.center, Vector.create(angle, arc.radius));
             grid.InsertClient(new MagicProjectile(pos, size, vector, speed, {
-                dmg: 2,
+                dmg: dmg,
                 color: 'black',
                 owner: caster.id,
+                mpl: caster.mpl,
                 curve: {
                     center: Vector.sub(arc.center, [.5 * size, .5 * size]),
                     radius: arc.radius,

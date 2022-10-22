@@ -1,4 +1,4 @@
-import { ElementCreator } from '../libs/element_creator.js'
+import { ElementCreator } from '../classes/element_creator.js'
 // text interaction
 
 /**

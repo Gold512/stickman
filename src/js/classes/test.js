@@ -1,1 +1,0 @@
-areaOfOrb = mpl => Math.sqrt(mpl**2/Math.PI)*.5;

@@ -1,9 +1,9 @@
-import {math} from './math.js';
+import {math} from './module/math.js';
 import {Client} from './spacial_hash.js';
 import { saveToStorage } from './save.js';
 import { newInteractive } from './ui/interaction.js';
 import { AI } from './classes/AI.js';
-import { Vector } from './vector.js';
+import { Vector } from './module/vector.js';
 
 export class PlayerClient extends Client {
     constructor(position, dimensions, bars) {
@@ -23,7 +23,8 @@ export class PlayerClient extends Client {
             xp: 0,
             maxXp: 10,
             level: 1,
-            magic_affinity: 0
+            magicAffinity: 0,
+            mpl: 1
         }
 
         this._regen = {health: 0, mana: 0};
@@ -64,7 +65,7 @@ export class PlayerClient extends Client {
 
         this.modifier.duration -= t;
         if(this.modifier.duration <= 0) this.modifier = {};
-        if(this.modifier.callback) this.modifier.callback(this, t);
+        if(this.modifier.callback) this.modifier.callback.bind(this)(t);
     }
 
     Move(keys, distance) {
@@ -111,6 +112,7 @@ export class PlayerClient extends Client {
         this.mana = this.stats.mana;
         this.xp = this.stats.xp;
         this.level = this.stats.level;
+        this.magicAffinity = this.stats.magicAffinity;
     }
 
     _LevelUp(v) {
@@ -209,18 +211,41 @@ export class PlayerClient extends Client {
     get healthRegen() { return this.stats.healthRegen; }
 
     set magicAffinity(v) { 
-        this.bars.magic_affinity.style.setProperty('--current', v);
-        this.stats.magic_affinity = v;
+        this.bars.magicAffinity.style.setProperty('--current', v);
+        this.stats.magicAffinity = v;
+
+        let affinity = mpl => (100-34) + Math.round((mpl + 2)**3.2)
+        let requiredAffinity = affinity(this.mpl);
+
+        while(v >= requiredAffinity) {
+            v -= requiredAffinity;
+            this.stats.mpl++;
+            if(v >= requiredAffinity) requiredAffinity = affinity(this.mpl);
+        }
+
+        this.bars.magicAffinity.style.setProperty('--current', v);
+        this.bars.magicAffinity.style.setProperty('--max', affinity(this.mpl));
+        this.stats.magicAffinity = v;
+        this.mpl = this.stats.mpl; // update mpl UI elements
     }
-    get magicAffinity() { return this.stats.magic_affinity; }
+
+    get magicAffinity() { return this.stats.magicAffinity; }
+
+    set mpl(v) {
+        this.bars.magicAffinity.style.setProperty('--mpl', v);
+        this.stats.mpl = v;
+    }
+
+    get mpl() { return this.stats.mpl; }
 }
 
 export class Enemy extends Client {
     constructor(position, dimensions, {
         maxHealth = 5,
         maxMana = 25,
-        healthRegen = .5,
-        manaRegen = 2
+        healthRegen = .2,
+        manaRegen = 2,
+        ai
     }={}) {
         super(position, dimensions);
         this.speed = 3;
@@ -241,7 +266,7 @@ export class Enemy extends Client {
             get mana() { return this.owner.mana; }
         }
 
-        this.AI = new AI(this, {
+        this.AI = ai || new AI(this, {
             wander: true,
             stayWithin: true,
             dodge: 'low'
@@ -622,7 +647,7 @@ export class MagicProjectile extends Client {
 
             // If it collides with another bullet make both explode with larger radius
             if(o instanceof MagicProjectile) {
-                if(this.owner && this.owner == o.owner) {
+                if(this.owner && !this.curve && this.owner == o.owner) {
                     remove = false;
                     continue;
                 }
@@ -818,11 +843,39 @@ export class RectSolid extends Client {
     }
 
     Collision(ev) {
+        const center = this.GetCenter();
         for(let i = 0; i < ev.objects.length; i++) {
             const o = ev.objects[i];
-            if(!o.solid) return;
+            if(!o.collision.solid) continue;
 
+            // move object that collided away so it will no longer
+            // overlap the solid 
 
+            const obj_c = o.GetCenter();
+
+            // right side
+            if(obj_c[0] > center[0]) {
+                o.position[0] = this.position[0] + this.dimensions[0];
+                continue;
+            }
+            
+            // left side
+            if(obj_c[0] < center[0]) {
+                o.position[0] = this.position[0] - o.dimensions[0];
+                continue;
+            }
+
+            // top
+            if(obj_c[1] < center[1]) {
+                o.position[1] = this.position[1] - o.dimensions[1];
+                continue;
+            }
+
+            // bottom
+            if(obj_c[1] > center[1]) {
+                o.position[1] = this.position[1] + this.dimensions[1];
+                continue;
+            }
         }
     }
 }

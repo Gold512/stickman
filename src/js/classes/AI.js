@@ -1,7 +1,7 @@
 import { MagicProjectile } from "../objects.js";
-import { math } from "../math.js";
-import { Vector } from "../vector.js";
-import { collision } from '../collision.js';
+import { math } from "../module/math.js";
+import { Vector } from "../module/vector.js";
+import { collision } from '../module/collision.js';
 
 // Create a AI to allow an entity to react to its surroundings
 export class AI { 

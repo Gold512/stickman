@@ -1,5 +1,5 @@
-import * as clients from '../objects.js'
-import { ElementCreator } from './element_creator.js';
+import * as clients from '../spacial_hash/objects.js'
+import { ElementCreator } from '../classes/element_creator.js';
 
 function parsePos(s) {
     const pos = s.split(',');

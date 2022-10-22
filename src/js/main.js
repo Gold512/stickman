@@ -1,20 +1,20 @@
 import {SpatialHash} from './spacial_hash.js';
 import {PlayerClient, Enemy, MagicProjectile, Spawner} from './objects.js';
-import {collision} from './collision.js'
+import {collision} from './module/collision.js'
 import {initUI, keyRegistry, loadSkillBar} from './ui.js'
 import * as skills from './skill.js'
 import { loadFromStorage } from './save.js';
 import { FPS } from './libs/fps.min.js'
-import { ElementCreator } from './libs/element_creator.js'
-import { Vector } from './vector.js';
-import { math } from './math.js';
+import { ElementCreator } from './classes/element_creator.js'
+import { Vector } from './module/vector.js';
+import { math } from './module/math.js';
 const grid = new SpatialHash([-30, -30], [60, 60]);
 
 const player = grid.InsertClient(new PlayerClient([0, 0], [.5, .5], {
     health: document.getElementById('health-bar'),
     mana: document.getElementById('mana-bar'),
     xp: document.getElementById('xp-bar'),
-    magic_affinity: document.getElementById('magic-affinity-bar'),
+    magicAffinity: document.getElementById('magic-affinity-bar'),
     level: document.getElementById('level')
 }));
 loadFromStorage(player);

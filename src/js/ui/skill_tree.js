@@ -1,10 +1,10 @@
-import {newSVG} from '../svg.js'
+import {newSVG} from '../module/svg.js'
 import {skills, mpl_colors} from '../skill.js'
-import {ElementCreator} from '../libs/element_creator.js'
-import { CreateAnimation } from '../libs/animation.js'
+import {ElementCreator} from '../classes/element_creator.js'
+import { CreateAnimation } from '../module/animation.js'
 import { saveToStorage } from '../save.js'
 import { updateSkills } from '../ui.js'
-import { math } from '../math.js'
+import { math } from '../module/math.js'
 
 const SKILL_TREE = [
     'arcane',
