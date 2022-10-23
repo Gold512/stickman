@@ -285,7 +285,7 @@ document.addEventListener("wheel", ev => {
 
             ticking = false;
         });
-  
+
         ticking = true;
     }
 });
@@ -360,7 +360,9 @@ const fps = new FPS({side: 'top-right'});
         }
 
         if(o.collision.type == 'active') {
-            const nearBy = grid.FindNear(o.position, [1, 1]);
+            let searchSize = Math.ceil(o.dimensions[0]/2)
+            const nearBy = grid.FindNear(o.GetCenter(), [searchSize, searchSize]);
+            
             let collisions = [];
             let limit = o.collision.limit || Infinity; 
             // limit is the number of collisions to detect for an object
@@ -378,10 +380,10 @@ const fps = new FPS({side: 'top-right'});
                         isCollided = collision.Circles(o.position[0] + r1, o.position[1] + r1, o.dimensions[0]/2, e.position[0] + r2, e.position[1] + r2, e.dimensions[0]/2);
                         break;
                     case 'rectangle+circle':
-                        isCollided = collision.RectAndCircle(o.position[0], o.position[1], o.dimensions[0], o.dimensions[1], e.position[0] + r2, e.position[1] + r2, e.dimensions[0]/2);
+                        isCollided = collision.RectAndCircle(o.position[0], o.position[1], o.dimensions[0], o.dimensions[1], e.position[0] + r2, e.position[1] + r2, r2);
                         break;
                     case 'circle+rectangle':
-                        isCollided = collision.RectAndCircle(e.position[0], e.position[1], e.dimensions[0], e.dimensions[1], o.position[0] + r1, o.position[1] + r1, o.dimensions[0]/2);
+                        isCollided = collision.RectAndCircle(e.position[0], e.position[1], e.dimensions[0], e.dimensions[1], o.position[0] + r1, o.position[1] + r1, r1);
                         break;
                     case 'rectangle+rectangle':
                         isCollided = collision.Rects(o.position[0], o.position[1], o.dimensions[0], o.dimensions[1], e.position[0], e.position[1], e.dimensions[0], e.dimensions[1]);
