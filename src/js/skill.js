@@ -7,8 +7,8 @@ function multiShot(grid, caster, vector, deg) {
         const vect = deg[i] != 0 ? Vector.rotate(vector, deg[i]) : vector;
 
         const stats = getOrbStats(caster.mpl)
-        const x = origin[0] + .5 * caster.dimensions[0] + vect[0] * stats.size * .5;
-        const y = origin[1] + .5 * caster.dimensions[1] + vect[1] * stats.size * .5;
+        const x = origin[0] + vect[0] * (stats.size * .5 + caster.dimensions[0] * .5);
+        const y = origin[1] + vect[1] * (stats.size * .5 + caster.dimensions[0] * .5);
 
         
         grid.InsertClient(new MagicProjectile([x, y], stats.size, vect, 15, {
@@ -48,7 +48,7 @@ function getFiredObjectPosition(caster, radius, vector) {
 function getOrbStats(mpl) {
     return {
         dmg: Math.round((mpl + 2)**(1.8) * .5),
-        size: Math.round(( (2 ** (mpl - 1)) / Math.PI) ** (1/3) * 50) / 100
+        size: Math.round(( (2 ** (mpl - 1)) / Math.PI) ** (1/2.3) * 50) / 100
     }
 }
 
@@ -298,15 +298,24 @@ export const keydown = (function() {
         }
     }
 
-    function volleyShot({ ctx, scale, offset, caster, vector, tile } = {}) {
-        // caster.AddTag('NoMovement');
+    function volleyShot({ ctx, scale, offset, caster, vector, tile, grid } = {}) {
+        if(caster.modifier) return false;
+
+        const stats = getOrbStats(caster.mpl + 2);
+        const center = Vector.add(caster.GetCenter(), Vector.multiply(vector, stats.size * .5 + caster.dimensions[0] * .75));
 
         // first a orb will have to be built then charged to the size of a orb 2 MPLs higher then normal shots
         // then when the charge is complete the orb will shrink and shoot out the orbs
-        const chargeOrb = new MagicProjectile()
+        const chargeOrb = grid.InsertClient(new MagicProjectile(center, 0, [0, 0], 0, {
+            dmg: 0,
+            color: 'black',
+            owner: caster.id
+        }));
+
+        const totalDuration = 800;
         caster.modifier = {
-            name: 'volleyShot',
-            duration: 1500,
+            name: 'volleyShot:charge',
+            duration: totalDuration,
             noMove: true,
             callback: (t) => {
                 // the orb was destroyed preventing the cast from being completed
@@ -315,7 +324,54 @@ export const keydown = (function() {
                     return;
                 } 
 
+                const completion = (totalDuration - caster.modifier.duration) / totalDuration;
+                let r = math.lerp(completion, 0, stats.size)
+                
+                chargeOrb.position = Vector.sub(center, [.5 * r,.5 * r])
+                chargeOrb.dimensions = [r, r];
+            },
+            onComplete: () => {
+                let duration = 0;
+                const totalDuration = 400;
+                const inaccuracy = 20;
 
+                caster.modifier = {
+                    name: 'volleyShot:fire',
+                    duration: totalDuration,
+                    noMove: true,
+                    callback: (t) => {
+                        // the orb was destroyed preventing the cast from being completed
+                        if(!chargeOrb.position) {
+                            caster.modifier = null;
+                            return;
+                        } 
+
+                        const completion = caster.modifier.duration / totalDuration;
+                        let r = math.lerp(completion, 0, stats.size);
+                        duration += t;
+                        if(duration > (totalDuration / 10)) {
+                            duration = 0;
+
+                            const deg = math.rand_int(-inaccuracy, inaccuracy);
+                            
+
+                            // shoot projectile inaccuratly
+                            const vect = deg != 0 ? Vector.rotate(vector, deg) : vector;
+
+                            const stats = getOrbStats(caster.mpl)
+                            grid.InsertClient(new MagicProjectile(center, stats.size, vect, 15, {
+                                dmg: stats.dmg,
+                                color: 'black',
+                                owner: caster.id,
+                                mpl: caster.mpl
+                            }));
+                        }
+
+                        chargeOrb.position = Vector.sub(center, [.5 * r,.5 * r])
+                        chargeOrb.dimensions = [r, r];
+                    },
+                    onComplete: () => { if(chargeOrb.position) grid.Remove(chargeOrb) }
+                }
             }
         }
     }

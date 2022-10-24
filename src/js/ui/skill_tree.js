@@ -12,7 +12,8 @@ const SKILL_TREE = [
     ['curve_shot', 'double_curve_shot'],
     ['laser', 'curved_laser'],
     ['shield', 'shield_shot', 'expand_shield'],
-    ['levitation', 'flight', 'super_speed', 'hyperspeed']
+    ['levitation', 'flight', 'super_speed', 'hyperspeed'],
+    ['volley_shot']
 ]
 
 const menu_container = document.getElementById('menu')

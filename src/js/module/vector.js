@@ -56,7 +56,7 @@ export const Vector = {
     /**
      * Multiply axes of the first vector by x
      * @param {VectorArray} vec1 - first vector 
-     * @param {VectorArray} x - multiplier
+     * @param {Number|VectorArray} x - multiplier
      * @returns {VectorArray}
      */
     multiply(vec, x) {

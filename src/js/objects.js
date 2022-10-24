@@ -29,7 +29,7 @@ export class PlayerClient extends Client {
 
         this._regen = {health: 0, mana: 0};
 
-        this.modifier = {};
+        this.modifier = null;
 
         // autosave every 30s
         setInterval(() => {
@@ -63,13 +63,17 @@ export class PlayerClient extends Client {
             }
         }
 
+        if(!this.modifier) return;
         this.modifier.duration -= t;
-        if(this.modifier.duration <= 0) this.modifier = {};
-        if(this.modifier.callback) this.modifier.callback.bind(this)(t);
+        if(this.modifier.duration <= 0) {
+            let onComplete = this.modifier.onComplete;
+            this.modifier = null;
+            if(onComplete) onComplete.bind(this)();
+        } else if(this.modifier.callback) this.modifier.callback.bind(this)(t);
     }
 
     Move(keys, distance) {
-        if(this.modifier.noMove) return;
+        if(this.modifier && this.modifier.noMove) return;
         if( (keys.up || keys.down) && (keys.left || keys.right) ) distance *= Math.SQRT1_2;
 
         if( !(keys.up && keys.down) && (keys.up || keys.down) ) {
