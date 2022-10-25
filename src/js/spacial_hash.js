@@ -35,6 +35,8 @@ export class SpatialHash {
    */
   NewClient(position, dimensions) {
     const client = new Client(position, dimensions);
+    client.grid = this;
+    client.inGrid = true;
     this._idTable[client.id] = client;
 
     this._Insert(client);
@@ -49,6 +51,8 @@ export class SpatialHash {
    */
   InsertClient(client) {
     this._Insert(client);
+    client.inGrid = true;
+    client.grid = this;
 
     if(typeof client.Step == 'function') {
       const step_entry_id = String(this._step_id_counter);
@@ -71,6 +75,7 @@ export class SpatialHash {
   Remove(client) {
     if(client.OnRemove) client.OnRemove();
     this._Remove(client);
+    client.inGrid = false;
     if(client._step_entry_id) delete this._step[client._step_entry_id];
     delete this._idTable[client.id];
   }
@@ -313,7 +318,6 @@ export class SpatialHash {
     client._cells.min = null;
     client._cells.max = null;
     client._cells.nodes = null;
-    client.grid = null;
   }
 
   /**
@@ -379,7 +383,6 @@ export class SpatialHash {
     client._cells.min = i1;
     client._cells.max = i2;
     client._cells.nodes = nodes;
-    client.grid = this;
   }
 }
 
@@ -428,6 +431,7 @@ export class Client {
     }
     this.__queryId = -1;
     this.id = Date.now().toString(36) + Math.floor(1e12 + Math.random() * 9e12).toString(36);
+    this.inGrid = false;
   }
 
   /**

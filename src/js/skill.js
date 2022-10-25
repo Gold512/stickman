@@ -319,7 +319,7 @@ export const keydown = (function() {
             noMove: true,
             callback: (t) => {
                 // the orb was destroyed preventing the cast from being completed
-                if(!chargeOrb.grid) {
+                if(!chargeOrb.inGrid) {
                     caster.modifier = null;
                     return;
                 } 
@@ -341,7 +341,7 @@ export const keydown = (function() {
                     noMove: true,
                     callback: (t) => {
                         // the orb was destroyed preventing the cast from being completed
-                        if(!chargeOrb.grid) {
+                        if(!chargeOrb.inGrid) {
                             caster.modifier = null;
                             return;
                         } 
@@ -370,7 +370,7 @@ export const keydown = (function() {
                         chargeOrb.position = Vector.sub(center, [.5 * r,.5 * r])
                         chargeOrb.dimensions = [r, r];
                     },
-                    onComplete: () => { if(chargeOrb.grid) grid.Remove(chargeOrb) }
+                    onComplete: () => { if(chargeOrb.inGrid) grid.Remove(chargeOrb) }
                 }
             }
         }
