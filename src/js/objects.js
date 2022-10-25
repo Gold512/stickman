@@ -221,7 +221,7 @@ export class PlayerClient extends Client {
         this.bars.magicAffinity.style.setProperty('--current', v);
         this.stats.magicAffinity = v;
 
-        let affinity = mpl => (100-34) + Math.round((mpl + 2)**3.2)
+        let affinity = mpl => (100-34) + Math.round((mpl + 2)**3.8)
         let requiredAffinity = affinity(this.mpl);
 
         while(v >= requiredAffinity) {
@@ -401,15 +401,13 @@ export class Spawner extends Client {
             onClose() {
                 ev.onClose();
             }, 
-            // options: [
-            //     {
-            //         close: true,
-            //         text: 'Beginner',
-            //         callback() {
-
-            //         }
-            //     }
-            // ]
+            options: [
+                {
+                    close: true,
+                    text: 'Force spawn',
+                    callback: () => this.Spawn()
+                }
+            ]
         })
     }
 
