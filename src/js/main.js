@@ -303,7 +303,7 @@ const fps = new FPS({side: 'top-right'});
     }
 
     // player movement 
-    if(!player.HasTag('NoMovement')) player.Move(keyState, .15);
+    if(!player.HasTag('NoMovement')) player.Move(keyState, 7, elapsedTime);
     grid.UpdateClient(player);
 
     // camera movement 
@@ -362,7 +362,7 @@ const fps = new FPS({side: 'top-right'});
         if(o.collision.type == 'active') {
             let searchSize = Math.ceil(o.dimensions[0]/2)
             const nearBy = grid.FindNear(o.GetCenter(), [searchSize, searchSize]);
-            
+
             let collisions = [];
             let limit = o.collision.limit || Infinity; 
             // limit is the number of collisions to detect for an object

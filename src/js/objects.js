@@ -72,24 +72,27 @@ export class PlayerClient extends Client {
         } else if(this.modifier.callback) this.modifier.callback.bind(this)(t);
     }
 
-    Move(keys, distance) {
+    Move(keys, distance, t) {
+        // time in seconds
+        const ts = t * 0.001;
+        
         if(this.modifier && this.modifier.noMove) return;
         if( (keys.up || keys.down) && (keys.left || keys.right) ) distance *= Math.SQRT1_2;
 
         if( !(keys.up && keys.down) && (keys.up || keys.down) ) {
             if(keys.down) {
-                this.position[1] += distance;
+                this.position[1] += distance * ts;
             } else  {
-                this.position[1] -= distance;
+                this.position[1] -= distance * ts;
             }
         }
         
         if( !(keys.left && keys.right) && (keys.left || keys.right) ) {
             if(keys.right) {
-                this.position[0] += distance;
+                this.position[0] += distance * ts;
                 this.facing = 'right';
             } else  {
-                this.position[0] -= distance;
+                this.position[0] -= distance * ts;
                 this.facing = 'left';
             }
         }
@@ -483,7 +486,8 @@ export class MagicProjectile extends Client {
         color = 'black',
         anchor = 'center',
         owner = null,
-        curve = null
+        curve = null,
+        conditionals
     } = {}) {
         position = anchorPosition(anchor, position, size);
 
@@ -512,6 +516,10 @@ export class MagicProjectile extends Client {
                 angleChange: curve.direction * (this.speed / circumference) * 360,
                 distanceTraveled: curve.distance
             };
+        };
+
+        if(conditionals) {
+            this.conditionals = this.conditionals;
         }
     }
 

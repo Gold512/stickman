@@ -48,7 +48,7 @@ function getFiredObjectPosition(caster, radius, vector) {
 function getOrbStats(mpl) {
     return {
         dmg: Math.round((mpl + 2)**(1.8) * .5),
-        size: Math.round(( (2 ** (mpl - 1)) / Math.PI) ** (1/2.3) * 50) / 100
+        size: Math.round(( (2 ** (mpl - 1)) / Math.PI) ** (1/2.75) * 50) / 100
     }
 }
 
@@ -301,7 +301,7 @@ export const keydown = (function() {
     function volleyShot({ ctx, scale, offset, caster, vector, tile, grid } = {}) {
         if(caster.modifier) return false;
 
-        const stats = getOrbStats(caster.mpl + 2);
+        const stats = getOrbStats(caster.mpl + 3);
         const center = Vector.add(caster.GetCenter(), Vector.multiply(vector, stats.size * .5 + caster.dimensions[0] * .75));
 
         // first a orb will have to be built then charged to the size of a orb 2 MPLs higher then normal shots
@@ -319,7 +319,7 @@ export const keydown = (function() {
             noMove: true,
             callback: (t) => {
                 // the orb was destroyed preventing the cast from being completed
-                if(!chargeOrb.position) {
+                if(!chargeOrb.grid) {
                     caster.modifier = null;
                     return;
                 } 
@@ -341,7 +341,7 @@ export const keydown = (function() {
                     noMove: true,
                     callback: (t) => {
                         // the orb was destroyed preventing the cast from being completed
-                        if(!chargeOrb.position) {
+                        if(!chargeOrb.grid) {
                             caster.modifier = null;
                             return;
                         } 
@@ -370,13 +370,13 @@ export const keydown = (function() {
                         chargeOrb.position = Vector.sub(center, [.5 * r,.5 * r])
                         chargeOrb.dimensions = [r, r];
                     },
-                    onComplete: () => { if(chargeOrb.position) grid.Remove(chargeOrb) }
+                    onComplete: () => { if(chargeOrb.grid) grid.Remove(chargeOrb) }
                 }
             }
         }
     }
 
-    function recursiveShot({ ctx, scale, offset, caster, vector, tile } = {}) {
+    function recursiveShot({ ctx, scale, offset, caster, vector, tile, grid } = {}) {
         
     }
 

@@ -209,10 +209,33 @@ export class AI {
     attack() {
         // view distance 
         let viewDistance = 6;
-        this.client.grid.ClientSelector({
-            origin: this.client.GetCenter(),
-            bounds: [viewDistance, viewDistance],
+        let targetDistance = 8;
 
-        })
+        const client = this.client;
+        
+        const target = client.grid.GetClientById(this.target);
+        if(target) {
+            if(((target.position[0] - client.position[0]) ** 2 + (target.position[1] - client.position[1]) ** 2) > targetDistance ** 2) this.target = null;
+        }
+
+        if(!this.target) {
+            this.target = client.grid.ClientSelector({
+                origin: this.client.GetCenter(),
+                bounds: [viewDistance, viewDistance],
+                sort: 'nearest',
+                limit: 1
+            })[0];
+        }
+
+        // check if target exists since selectors can return null
+        if(this.target) {
+            const selectedSkill = math.weighted_random([
+                {weight: 50, item: 'single_shot'},
+                {weight: 30, item: 'double_shot'},
+                {weight: 10, item: 'triple_shot'},
+            ]);
+
+            
+        }
     }
 }

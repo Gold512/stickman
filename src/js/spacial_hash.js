@@ -313,6 +313,7 @@ export class SpatialHash {
     client._cells.min = null;
     client._cells.max = null;
     client._cells.nodes = null;
+    client.grid = null;
   }
 
   /**
