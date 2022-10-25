@@ -158,13 +158,23 @@ export class ElementCreator {
     }
 
     /**
+     * Conditionally append the child element
+     * @param {Boolean|Function} bool - a boolean or a function that returns a boolean 
+     */
+    condition(bool) {
+        if(typeof bool == 'function') bool = bool();
+        if(!bool) this.cancelled = true;
+        return this;
+    }
+
+    /**
      * Ends the chain, appending this element to its designated parent, as well as moving the 
      * function chained object to the parent object
      * @returns {ElementCreator} parent element creator
      */
     get end() {
         if(!this.parent) throw new Error("can only end child element declaration, use appendTo instead");
-        this.parent.element.appendChild(this.element);
+        if(!this.cancelled) this.parent.element.appendChild(this.element);
         this.top.unappended--;
         return this.parent;
     }

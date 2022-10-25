@@ -16,6 +16,14 @@ const SKILL_TREE = [
     ['volley_shot']
 ]
 
+const descriptions = {
+    arcane: {
+        name: 'Arcane',
+        desc: 'Basic magic consisting of mainly channelling magic to form shapes like orbs, beams or arcs as well as propulsion',
+        notUnlockable: true
+    }
+}
+
 const menu_container = document.getElementById('menu')
 
 function createStatMenu() {
@@ -206,16 +214,17 @@ function skillTreeRender(cont, canvas, options) {
 
     for(let i = 0, k = Object.keys(tree); i < k.length; i++) {
         const e = tree[k[i]], id = k[i];
-        const locked = !player.skills.has(id);
+        const sk = skills[id] || descriptions[id];
+        const locked = (sk && sk.notUnlockable) ? false : !player.skills.has(id);
         const unlockable = (() => {
-            console.log(e)
+            // console.log(e)
             for(let i = 0; i < e.require.length; i++) {
                 if(tree[e.require[i]].unlocked == false) return false;
             }
 
             return true;
         })();
-        console.log(unlockable)
+        // console.log(unlockable)
 
         // create skill container
         const skill = document.createElement('div');
@@ -243,7 +252,6 @@ function skillTreeRender(cont, canvas, options) {
                 .end
             .appendTo(skill);
         
-        const sk = skills[id];
 
         if(sk != undefined) {
 
@@ -273,6 +281,7 @@ function skillTreeRender(cont, canvas, options) {
 
                 // mana bar to show amount of total mana used by this skill
                 .newChild('div')
+                    .condition(typeof sk.mana == 'number')
                     .class(['bar', 'no-total', 'reverse'])
                     .styleVariables({
                         max: player.maxMana,
