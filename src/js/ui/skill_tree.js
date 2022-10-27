@@ -13,7 +13,7 @@ const SKILL_TREE = [
     ['laser', 'curved_laser'],
     ['shield', 'shield_shot', 'expand_shield'],
     ['levitation', 'flight', 'super_speed', 'hyperspeed'],
-    ['volley_shot']
+    ['volley_shot', 'recursive_shot']
 ]
 
 const descriptions = {

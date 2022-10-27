@@ -1,17 +1,17 @@
-import { MagicProjectile, Shield } from "./objects.js";
+import { MagicProjectile, RecursiveMagicProjectile, Shield } from "./objects.js";
 import { Vector } from "./module/vector.js";
 import { math } from "./module/math.js";
+import { speed, getOrbStats } from "./module/calc.js";
 function multiShot(grid, caster, vector, deg) {
     const origin = caster.GetCenter();
     for(let i = 0; i < deg.length; i++) {
         const vect = deg[i] != 0 ? Vector.rotate(vector, deg[i]) : vector;
 
         const stats = getOrbStats(caster.mpl)
-        const x = origin[0] + vect[0] * (stats.size * .5 + caster.dimensions[0] * .5);
-        const y = origin[1] + vect[1] * (stats.size * .5 + caster.dimensions[0] * .5);
-
+        const x = origin[0] + vect[0] * (stats.size * .5 + Math.SQRT2 * caster.dimensions[0] * .5);
+        const y = origin[1] + vect[1] * (stats.size * .5 + Math.SQRT2 * caster.dimensions[0] * .5);
         
-        grid.InsertClient(new MagicProjectile([x, y], stats.size, vect, 15, {
+        grid.InsertClient(new MagicProjectile([x, y], stats.size, vect, speed.projectile, {
             dmg: stats.dmg,
             color: 'black',
             owner: caster.id,
@@ -42,13 +42,6 @@ function getFiredObjectPosition(caster, radius, vector) {
     if(intersect_y) {
 
         return;
-    }
-}
-
-function getOrbStats(mpl) {
-    return {
-        dmg: Math.round((mpl + 2)**(1.8) * .5),
-        size: Math.round(( (2 ** (mpl - 1)) / Math.PI) ** (1/2.75) * 50) / 100
     }
 }
 
@@ -165,15 +158,26 @@ export const skills = {
 
         id: 'volley_shot',
         mana: 25,
-        cd: 0, 
+        cd: .1, 
         cost: 20,
+        mpl: 5
+    },
+
+    recursive_shot: {
+        name: 'Recursive Shot',
+
+        id: 'recursive_shot',
+        mana: 12,
+        cd: .75,
+        cost: 10,
         mpl: 5
     }
 
 }
 
 export const mpl_colors = [
-    'pink',
+    'black',
+    'magenta',
     'lime',
     'yellow',
     'red',
@@ -309,7 +313,8 @@ export const keydown = (function() {
         const chargeOrb = grid.InsertClient(new MagicProjectile(center, 0, [0, 0], 0, {
             dmg: 0,
             color: 'black',
-            owner: caster.id
+            owner: caster.id,
+            mpl: caster.mpl
         }));
 
         const totalDuration = 800;
@@ -377,7 +382,17 @@ export const keydown = (function() {
     }
 
     function recursiveShot({ ctx, scale, offset, caster, vector, tile, grid } = {}) {
-        
+        const origin = caster.GetCenter();
+        const stats = getOrbStats(caster.mpl)
+        const pos = Vector.add(origin, Vector.multiply(vector, stats.size * .5 + Math.SQRT2 * caster.dimensions[0] * .5));
+        grid.InsertClient(new RecursiveMagicProjectile(pos, stats.size, vector, speed.projectile, {
+            dmg: stats.dmg,
+            owner: caster.id,
+            mpl: caster.mpl,
+            color: 'black',
+            splitAt: tile
+        }));
+        return true;
     }
 
     return {singleShot, doubleShot, tripleShot, shield, shieldShot, superSpeed, recursiveShot, volleyShot}

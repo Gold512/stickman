@@ -4,6 +4,7 @@ import { saveToStorage } from './save.js';
 import { newInteractive } from './ui/interaction.js';
 import { AI } from './classes/AI.js';
 import { Vector } from './module/vector.js';
+import { getOrbStats, speed } from './module/calc.js';
 
 export class PlayerClient extends Client {
     constructor(position, dimensions, bars) {
@@ -485,7 +486,7 @@ export class MagicProjectile extends Client {
         anchor = 'center',
         owner = null,
         curve = null,
-        conditionals
+        mpl = null
     } = {}) {
         position = anchorPosition(anchor, position, size);
 
@@ -516,9 +517,8 @@ export class MagicProjectile extends Client {
             };
         };
 
-        if(conditionals) {
-            this.conditionals = this.conditionals;
-        }
+        if(!mpl) throw new Error('no mpl specified');
+        this.mpl = mpl;
     }
 
     /**
@@ -710,6 +710,81 @@ export class MagicProjectile extends Client {
         if(remove) {
             ev.grid.Remove(this);
             this.grid.InsertClient(new ExplosionParticle(this.GetCenter(), [this.dimensions[0], 2.5 * this.dimensions[0]], 10));
+        }
+    }
+}
+
+export class RecursiveMagicProjectile extends MagicProjectile {
+    constructor(position, size, vel, speed, {
+        dmg = 1,
+        color = 'black',
+        anchor = 'center',
+        owner = null,
+        splitAt,
+        mpl
+    } = {}) {
+        super(position, size, vel, speed, {dmg, color, anchor, owner, mpl});
+        if(!splitAt) throw new Error('no position to split at provided');
+        this.splitAt = splitAt;
+    }
+
+    Step(t) {
+        // move based on velocity
+        const ts = t * 0.001;
+        this.position[0] += this.velocity[0] * this.speed * ts;
+        this.position[1] += this.velocity[1] * this.speed * ts;
+
+        const p1 = this.GetCenter(), p2 = this.splitAt;
+        const v = this.velocity;
+
+        const x_polarity = this._GetPolarity(v[0]), y_polarity = this._GetPolarity(v[1]);
+        console.log({x_polarity, y_polarity, p1, p2, v})
+        if(
+            (x_polarity * p2[0] <= x_polarity * p1[0]) &&
+            (y_polarity * p2[1] <= y_polarity * p1[1])
+        ) {
+            this.grid.Remove(this);
+        }
+    }
+
+    /**
+     * gets whether 1 is positive or negative
+     * in short it would be: n / abs(n)
+     * @returns -1 when negative and 1 when positive
+     */
+    _GetPolarity(n) {
+        n *= 10;
+        return (n>>31) - (-n>>31)
+    }
+
+    OnRemove() {
+        this.Recurse();
+    }
+
+    // split in to 8 smaller projectiles
+    Recurse() {
+        const d = Math.SQRT1_2;
+        const velocities = [
+            [1, 0],
+            [d, d],
+            [0, 1],
+            [-d, d],
+            [-1, 0],
+            [-d, -d],
+            [0, -1],
+            [d, -d]
+        ];
+
+        const origin = this.GetCenter();
+        const stats = getOrbStats(this.mpl - 2)
+
+        for(let i = 0; i < velocities.length; i++) {
+            const v = velocities[i];
+            this.grid.InsertClient(new MagicProjectile(origin, stats.size, v, speed.projectile, {
+                dmg: stats.dmg,
+                owner: this.owner,
+                mpl: this.mpl - 2
+            }));
         }
     }
 }
