@@ -258,14 +258,16 @@ export const keydown = (function() {
     function superSpeed({ ctx, scale, offset, caster, vector, tile } = {}) {
         // Cast will fail if remaining duration is less then 20ms or 
         // another modifier is present
-        if((caster.modifier.name == 'superSpeed' && caster.modifier.duration > 20)
-        || (caster.modifier.name && caster.modifier.name != 'superSpeed')) return false;
+        if(caster.modifier && ((caster.modifier.name == 'superSpeed' && caster.modifier.duration > 20)
+        || (caster.modifier.name && caster.modifier.name != 'superSpeed'))) return false;
 
         const speed = 15;
 
+        const center = caster.GetCenter()
+
         // calculate amount of time required to reach clicked point
         let dist = [caster.position[0] - tile[0], caster.position[1] - tile[1]];
-        let time = speed * Math.sqrt(dist[0]**2 + dist[1]**2) * 60;
+        let time = speed * Math.sqrt(dist[0]**2 + dist[1]**2) * 5;
 
         const [x, y] = caster.GetCenter();
         caster.modifier = {

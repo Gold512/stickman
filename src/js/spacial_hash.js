@@ -269,7 +269,7 @@ export class SpatialHash {
       }
 
       // Remove clients above limit
-      if(clients.length > limit) clients.length = limit;
+      if(clients.length > limit) clients.length = limit; // method to slice off elements of constant array
     }
 
     return clients;
@@ -383,6 +383,30 @@ export class SpatialHash {
     client._cells.min = i1;
     client._cells.max = i2;
     client._cells.nodes = nodes;
+  }
+
+  toJSON() {
+    const clients = [];
+    const queryId = this._queryIds++;
+
+    for (let x = 0, xn = this._cells.length; x < xn; ++x) {
+      for (let y = 0, yn = this._cells[x].length; y < yn; ++y) {
+        let head = this._cells[x][y];
+
+        while (head) {
+          const v = head.client;
+          head = head.next;
+
+          if (v._queryId != queryId) {
+            v._queryId = queryId;
+            if(!v.toJSON) throw new Error(`[object ${v.constructor.name}] does not have toJSON method`);
+
+            clients.push(v.toJSON());
+          }
+        }
+      }
+    }
+    return clients;
   }
 }
 

@@ -245,6 +245,27 @@ export class PlayerClient extends Client {
     }
 
     get mpl() { return this.stats.mpl; }
+
+    toJSON() {
+        return {
+            position: this.position,
+            dimensions: this.dimensions,
+
+            maxHealth: this.maxHealth,
+            health: this.health,
+            healthRegen: this.healthRegen,
+
+            maxMana: this.maxMana,
+            mana: this.mana,
+            manaRegen: this.manaRegen,
+
+            mpl: this.mpl,
+            magicAffinity: this.magicAffinity,
+
+            speed: this.speed,
+            velocity: this.velocity
+        }
+    }
 }
 
 export class Enemy extends Client {
@@ -253,6 +274,7 @@ export class Enemy extends Client {
         maxMana = 25,
         healthRegen = .2,
         manaRegen = 2,
+        mpl = 1,
         ai
     }={}) {
         super(position, dimensions);
@@ -267,6 +289,8 @@ export class Enemy extends Client {
         this.mana = maxMana;
         this.manaRegen = manaRegen;
 
+        this.mpl
+
         this._regen = {mana: 0, health: 0}
         this.stats = {
             owner: this,
@@ -274,11 +298,13 @@ export class Enemy extends Client {
             get mana() { return this.owner.mana; }
         }
 
-        this.AI = ai || new AI(this, {
+        this.AIConfig = {
             wander: true,
             stayWithin: true,
             dodge: 'low'
-        })
+        }
+
+        this.AI = ai || new AI(this, this.AIConfig)
     }
 
     ShootAt(pos) {
@@ -368,6 +394,27 @@ export class Enemy extends Client {
         const spawner = this.grid.GetClientById(this.spawner)
         if(spawner) spawner.killed++;
     }
+
+    toJSON() {
+        return {
+            position: this.position,
+            dimensions: this.dimensions,
+
+            maxHealth: this.maxHealth,
+            health: this.health,
+            healthRegen: this.healthRegen,
+
+            maxMana: this.maxMana,
+            mana: this.mana,
+            manaRegen: this.manaRegen,
+
+            mpl: this.mpl,
+            AIConfig: this.AIConfig,
+
+            speed: this.speed,
+            velocity: this.velocity
+        }
+    }
 }
 
 export class Spawner extends Client {
@@ -454,6 +501,15 @@ export class Spawner extends Client {
         ctx.fillStyle = null;
         ctx.strokeStyle = null;
         ctx.lineWidth = null;
+    }
+
+    toJSON() {
+        return {
+            position: this.position,
+            bounds: this.bounds,
+            count: this.count,
+            entity: {}
+        }
     }
 
     set killed(v) {
@@ -738,7 +794,6 @@ export class RecursiveMagicProjectile extends MagicProjectile {
         const v = this.velocity;
 
         const x_polarity = this._GetPolarity(v[0]), y_polarity = this._GetPolarity(v[1]);
-        console.log({x_polarity, y_polarity, p1, p2, v})
         if(
             (x_polarity * p2[0] <= x_polarity * p1[0]) &&
             (y_polarity * p2[1] <= y_polarity * p1[1])
@@ -776,10 +831,13 @@ export class RecursiveMagicProjectile extends MagicProjectile {
         ];
 
         const origin = this.GetCenter();
-        const stats = getOrbStats(this.mpl - 2)
+        const stats = getOrbStats(this.mpl - 2);
 
+        if(this.mpl < 3) return;
+
+        const angle = 22.5 - Vector.getAngle(this.velocity);
         for(let i = 0; i < velocities.length; i++) {
-            const v = velocities[i];
+            const v = Vector.rotate(velocities[i], angle);
             this.grid.InsertClient(new MagicProjectile(origin, stats.size, v, speed.projectile, {
                 dmg: stats.dmg,
                 owner: this.owner,
@@ -924,10 +982,17 @@ class ExplosionParticle extends Client {
 export class RectSolid extends Client {
     constructor(position, dimensions) {
         super(position, dimensions);
-        this.collision.type = 'active';
+        this.collision = {
+            type: 'active', 
+            shape: 'rectangle',
+            solid: false
+        }
     }
 
+    Step() {}
+
     Collision(ev) {
+        console.log('collision')
         const center = this.GetCenter();
         for(let i = 0; i < ev.objects.length; i++) {
             const o = ev.objects[i];
@@ -962,6 +1027,19 @@ export class RectSolid extends Client {
                 continue;
             }
         }
+    }
+
+    Render(ctx, offset, scale) {
+        ctx.fillStyle = 'gray';
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 5;
+
+        ctx.fillRect(this.position[0] * scale + offset[0], this.position[1] * scale + offset[1], this.dimensions[0] * scale, this.dimensions[1] * scale);
+        ctx.strokeRect(this.position[0] * scale + offset[0], this.position[1] * scale + offset[1], this.dimensions[0] * scale, this.dimensions[1] * scale);
+
+        ctx.fillStyle = null;
+        ctx.strokeStyle = null;
+        ctx.lineWidth = null;
     }
 }
 

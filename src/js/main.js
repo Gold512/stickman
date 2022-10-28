@@ -1,5 +1,5 @@
 import {SpatialHash} from './spacial_hash.js';
-import {PlayerClient, Enemy, MagicProjectile, Spawner} from './objects.js';
+import {PlayerClient, Enemy, MagicProjectile, Spawner, RectSolid} from './objects.js';
 import {collision} from './module/collision.js'
 import {initUI, keyRegistry, loadSkillBar} from './ui.js'
 import * as skills from './skill.js'
@@ -21,6 +21,7 @@ loadFromStorage(player);
 
 grid.InsertClient(new Spawner([0, 0], [12, 12], () => new Enemy(null, [.5, .5]), 3).SetZIndex(-1)).Spawn();
 
+grid.InsertClient(new RectSolid([3, 3], [1, 1]));
 // grid.InsertClient(new MagicProjectile([3, 3], .5, [0, 0], 0, 0, 'black'))
 
 // grid.InsertClient(new Enemy([3, 3], [.5, .5]));
@@ -352,7 +353,7 @@ const fps = new FPS({side: 'top-right'});
     for(let i = 0, k = Object.keys(grid._step); i < k.length; i++) {
         const o = grid._step[k[i]];
         if(o == undefined) continue;
-        if(!(o instanceof MagicProjectile)) continue;
+        if(!(o instanceof MagicProjectile) && (!o.collision || (o.collision.type != 'active'))) continue;
 
         if(Math.abs(player.position[0] - o.position[0]) >= despawnRange || 
         Math.abs(player.position[1] - o.position[1]) >= despawnRange) {
@@ -360,11 +361,12 @@ const fps = new FPS({side: 'top-right'});
         }
 
         if(o.collision.type == 'active') {
-            let searchSize = Math.ceil(o.dimensions[0]/2)
+            let searchSize = Math.ceil(o.dimensions[0]/2 + .1)
             const nearBy = grid.FindNear(o.GetCenter(), [searchSize, searchSize]);
 
             let collisions = [];
             let limit = o.collision.limit || Infinity; 
+
             // limit is the number of collisions to detect for an object
             for(let i = 0; i < nearBy.length; i++) {
                 const e = nearBy[i];
