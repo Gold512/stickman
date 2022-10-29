@@ -21,7 +21,7 @@ loadFromStorage(player);
 
 grid.InsertClient(new Spawner([0, 0], [12, 12], () => new Enemy(null, [.5, .5]), 3).SetZIndex(-1)).Spawn();
 
-grid.InsertClient(new RectSolid([3, 3], [1, 1]));
+grid.InsertClient(new RectSolid([3, 3], [1, 3]));
 // grid.InsertClient(new MagicProjectile([3, 3], .5, [0, 0], 0, 0, 'black'))
 
 // grid.InsertClient(new Enemy([3, 3], [.5, .5]));
@@ -303,14 +303,11 @@ const fps = new FPS({side: 'top-right'});
         start = t;
     }
 
+    let center = player.GetCenter();
+
     // player movement 
     if(!player.HasTag('NoMovement')) player.Move(keyState, 7, elapsedTime);
     grid.UpdateClient(player);
-
-    // camera movement 
-    const center = player.GetCenter();
-    offset[0] = width/2 - center[0] * scale;
-    offset[1] = height/2 - center[1] * scale;
 
     // next use vector math to project the next place
     // the player will be and make the camera slightly behind the 
@@ -324,12 +321,6 @@ const fps = new FPS({side: 'top-right'});
 
     if(focusedClient && focusedClient.OnFocusBeforeRender) {
         focusedClient.OnFocusBeforeRender(ctx, offset, scale)
-    }
-
-    // Render the objects 
-    for(let i = 0; i < objects.length; i++) {
-        const o = objects[i];
-        o.Render(ctx, offset, scale);
     }
 
     // execute tick functions if skill key is being held down 
@@ -361,8 +352,7 @@ const fps = new FPS({side: 'top-right'});
         }
 
         if(o.collision.type == 'active') {
-            let searchSize = Math.ceil(o.dimensions[0]/2 + .1)
-            const nearBy = grid.FindNear(o.GetCenter(), [searchSize, searchSize]);
+            const nearBy = grid.FindNear(o.GetCenter(), o.dimensions);
 
             let collisions = [];
             let limit = o.collision.limit || Infinity; 
@@ -403,6 +393,17 @@ const fps = new FPS({side: 'top-right'});
                 ctx: ctx
             });
         }
+    }
+
+    // camera movement
+    center = player.GetCenter();
+    offset[0] = width/2 - center[0] * scale;
+    offset[1] = height/2 - center[1] * scale;
+
+    // Render the objects 
+    for(let i = 0; i < objects.length; i++) {
+        const o = objects[i];
+        o.Render(ctx, offset, scale);
     }
 
     fps.frame()

@@ -9,6 +9,7 @@ import { getOrbStats, speed } from './module/calc.js';
 export class PlayerClient extends Client {
     constructor(position, dimensions, bars) {
         super(position, dimensions);
+        this.velocity = [0,0]
         this.bars = bars;
         
         this.facing = 'right';
@@ -82,21 +83,24 @@ export class PlayerClient extends Client {
 
         if( !(keys.up && keys.down) && (keys.up || keys.down) ) {
             if(keys.down) {
-                this.position[1] += distance * ts;
+                this.velocity[1] = distance;
             } else  {
-                this.position[1] -= distance * ts;
+                this.velocity[1] = -distance;
             }
-        }
+        } else { this.velocity[1] = 0; }
         
         if( !(keys.left && keys.right) && (keys.left || keys.right) ) {
             if(keys.right) {
-                this.position[0] += distance * ts;
+                this.velocity[0] = distance;
                 this.facing = 'right';
             } else  {
-                this.position[0] -= distance * ts;
+                this.velocity[0] = -distance;
                 this.facing = 'left';
             }
-        }
+        } else { this.velocity[0] = 0; }
+
+        this.position[0] += this.velocity[0] * ts;
+        this.position[1] += this.velocity[1] * ts;
     }
 
     Render(ctx, offset, scale) {
@@ -994,35 +998,55 @@ export class RectSolid extends Client {
     Collision(ev) {
         console.log('collision')
         const center = this.GetCenter();
+
         for(let i = 0; i < ev.objects.length; i++) {
             const o = ev.objects[i];
             if(!o.collision.solid) continue;
 
             // move object that collided away so it will no longer
             // overlap the solid 
+            // collision conditions based on edge distance comparisons
+            // basically the side that is collided with is the side which the opposite edges of the 
+            // objects are the closest to each other
 
             const obj_c = o.GetCenter();
+            
+            // distances between object edges
 
-            // right side
-            if(obj_c[0] > center[0]) {
+            // distance between left edge of o and right edge of this
+            const LR_diff = Math.abs(o.position[0] - (this.position[0] + this.dimensions[0]));
+            
+            // distance between top edge of o and bottom edge of this
+            const TB_diff = Math.abs(o.position[1] - (this.position[1] + this.dimensions[1]));
+
+            const RL_diff = Math.abs(o.position[0] + o.dimensions[0] - this.position[0]);
+
+            const BT_diff = Math.abs(o.position[1] + o.dimensions[1] - this.position[1]);
+
+            const min_y_diff = Math.min(TB_diff, BT_diff);
+            const min_x_diff = Math.min(RL_diff, LR_diff);
+
+            // check if the object collided from the right
+            if( (obj_c[0] > center[0]) && (LR_diff < min_y_diff)) {
                 o.position[0] = this.position[0] + this.dimensions[0];
                 continue;
-            }
+            } 
             
-            // left side
-            if(obj_c[0] < center[0]) {
+            // check if the object collided from the left
+            if( (obj_c[0] < center[0]) && (RL_diff < min_y_diff) ) {
                 o.position[0] = this.position[0] - o.dimensions[0];
                 continue;
             }
+            
 
-            // top
-            if(obj_c[1] < center[1]) {
+            // check if collided from top
+            if( (obj_c[1] < center[1]) && (BT_diff < min_x_diff) ) {
                 o.position[1] = this.position[1] - o.dimensions[1];
                 continue;
             }
 
-            // bottom
-            if(obj_c[1] > center[1]) {
+            // check if collided from bottom
+            if( (obj_c[1] > center[1]) && (TB_diff < min_x_diff) ) {
                 o.position[1] = this.position[1] + this.dimensions[1];
                 continue;
             }
