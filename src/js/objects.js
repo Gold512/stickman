@@ -996,8 +996,8 @@ export class RectSolid extends Client {
     Step() {}
 
     Collision(ev) {
-        console.log('collision')
         const center = this.GetCenter();
+        console.log(ev.objects)
 
         for(let i = 0; i < ev.objects.length; i++) {
             const o = ev.objects[i];
@@ -1019,9 +1019,9 @@ export class RectSolid extends Client {
             // distance between top edge of o and bottom edge of this
             const TB_diff = Math.abs(o.position[1] - (this.position[1] + this.dimensions[1]));
 
-            const RL_diff = Math.abs(o.position[0] + o.dimensions[0] - this.position[0]);
+            const RL_diff = Math.abs((o.position[0] + o.dimensions[0]) - this.position[0]);
 
-            const BT_diff = Math.abs(o.position[1] + o.dimensions[1] - this.position[1]);
+            const BT_diff = Math.abs((o.position[1] + o.dimensions[1]) - this.position[1]);
 
             const min_y_diff = Math.min(TB_diff, BT_diff);
             const min_x_diff = Math.min(RL_diff, LR_diff);
@@ -1064,6 +1064,13 @@ export class RectSolid extends Client {
         ctx.fillStyle = null;
         ctx.strokeStyle = null;
         ctx.lineWidth = null;
+    }
+
+    toJSON() {
+        return {
+            position: this.position,
+            dimensions: this.dimensions
+        }
     }
 }
 

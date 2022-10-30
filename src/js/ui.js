@@ -94,6 +94,7 @@ function updateStats(player) {
 
     document.getElementById('player-level').innerText = player.level;
     document.getElementById('player-xp').innerText = player.xp;
+    document.getElementById('player-mpl').innerText = player.mpl;
 }
 
 // update the localStorage save data
