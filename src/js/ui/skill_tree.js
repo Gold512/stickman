@@ -40,6 +40,21 @@ function createStatMenu() {
     createSkillTree(skills, canvas, {w: 6, h: 6, spacing: 2});
     main.appendChild(skills);
 
+    // move canvas with translate on scroll to ensure it is aligned with the
+    // skill icon container
+    skills.addEventListener('scroll', ev => {
+        let ticking;
+        if(ticking) return;
+
+        let target = ev.currentTarget;
+        window.requestAnimationFrame(() => {
+            canvas.style.transform = `translate(-${target.scrollLeft}px,-${target.scrollTop}px)`;
+            ticking = false;
+        });
+
+        ticking = true;
+    });
+
     // Close btn 
     new ElementCreator('button')
         .style({
@@ -199,6 +214,10 @@ function skillTreeRender(cont, canvas, options) {
     const vh = window.innerHeight / 100;
     const vw = window.innerWidth / 100;
     const {w, h} = options;
+
+    // width of the canvas will be the right edge of the rightmost icon
+    
+
     const height = window.innerHeight;
     const width = window.innerWidth;
     
@@ -386,7 +405,7 @@ function skillTreeRender(cont, canvas, options) {
                     x1:vh * ( sk.x ),
                     y1:height - vh * (sk.y * 5 + h),
                     x2:vh * ( e.x ),
-                    y2:height - vh * ( e.y * 5)
+                    y2:height - vh * ( e.y * 5 )
                 });
             }
             continue;

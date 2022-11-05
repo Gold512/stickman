@@ -21,7 +21,8 @@ loadFromStorage(player);
 
 grid.InsertClient(new Spawner([0, 0], [12, 12], () => new Enemy(null, [.5, .5]), 3).SetZIndex(-1)).Spawn();
 
-grid.InsertClient(new RectSolid([3, 3], [1, 3]));
+grid.InsertClient(new RectSolid([-5, 3], [10, 1]));
+grid.InsertClient(new RectSolid([-6, 0], [1, 3]));
 // grid.InsertClient(new MagicProjectile([3, 3], .5, [0, 0], 0, 0, 'black'))
 
 // grid.InsertClient(new Enemy([3, 3], [.5, .5]));
@@ -209,6 +210,7 @@ let start;
 let mousePos = [];
 const offset = [width/2, height/2];
 let focusedClient;
+let gravityObjects = new Set([PlayerClient, Enemy]);
 
 canvas.addEventListener('contextmenu', ev => {
     ev.preventDefault();
@@ -303,6 +305,11 @@ const fps = new FPS({side: 'top-right'});
         start = t;
     }
 
+    if(elapsedTime > 100) {
+        console.warn(`elapsed time is ${elapsedTime}`);
+        elapsedTime = 1000/60;
+    }
+
     let center = player.GetCenter();
 
     // player movement 
@@ -321,6 +328,21 @@ const fps = new FPS({side: 'top-right'});
 
     if(focusedClient && focusedClient.OnFocusBeforeRender) {
         focusedClient.OnFocusBeforeRender(ctx, offset, scale)
+    }
+
+    // gravity 
+    const ts = elapsedTime / 1000;
+    for(let i = 0; i < objects.length; i++) {
+        if(!objects[i].HasTag('NoGravity') && gravityObjects.has(objects[i].constructor)) {
+            objects[i].gravity = objects[i].gravity ? objects[i].gravity + Math.min(4**(1+objects[i].gravity), 10) * ts : 6 * ts;
+            objects[i].position[1] += objects[i].gravity * ts;
+        }
+    }
+
+    if(player.position[1] > 200) {
+        alert('fell out of world');
+        player.position = [0,0]
+        player.gravity = 0;
     }
 
     // execute tick functions if skill key is being held down 

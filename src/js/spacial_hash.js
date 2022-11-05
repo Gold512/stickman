@@ -478,7 +478,7 @@ export class Client {
 
   /**
    * Check if the client has a given tag
-   * @param {String} tag - the tag to check the presence of
+   * @param {('NoGravity'|'NoMovement'|'Static')} tag - the tag to check the presence of
    * @returns {Boolean}
    */
   HasTag(tag) {

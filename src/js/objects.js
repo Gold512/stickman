@@ -40,6 +40,7 @@ export class PlayerClient extends Client {
         }, 30e3);
 
         this.skills = new Set();
+        this.onGround = false;
     }
 
     // Mana and health regen
@@ -72,25 +73,39 @@ export class PlayerClient extends Client {
             this.modifier = null;
             if(onComplete) onComplete.bind(this)();
         } else if(this.modifier.callback) this.modifier.callback.bind(this)(t);
+
     }
 
     Move(keys, distance, t) {
+        let {up, down, left, right} = keys;
+
         // time in seconds
         const ts = t * 0.001;
+
+        if((!this.HasTag('NoGravity')) && (this.onGround === false)) {
+            // allow smaller jumps 
+            if(up == false) this.gravity += 10 * t/1000;
+            // prevent up and down movement while in the air
+            up = true;
+            down = false;
+        }
+
+        this.onGround = false;
         
         if(this.modifier && this.modifier.noMove) return;
-        if( (keys.up || keys.down) && (keys.left || keys.right) ) distance *= Math.SQRT1_2;
+        if( (up || down) && !(up && down) && 
+        (left || right) &&  !(left && right)) distance *= Math.SQRT1_2;
 
-        if( !(keys.up && keys.down) && (keys.up || keys.down) ) {
-            if(keys.down) {
+        if( !(up && down) && (up || down) ) {
+            if(down) {
                 this.velocity[1] = distance;
             } else  {
                 this.velocity[1] = -distance;
             }
         } else { this.velocity[1] = 0; }
         
-        if( !(keys.left && keys.right) && (keys.left || keys.right) ) {
-            if(keys.right) {
+        if( !(left && right) && (left || right) ) {
+            if(right) {
                 this.velocity[0] = distance;
                 this.facing = 'right';
             } else  {
@@ -101,6 +116,7 @@ export class PlayerClient extends Client {
 
         this.position[0] += this.velocity[0] * ts;
         this.position[1] += this.velocity[1] * ts;
+
     }
 
     Render(ctx, offset, scale) {
@@ -997,17 +1013,18 @@ export class RectSolid extends Client {
 
     Collision(ev) {
         const center = this.GetCenter();
-        console.log(ev.objects)
 
         for(let i = 0; i < ev.objects.length; i++) {
             const o = ev.objects[i];
             if(!o.collision.solid) continue;
+            if(o instanceof MagicProjectile) continue;
 
             // move object that collided away so it will no longer
             // overlap the solid 
             // collision conditions based on edge distance comparisons
             // basically the side that is collided with is the side which the opposite edges of the 
             // objects are the closest to each other
+            // also make object lose its velocity on collision
 
             const obj_c = o.GetCenter();
             
@@ -1042,6 +1059,8 @@ export class RectSolid extends Client {
             // check if collided from top
             if( (obj_c[1] < center[1]) && (BT_diff < min_x_diff) ) {
                 o.position[1] = this.position[1] - o.dimensions[1];
+                if(o.gravity !== undefined) o.gravity = 0;
+                if(o.onGround === false) o.onGround = true;
                 continue;
             }
 
