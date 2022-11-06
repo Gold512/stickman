@@ -209,6 +209,14 @@ function createSkillTree(cont, canvas, options) {
     });
 }
 
+function propertyMax(object, property) {
+    let max = [null, -Infinity];
+    for(let i in object) {
+        if(object[i][property] > max[1]) max = [i, object[i][property]];
+    }
+    return object[max[0]];
+}
+
 function skillTreeRender(cont, canvas, options) {
     const ctx = canvas.getContext('2d');
     const vh = window.innerHeight / 100;
@@ -217,15 +225,16 @@ function skillTreeRender(cont, canvas, options) {
 
     // width of the canvas will be the right edge of the rightmost icon
     
+    const tree = createTreeStruct(SKILL_TREE, 100, options.spacing);
 
     const height = window.innerHeight;
-    const width = window.innerWidth;
+    const width = vh * (propertyMax(tree, 'x').x + .5 * w);
     
     canvas.width = width;
+    canvas.style.width = `${width}px`;
     canvas.height = height;
 
     // Create the icons themselves 
-    const tree = createTreeStruct(SKILL_TREE, 100, options.spacing);
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 

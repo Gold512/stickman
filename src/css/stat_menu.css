@@ -233,6 +233,42 @@
     top: 0;
 }
 
+.skill-tree > .skill-container { overflow: overlay; }
+.skill-tree > .skill-container::after {
+    content: '';
+    display: block;
+    width: 200%;
+    height: 10px;
+}
+
+::-webkit-scrollbar {
+    width: .8em;
+    height: .8em;
+}
+
+::-webkit-scrollbar:active {
+    width: 1em;
+    height: 1em;
+}
+
+::-webkit-scrollbar-track {
+    background:none;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: rgba(200, 200, 200, 0.2);
+    border-radius: .4em;
+    margin: 3px 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(200, 200, 200, 0.32);
+}
+
+::-webkit-scrollbar-thumb:active {
+    background-color: rgba(200, 200, 200, 0.45);
+}
+
 .skill-tree > * {
     position: absolute;
     z-index: 20;
