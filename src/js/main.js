@@ -5,9 +5,8 @@ import {initUI, keyRegistry, loadSkillBar} from './ui.js'
 import * as skills from './skill.js'
 import { loadFromStorage } from './save.js';
 import { FPS } from './libs/fps.min.js'
-import { ElementCreator } from './classes/element_creator.js'
 import { Vector } from './module/vector.js';
-import { math } from './module/math.js';
+import { speed } from './module/calc.js';
 const grid = new SpatialHash([-30, -30], [60, 60]);
 
 const player = grid.InsertClient(new PlayerClient([0, 0], [.5, .5], {
@@ -17,12 +16,14 @@ const player = grid.InsertClient(new PlayerClient([0, 0], [.5, .5], {
     magicAffinity: document.getElementById('magic-affinity-bar'),
     level: document.getElementById('level')
 }));
+player.speed = speed.move;
 loadFromStorage(player);
 
 grid.InsertClient(new Spawner([0, 0], [12, 12], () => new Enemy(null, [.5, .5]), 3).SetZIndex(-1)).Spawn();
 
 grid.InsertClient(new RectSolid([-5, 3], [10, 1]));
 grid.InsertClient(new RectSolid([-6, 0], [1, 3]));
+grid.InsertClient(new RectSolid([5, 0], [1, 5]));
 // grid.InsertClient(new MagicProjectile([3, 3], .5, [0, 0], 0, 0, 'black'))
 
 // grid.InsertClient(new Enemy([3, 3], [.5, .5]));
@@ -313,7 +314,7 @@ const fps = new FPS({side: 'top-right'});
     let center = player.GetCenter();
 
     // player movement 
-    if(!player.HasTag('NoMovement')) player.Move(keyState, 7, elapsedTime);
+    if(!player.HasTag('NoMovement')) player.Move(keyState, elapsedTime);
     grid.UpdateClient(player);
 
     // next use vector math to project the next place
@@ -362,14 +363,14 @@ const fps = new FPS({side: 'top-right'});
         }
     }
 
-    // Object despawning
+    // collision and despawning 
     for(let i = 0, k = Object.keys(grid._step); i < k.length; i++) {
         const o = grid._step[k[i]];
         if(o == undefined) continue;
-        if(!(o instanceof MagicProjectile) && (!o.collision || (o.collision.type != 'active'))) continue;
+        if(!o.collision || (o.collision.type != 'active')) continue;
 
-        if(Math.abs(player.position[0] - o.position[0]) >= despawnRange || 
-        Math.abs(player.position[1] - o.position[1]) >= despawnRange) {
+        if((o instanceof MagicProjectile) && ( Math.abs(player.position[0] - o.position[0]) >= despawnRange || 
+        Math.abs(player.position[1] - o.position[1]) >= despawnRange ) ) {
             grid.Remove(o);
         }
 

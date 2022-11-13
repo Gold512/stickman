@@ -125,15 +125,24 @@ function createTreeStruct(tree, w, spacing = 3) {
             // The prev string element is the parent
             res[e] = {
                 require: parent ? [parent] : [],
+                children: [],
                 x: w * ((i + 1) / (totalInLayer + 1)), 
                 y: spacing * i + spacing,
 
             };
+            console.log(res)
+            if(parent) res[parent].children.push(e);
 
             parent = e;
             skippedIndices++;
         } else if(e instanceof Array) {
-            res = Object.assign(res, subParseTreeStruct(parent, e, w * ((i - skippedIndices + 1) / (tree.length - totalInLayer + 1)), spacing));
+            const r = subParseTreeStruct(parent, e, w * ((i - skippedIndices + 1) / (tree.length - totalInLayer + 1)), spacing);
+            for(let i in r) {
+                if(res[i] != undefined) {
+                    res[i] = Object.assign(res[i], r[i]);
+                } else res[i] = r[i];
+            }
+            // res = Object.assign(res, );
         }
     }
 
@@ -155,11 +164,18 @@ function subParseTreeStruct(parent, tree, x ,spacing) {
         if(typeof e === 'string') {
             res[e] = {
                 require: parent ? [parent] : [],
+                children: [],
+
                 x: x,
                 y: (i + 1) * spacing + spacing,
-                child: tree[i+1] || null,
+                // child: tree[i+1] || null,
                 unlocked: player.skills.has(e)
             };
+
+            if(parent) {
+                if(!res[parent]) res[parent] = {children: []};
+                res[parent].children.push(e);
+            }
 
             parent = e;
             
@@ -171,11 +187,18 @@ function subParseTreeStruct(parent, tree, x ,spacing) {
         // e.require {Array} - a list of skills required for this skill to be unlocked 
         res[e.id] = {
             require: [parent].concat(e.require),
+            children: [],
+
             x: x,
             y: (i + 1) * spacing + spacing,
-            child: tree[i+1].id || null
+            // child: tree[i+1].id || null
         };
 
+        if(parent) {
+            if(!res[parent]) res[parent] = {children: []};
+            res[parent].children.push(e);
+        }
+        
         parent = e.id;
     }
 
@@ -217,6 +240,28 @@ function propertyMax(object, property) {
     return object[max[0]];
 }
 
+/**
+ * Create glow effect on canvas
+ * @param {CanvasRenderingContext2D} ctx 
+ * @param {Number} x 
+ * @param {Number} y 
+ * @param {Number} r 
+ */
+function canvasGlowEffect(ctx, x, y, r) {
+    let fillStyle = ctx.fillStyle;
+
+    const grd = ctx.createRadialGradient(x, y, 0, x, y, r);
+    grd.addColorStop(0, 'rgba(255,255,255, 1)');
+    grd.addColorStop(.6, 'rgba(255,255,255, .8)');
+    grd.addColorStop(1, 'rgba(255,255,255, 0)');
+    ctx.fillStyle = grd;
+    let path = new Path2D();
+    path.arc(x, y, r, 0, 2 * Math.PI);
+    ctx.fill(path);
+
+    ctx.fillStyle = fillStyle;
+}
+
 function skillTreeRender(cont, canvas, options) {
     const ctx = canvas.getContext('2d');
     const vh = window.innerHeight / 100;
@@ -245,7 +290,7 @@ function skillTreeRender(cont, canvas, options) {
         const sk = skills[id] || descriptions[id];
         const locked = (sk && sk.notUnlockable) ? false : !player.skills.has(id);
         const unlockable = (() => {
-            // console.log(e)
+            if(!e.require) return true; // skill has no requirements
             for(let i = 0; i < e.require.length; i++) {
                 if(tree[e.require[i]].unlocked == false) return false;
             }
@@ -331,7 +376,7 @@ function skillTreeRender(cont, canvas, options) {
                             if(player.stats.skillPoints < sk.cost) {
                                 // shake animation on buy fail 
                                 ev.currentTarget.classList.add('shake');
-                                setTimeout(() => ev.currentTarget.classList.remove('shake'), 500);
+                                setTimeout(element => element.classList.remove('shake'), 500, ev.currentTarget);
                                 return;
                             }
                             
@@ -341,6 +386,28 @@ function skillTreeRender(cont, canvas, options) {
                             player.skills.add(sk.id);
                             saveToStorage(player);
                             updateSkills();
+                            
+                            // check if child skills are available 
+                            // and if they are make them unlockable
+                            for(let i = 0; i < e.children.length; i++) {
+                                const tree_node = tree[e.children[i]];
+
+                                let unlocked = true;
+                                // check if child has all required skills unlocked
+                                for(let j = 0; j < tree_node.require.length; j++) {
+                                    if(!player.skills.has(tree_node.require[i])) {
+                                        unlocked = false;
+                                        continue;
+                                    }
+                                }
+
+                                if(unlocked) {
+                                    const child_skill = cont.querySelector(`#st_${e.children[i]}`)
+                                    
+                                    child_skill.classList.remove('not-unlockable');
+                                    child_skill.querySelector('.skill-buy-btn').removeAttribute('disabled');
+                                }
+                            }
 
                             // Change connecting line color
                             CreateAnimation(p => {
@@ -380,17 +447,7 @@ function skillTreeRender(cont, canvas, options) {
                             
                                 ctx.strokeStyle = null;
                                 ctx.strokeWidth = null;
-                            }, 800).promise.then(() => {
-                                skill.classList.remove('locked');
-
-                                // make child elements unlockable 
-                                const child_skill = cont.querySelector(`#st_${e.child}`);
-                                
-                                if(!child_skill) return;
-                                child_skill.classList.remove('non-unlockable');
-                                child_skill.querySelector('.skill-buy-btn').removeAttribute('disabled');
-                            })
-                            
+                            }, 800).promise.then(() => skill.classList.remove('locked'));
                         })
                         .newChild('div')
                             .text(`${sk.cost} SP`)

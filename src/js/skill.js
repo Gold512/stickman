@@ -103,7 +103,7 @@ export const skills = {
     },
     flight: {
         name: 'Flight',
-        id: 'levitation',
+        id: 'flight',
         mana: 8,
         cd: 2,
         cost: 8,
@@ -256,6 +256,10 @@ export const keydown = (function() {
     }
 
     function superSpeed({ ctx, scale, offset, caster, vector, tile } = {}) {
+        // require player to fly/levitate to use
+        // may limit it to fly only 
+        if(!caster.HasTag('NoGravity')) return false;
+
         // Cast will fail if remaining duration is less then 20ms or 
         // another modifier is present
         if(caster.modifier && ((caster.modifier.name == 'superSpeed' && caster.modifier.duration > 20)
@@ -397,7 +401,17 @@ export const keydown = (function() {
         return true;
     }
 
-    return {singleShot, doubleShot, tripleShot, shield, shieldShot, superSpeed, recursiveShot, volleyShot}
+    function levitation({ caster }) {
+        caster.AddTag('NoGravity');
+        caster.speed = speed.levitation;
+    }
+
+    function flight({ caster }) {
+        caster.speed = speed.move;
+        caster.AddTag('NoGravity');
+    }
+
+    return {singleShot, doubleShot, tripleShot, shield, shieldShot, superSpeed, recursiveShot, volleyShot, levitation, flight}
 }());
 
 export const tick = (function() {

@@ -76,7 +76,7 @@ export class PlayerClient extends Client {
 
     }
 
-    Move(keys, distance, t) {
+    Move(keys, t) {
         let {up, down, left, right} = keys;
 
         // time in seconds
@@ -92,31 +92,31 @@ export class PlayerClient extends Client {
 
         this.onGround = false;
         
+        let vel = 1;
         if(this.modifier && this.modifier.noMove) return;
         if( (up || down) && !(up && down) && 
-        (left || right) &&  !(left && right)) distance *= Math.SQRT1_2;
+        (left || right) &&  !(left && right)) vel = Math.SQRT1_2;
 
         if( !(up && down) && (up || down) ) {
             if(down) {
-                this.velocity[1] = distance;
+                this.velocity[1] = vel;
             } else  {
-                this.velocity[1] = -distance;
+                this.velocity[1] = -vel;
             }
         } else { this.velocity[1] = 0; }
         
         if( !(left && right) && (left || right) ) {
             if(right) {
-                this.velocity[0] = distance;
+                this.velocity[0] = vel;
                 this.facing = 'right';
             } else  {
-                this.velocity[0] = -distance;
+                this.velocity[0] = -vel;
                 this.facing = 'left';
             }
         } else { this.velocity[0] = 0; }
 
-        this.position[0] += this.velocity[0] * ts;
-        this.position[1] += this.velocity[1] * ts;
-
+        this.position[0] += this.velocity[0] * this.speed * ts;
+        this.position[1] += this.velocity[1] * this.speed * ts;
     }
 
     Render(ctx, offset, scale) {
@@ -876,7 +876,7 @@ export class Shield extends Client {
 
         this.velocity = [ , ];
         this.projectile = false;
-        this.speed = .25;
+        this.speed = speed.projectile;
         // 1  : right
         // -1 : left
         // this.collision.type= 'none';

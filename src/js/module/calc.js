@@ -6,5 +6,7 @@ export function getOrbStats(mpl) {
 }
 
 export const speed = {
-    projectile: 15
+    projectile: 15,
+    move: 7,
+    levitation: 4
 }
