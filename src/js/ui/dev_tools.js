@@ -44,5 +44,11 @@ export const dev = {
             const e = grid._idTable[k[i]];
             if(!(e instanceof clients.PlayerClient)) grid.Remove(e);
         }
+    },
+
+    inspect: () => {
+        document.addEventListener('mousemove', ev => {
+            
+        });
     }
 }

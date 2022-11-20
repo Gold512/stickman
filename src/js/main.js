@@ -297,7 +297,7 @@ document.addEventListener("wheel", ev => {
 const fps = new FPS({side: 'top-right'});
 
 
-!function frame(t) {
+function frame(t) {
     let elapsedTime = 0;
     if(!start) {
         start = t;
@@ -431,7 +431,9 @@ const fps = new FPS({side: 'top-right'});
 
     fps.frame()
     window.requestAnimationFrame(frame);
-}();
+}
+
+window.addEventListener('load', () => frame());
 
 initUI(player);
 // updateStats(player);

@@ -6,6 +6,72 @@ import { AI } from './classes/AI.js';
 import { Vector } from './module/vector.js';
 import { getOrbStats, speed } from './module/calc.js';
 
+// base class with helper functions for moving clients
+export class Character extends Client {
+    constructor(position, dimensions) {
+        super(position, dimensions);
+    }
+
+    VelocityTick() {
+        this.position[0] += this.velocity[0];
+        this.position[1] += this.velocity[1];
+    }
+
+    // run collision function as entities instead (since they probably already have a step function)
+    Collision(ev) { 
+        const o = this;
+        
+        for(let i = 0; i < ev.objects.length; i++) {
+            const e = ev.objects[i];
+            if(!e.collision.solid) continue;
+
+            const obj_c = o.GetCenter();
+            
+            // distances between object edges
+
+            // distance between left edge of o and right edge of e
+            const LR_diff = Math.abs(o.position[0] - (e.position[0] + e.dimensions[0]));
+            
+            // distance between top edge of o and bottom edge of e
+            const TB_diff = Math.abs(o.position[1] - (e.position[1] + e.dimensions[1]));
+
+            const RL_diff = Math.abs((o.position[0] + o.dimensions[0]) - e.position[0]);
+
+            const BT_diff = Math.abs((o.position[1] + o.dimensions[1]) - e.position[1]);
+
+            const min_y_diff = Math.min(TB_diff, BT_diff);
+            const min_x_diff = Math.min(RL_diff, LR_diff);
+
+            // check if the object collided from the right
+            if( (obj_c[0] > center[0]) && (LR_diff < min_y_diff)) {
+                o.position[0] = e.position[0] + e.dimensions[0];
+                continue;
+            } 
+            
+            // check if the object collided from the left
+            if( (obj_c[0] < center[0]) && (RL_diff < min_y_diff) ) {
+                o.position[0] = e.position[0] - o.dimensions[0];
+                continue;
+            }
+            
+
+            // check if collided from top
+            if( (obj_c[1] < center[1]) && (BT_diff < min_x_diff) ) {
+                o.position[1] = e.position[1] - o.dimensions[1];
+                if(o.gravity !== undefined) o.gravity = 0;
+                if(o.onGround === false) o.onGround = true;
+                continue;
+            }
+
+            // check if collided from bottom
+            if( (obj_c[1] > center[1]) && (TB_diff < min_x_diff) ) {
+                o.position[1] = e.position[1] + e.dimensions[1];
+                continue;
+            }
+        }
+    }
+}
+
 export class PlayerClient extends Client {
     constructor(position, dimensions, bars) {
         super(position, dimensions);
@@ -391,7 +457,7 @@ export class Enemy extends Client {
 
         // Render enemy health bar
         const tl = this.dimensions[0] * 1.25 * scale;
-        const l = tl / this.maxHealth * this.health;
+        const l = Math.max(tl / this.maxHealth * this.health, 0);
         const health_bar = [this.position[0] * scale + pos[0] - this.dimensions[0] * .125 * scale, this.position[1] * scale + pos[1] - 10];
         
         ctx.fillStyle = 'rgba(120, 120, 120, 1)';
@@ -1005,7 +1071,7 @@ export class RectSolid extends Client {
         this.collision = {
             type: 'active', 
             shape: 'rectangle',
-            solid: false
+            solid: true
         }
     }
 

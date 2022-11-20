@@ -86,6 +86,10 @@ export class ElementCreator {
         return this;
     }
 
+    /**
+     * Set id of the element
+     * @param {String} id - id to set
+     */
     id(id) {
         this.element.id = id;
         return this;
@@ -93,7 +97,7 @@ export class ElementCreator {
 
     /**
      * Set css styles
-     * @param {Object} styles key value pair of styles and their value
+     * @param {Object[keyof CSSStyleDeclaration]} styles key value pair of styles and their value
      */
     style(styles) {
         for(let i = 0, k = Object.keys(styles); i < k.length; i++) {
