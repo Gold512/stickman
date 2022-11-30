@@ -35,6 +35,13 @@ export class AI {
 
         // attack data 
         this.target = null;
+
+        this.config = {
+            type,
+            wander,
+            stayWithin,
+            dodge
+        }
     }
 
     // AI tick function to calculate next action in current frame

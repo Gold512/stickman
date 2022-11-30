@@ -58,7 +58,7 @@ export class Character extends Client {
             // check if collided from top
             if( (obj_c[1] < center[1]) && (BT_diff < min_x_diff) ) {
                 o.position[1] = e.position[1] - o.dimensions[1];
-                if(o.gravity !== undefined) o.gravity = 0;
+                if(o._gravity !== undefined) o._gravity = 0;
                 if(o.onGround === false) o.onGround = true;
                 continue;
             }
@@ -77,6 +77,7 @@ export class PlayerClient extends Client {
         super(position, dimensions);
         this.velocity = [0,0]
         this.bars = bars;
+        this.gravity = true;
         
         this.facing = 'right';
 
@@ -150,7 +151,7 @@ export class PlayerClient extends Client {
 
         if((!this.HasTag('NoGravity')) && (this.onGround === false)) {
             // allow smaller jumps 
-            if(up == false) this.gravity += 10 * t/1000;
+            if(up == false) this._gravity += 10 * t/1000;
             // prevent up and down movement while in the air
             up = true;
             down = false;
@@ -366,6 +367,7 @@ export class Enemy extends Client {
         super(position, dimensions);
         this.speed = 3;
         this.velocity = [0, 0];
+        this.gravity = true;
 
         this.maxHealth = maxHealth;
         this.health = maxHealth;
@@ -375,7 +377,7 @@ export class Enemy extends Client {
         this.mana = maxMana;
         this.manaRegen = manaRegen;
 
-        this.mpl
+        this.mpl = mpl;
 
         this._regen = {mana: 0, health: 0}
         this.stats = {
@@ -384,13 +386,18 @@ export class Enemy extends Client {
             get mana() { return this.owner.mana; }
         }
 
-        this.AIConfig = {
+        if(ai && !(ai instanceof AI)) {
+            if((typeof ai !== 'object')) throw new TypeError('AI parameter is not an object or an instance of AI');
+            ai = new AI(this, ai);
+        }
+
+        let aiConfig = {
             wander: true,
             stayWithin: true,
             dodge: 'low'
-        }
+        } || ai.config;
 
-        this.AI = ai || new AI(this, this.AIConfig)
+        this.AI = ai || new AI(this, aiConfig)
     }
 
     ShootAt(pos) {
@@ -1065,6 +1072,12 @@ class ExplosionParticle extends Client {
     }
 }
 
+export class Item extends Client {
+    constructor(position, item) {
+
+    }
+}
+
 export class RectSolid extends Client {
     constructor(position, dimensions) {
         super(position, dimensions);
@@ -1125,7 +1138,7 @@ export class RectSolid extends Client {
             // check if collided from top
             if( (obj_c[1] < center[1]) && (BT_diff < min_x_diff) ) {
                 o.position[1] = this.position[1] - o.dimensions[1];
-                if(o.gravity !== undefined) o.gravity = 0;
+                if(o._gravity !== undefined) o._gravity = 0;
                 if(o.onGround === false) o.onGround = true;
                 continue;
             }

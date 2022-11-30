@@ -138,6 +138,11 @@ export class ElementCreator {
         return this;
     }
 
+    dataset(key, value = '') {
+        this.element.dataset[key] = value;
+        return this;
+    }
+
     /**
      * use function to operate on the element object
      * @param {function(HTMLElement,ElementCreator):void} fn -

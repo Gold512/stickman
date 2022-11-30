@@ -6,7 +6,7 @@ import * as skills from './skill.js'
 import { loadFromStorage } from './save.js';
 import { FPS } from './libs/fps.min.js'
 import { Vector } from './module/vector.js';
-import { speed } from './module/calc.js';
+import { camera, speed } from './module/calc.js';
 const grid = new SpatialHash([-30, -30], [60, 60]);
 
 const player = grid.InsertClient(new PlayerClient([0, 0], [.5, .5], {
@@ -39,7 +39,7 @@ window.spawn = function(n) {
 window.player = player;
 window.grid = grid;
 
-const keyState = {
+export const keyState = {
     up: false,
     down: false,
     left: false,
@@ -205,13 +205,12 @@ let [width, height] = [window.innerWidth, window.innerHeight]
 canvas.width = width;
 canvas.height = height;
 const ctx = canvas.getContext('2d');
-const scale = 50; // canvas pixels per grid tile
+const scale = camera.scale; // canvas pixels per grid tile
+const offset = camera.offset;
 const despawnRange = 20;
 let start;
 let mousePos = [];
-const offset = [width/2, height/2];
 let focusedClient;
-let gravityObjects = new Set([PlayerClient, Enemy]);
 
 canvas.addEventListener('contextmenu', ev => {
     ev.preventDefault();
@@ -334,16 +333,16 @@ function frame(t) {
     // gravity 
     const ts = elapsedTime / 1000;
     for(let i = 0; i < objects.length; i++) {
-        if(!objects[i].HasTag('NoGravity') && gravityObjects.has(objects[i].constructor)) {
-            objects[i].gravity = objects[i].gravity ? objects[i].gravity + Math.min(4**(1+objects[i].gravity), 10) * ts : 6 * ts;
-            objects[i].position[1] += objects[i].gravity * ts;
+        if(!objects[i].HasTag('NoGravity') && (objects[i].gravity === true)) {
+            objects[i]._gravity = objects[i]._gravity ? objects[i]._gravity + Math.min(4**(1+objects[i]._gravity), 10) * ts : 6 * ts;
+            objects[i].position[1] += objects[i]._gravity * ts;
         }
     }
 
     if(player.position[1] > 200) {
         alert('fell out of world');
         player.position = [0,0]
-        player.gravity = 0;
+        player._gravity = 0;
     }
 
     // execute tick functions if skill key is being held down 
@@ -435,10 +434,18 @@ function frame(t) {
 
 window.addEventListener('load', () => frame());
 
+// init stuff
 initUI(player);
 // updateStats(player);
 
 loadSkillBar();
+
+window.dev = () => {
+    let url = (new URL(location.href))
+    if(!url.pathname) url.pathname = 'index.html';
+    url.searchParams.append('dev', 'true');
+    location.replace(url)
+};
 
 // Load dev tools 
 !function() {
@@ -446,6 +453,8 @@ loadSkillBar();
     if(url.searchParams.get('dev') == 'true') {
         window.player = player;
         window.grid = grid;
-        import('./libs/dev_tools.js').then(o => window.dev = o.dev);
+        import('./ui/dev_tools.js').then(o => window.dev = o.dev);
     }
 }();
+
+

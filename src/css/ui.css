@@ -177,3 +177,36 @@
     border: 2px solid black;
     box-sizing: border-box;
 }
+
+#movement-buttons {
+    z-index: 2000;
+    bottom: 5vh;
+    position: fixed;
+    user-select: none;
+}
+
+#movement-buttons > button {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    background-color: rgb(0 0 0 / 15%);
+    border-color: rgb(0 0 0 / 25%)
+}
+
+#movement-buttons > button:active {
+    background-color: rgb(0 0 0 / 20%);
+    border-color: rgb(0 0 0 / 32%)
+}
+
+#movement-buttons > button:not(:first-child) {
+    margin-left: 2px;
+}
+
+#movement-buttons > button > object {
+    width: 100%;
+    height: 100%;
+}
+
+#movement-buttons > button {
+    position: relative;
+}

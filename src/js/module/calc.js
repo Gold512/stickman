@@ -1,3 +1,5 @@
+// store important global constants and functions 
+
 export function getOrbStats(mpl) {
     return {
         dmg: Math.round((mpl + 2)**(1.8) * .5),
@@ -10,3 +12,8 @@ export const speed = {
     move: 7,
     levitation: 4
 }
+
+export const camera = {
+    scale: 50,
+    offset: [window.innerWidth / 2, window.innerHeight / 2]
+};

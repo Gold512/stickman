@@ -1,6 +1,11 @@
 // Declare to global scope to avoid creating multiple caches
 if(!window.SVG_CACHE) window.SVG_CACHE = {};
 
+/**
+ * 
+ * @param {string} url - filepath to SVG
+ * @returns {HTMLElement} - object linking to svg or the svg itself if already loaded
+ */
 export function newSVG(url) {
     // Make sure './src/svg.svg' and 'src/svg.svg' are the same
     // Other notations like '././' are redundant
@@ -23,6 +28,11 @@ export function newSVG(url) {
     return object;
 }
 
+/**
+ * 
+ * @param {string} url - filepath to SVG
+ * @returns 
+ */
 export async function getSVG(url) {
     if(url.slice(0, 2) != './') url = './' + url;
     if(window.SVG_CACHE[url] != undefined) return window.SVG_CACHE[url];

@@ -1,3 +1,5 @@
+@import url('modal.css');
+
 /* this file should contain widely used skills */
 
 body {
@@ -381,6 +383,15 @@ onto the tooltip without the hover being disabled */
     to {
         box-shadow: 0 0 .25em #fff, 0 0 .375em var(--end), 0 0 .5em var(--end), 0 0 .625em var(--end), 0 0 .75em var(--end), 0 0 .875em var(--end), 0 0 1em var(--end);
     }
+}
+
+.flash {
+    animation: flash .75s ease-in-out infinite alternate;
+}
+
+@keyframes flash {
+    0% { background: rgb(255 255 255 / 5%) }
+    100% { background: rgb(255 255 255 / 15%) }
 }
 
 .skill-hotkey {

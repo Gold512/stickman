@@ -275,6 +275,27 @@ export class SpatialHash {
     return clients;
   }
 
+  Raycast(x0, y0, x1, y1) {
+    let i1 = this._GetCellIndex(x0, y0);
+    let i2 = this._GetCellIndex(x1, y1);
+
+    let dx = Math.abs(i2[0] - i1[0]);
+    let dy = Math.abs(i2[1] - i1[1]);
+    let sx = (i1[0] < i2[0]) ? 1 : -1;
+    let sy = (i1[1] < i2[1]) ? 1 : -1;
+    let err = dx - dy;
+
+    while(true) {
+      let cell=this._cells[i1[0]][i1[1]]; // Do what you need to for this
+      if(cell.client) return cell.client;
+
+      if ((i1[0] === i2[0]) && (i1[1] === i2[1])) break;
+      var e2 = 2*err;
+      if (e2 > -dy) { err -= dy; i1[0]  += sx; }
+      if (e2 < dx) { err += dx; i1[1]  += sy; }
+    }
+  }
+
   /**
    * Call step function for objects that need to be updated like projectiles
    * @param {Number} t the amount of time elapsed

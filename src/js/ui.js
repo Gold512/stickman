@@ -2,6 +2,7 @@ import { downloadSave, loadSaveFile, saveToStorage } from "./save.js";
 import { mpl_colors, skills } from "./skill.js";
 import {newSVG} from "./module/svg.js";
 import { stat_menu } from "./ui/skill_tree.js";
+import * as touch from "./ui/touch.js";
 
 const display = {
     menu: 'block'
@@ -55,6 +56,7 @@ export function initUI(player) {
     addSkill.addEventListener('dragover', ev => ev.preventDefault());
 
     stat_menu.init();
+    touch.init();
 }
 
 export function createSkillCard(icon, id, currentKey = '') {

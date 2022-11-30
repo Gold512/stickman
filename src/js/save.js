@@ -13,6 +13,9 @@ function getSaveJSON(player) {
         stats: player.stats,
         skills: [...player.skills],
         equipped_skills: skillKeys,
+    }, function(key, val) {
+        if(val === undefined) return val;
+        return val.toFixed ? Number(val.toFixed(4)) : val;
     });
 }
 
