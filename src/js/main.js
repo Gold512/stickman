@@ -180,21 +180,30 @@ document.addEventListener('keyup', ev => {
 });
 
 !function() {
+    function remeasureScreen() {
+        width = window.innerWidth;
+        height =  window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+    }
+
     let ticking = false;
     window.addEventListener('resize', () => {
         if (ticking) return;
         ticking = true;
 
-        width = window.innerWidth;
-        height =  window.innerHeight;
-        canvas.width = width;
-        canvas.height = height;
+        remeasureScreen()
 
         // Max of 10 updates per second to prevent whitescreen while resizing
         setTimeout(() => {
             ticking = false;
         }, 100);
     });
+    let portrait = window.matchMedia("(orientation: portrait)");
+
+    portrait.addEventListener("change", function(e) {
+        remeasureScreen();
+    })
 }();
 
 document.addEventListener('mousemove', ev => {
