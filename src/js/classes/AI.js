@@ -1,7 +1,9 @@
-import { MagicProjectile } from "../objects.js";
+import { MagicProjectile, PlayerClient } from "../objects.js";
 import { math } from "../module/math.js";
 import { Vector } from "../module/vector.js";
 import { collision } from '../module/collision.js';
+import { skillCaster, skills } from "../skill.js";
+import { skillConversionTable } from "../module/calc.js";
 
 // Create a AI to allow an entity to react to its surroundings
 export class AI { 
@@ -12,19 +14,21 @@ export class AI {
      * @param {Boolean} config.wander - Whether client should wander randomly when idle
      * @param {Boolean} config.stayWithin - top right and bottom left corner of bounds to stay within
      * @param {('none'|'low'|'medium'|'high')} config.dodge - level of projectile dodge in AI
+     * @param {object} config.attack - options for enemy attack patterns
+     * @param {Number} config.attack.viewDistance - distance that a target the enemy attacks will be selected
+     * @param {Number} config.attack.targetDistance - maximum distance that the enemy retains the selected target
      */
     constructor(client, {
         type = 'algorithm',
         wander = true,
         stayWithin = [],
-        dodge = 'none'
+        dodge = 'none',
+        attack: {
+            viewDistance = 6,
+            targetDistance = 8
+        } = {}
     }) {
         this.client = client;
-        this.config = {
-            wander: wander,
-            stayWithin: stayWithin,
-            dodge: dodge
-        }
 
         this.actionQueue = [];
         if(wander) this.actionQueue.push('wander');
@@ -40,7 +44,11 @@ export class AI {
             type,
             wander,
             stayWithin,
-            dodge
+            dodge,
+            attack: {
+                viewDistance,
+                targetDistance
+            }
         }
     }
 
@@ -49,6 +57,15 @@ export class AI {
         for(let i = 0; i < this.actionQueue.length; i++) {
             const res = this[this.actionQueue[i]]();
             if(res) break;
+        }
+
+        if(this.config.attack && this.client.skills.length > 0) {
+            if(this.attack_cd) {
+                this.attack_cd -= t;
+                if(this.attack_cd < 0) this.attack_cd = null;
+            }
+            
+            if(!this.attack_cd) this.attack();
         }
 
         this.action.time -= t;
@@ -214,35 +231,59 @@ export class AI {
     }
 
     attack() {
-        // view distance 
-        let viewDistance = 6;
-        let targetDistance = 8;
+        let viewDistance = this.config.attack.viewDistance;
+        let targetDistance = this.config.attack.targetDistance;
 
         const client = this.client;
         
-        const target = client.grid.GetClientById(this.target);
+        let target = client.grid.GetClientById(this.target);
         if(target) {
             if(((target.position[0] - client.position[0]) ** 2 + (target.position[1] - client.position[1]) ** 2) > targetDistance ** 2) this.target = null;
         }
 
         if(!this.target) {
-            this.target = client.grid.ClientSelector({
+            target = client.grid.ClientSelector({
                 origin: this.client.GetCenter(),
                 bounds: [viewDistance, viewDistance],
                 sort: 'nearest',
+                type: PlayerClient,
                 limit: 1
             })[0];
+
+            // check if target exists since selectors can return null
+            if(target) {
+                this.target = target.id;
+            } else return;
         }
 
-        // check if target exists since selectors can return null
-        if(this.target) {
-            const selectedSkill = math.weighted_random([
-                {weight: 50, item: 'single_shot'},
-                {weight: 30, item: 'double_shot'},
-                {weight: 10, item: 'triple_shot'},
-            ]);
+        // weigh all available skills
+        let weights = [{weight: 100, item: 'nothing'}];
+        for(let i = 0, skillList = client.skills; i < skillList.length; i++) {
+            const skillId = skillList[i];
+            const skillStats = skills[skillId];
 
-            
+            // check if insufficient mana
+            if(this.client.mana < skillStats.mana) continue;
+            const manaDiff = client.mana - skillStats.mana;
+            weights.push({
+                // favour using more mana
+                weight: Math.round((manaDiff*10) ** -.1)*10,
+                item: skillId
+            });
         }
+
+        const selectedSkill = math.weighted_random(weights);
+        if(selectedSkill == 'nothing') {
+            this.attack_cd = 100;
+            return;
+        }
+        const status = skillCaster[skillConversionTable[selectedSkill]]({
+            grid: this.client.grid,
+            caster: client,
+            vector: Vector.normalise(Vector.sub(target.position, this.client.position)),
+            tile: target.GetCenter()
+        });
+        if(status !== false) this.client.mana -= skills[selectedSkill].mana;
+        this.attack_cd = 1000*skills[selectedSkill].cd;
     }
 }

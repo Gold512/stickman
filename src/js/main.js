@@ -6,7 +6,7 @@ import * as skills from './skill.js'
 import { loadFromStorage } from './save.js';
 import { FPS } from './libs/fps.min.js'
 import { Vector } from './module/vector.js';
-import { camera, speed } from './module/calc.js';
+import { camera, skillConversionTable, speed } from './module/calc.js';
 const grid = new SpatialHash([-30, -30], [60, 60]);
 
 const player = grid.InsertClient(new PlayerClient([0, 0], [.5, .5], {
@@ -50,8 +50,6 @@ export const keyState = {
 
 const canvas = document.getElementById('canvas');
 
-const toCamelCase = s => s.toLowerCase().replace(/[-_][a-z]/g, (group) => group.slice(-1).toUpperCase());
-
 document.addEventListener('keydown', function keydown(ev) {
     if(document.activeElement != document.body) return;
     switch (ev.key) {
@@ -93,7 +91,7 @@ document.addEventListener('keydown', function keydown(ev) {
 
     const clickedGridTile = [(mousePos[0] - offset[0])/scale, (mousePos[1] - offset[1])/scale];
 
-    let functionName = toCamelCase(keyRegistry[ev.key]);
+    let functionName = skillConversionTable[keyRegistry[ev.key]];
     
     skill_selector: {
         if(ev.key == keyRegistry.shield_shot && !player.shield) {
@@ -172,7 +170,7 @@ document.addEventListener('keyup', ev => {
 
     
     if(keyRegistry[ev.key]) {
-        const skillName = toCamelCase(keyRegistry[ev.key]);
+        const skillName = skillConversionTable[keyRegistry[ev.key]];
         if(!skills.tick[skillName]) return;
         document.querySelector(`[data-id="${keyRegistry[ev.key]}"]`).classList.remove('casting')
         return;
@@ -257,7 +255,7 @@ canvas.addEventListener('click', ev => {
         ]);
 
         for(let i = 0; i < keys.length; i++) {
-            const skillName = toCamelCase(keyRegistry[keys[i]]);
+            const skillName = skillConversionTable[keyRegistry[keys[i]]];
             if(skills.click[skillName]) skills.click[skillName]({
                 grid, ctx, scale, offset, vector,
                 caster: player,
@@ -284,7 +282,7 @@ document.addEventListener("wheel", ev => {
                 ]);
             
                 for(let i = 0; i < keys.length; i++) {
-                    const skillName = toCamelCase(keyRegistry[keys[i]]);
+                    const skillName = skillConversionTable[keyRegistry[keys[i]]];
                     if(skills.scroll[skillName]) skills.scroll[skillName]({
                         grid, ctx, scale, offset, vector,
                         caster: player,
@@ -315,7 +313,7 @@ function frame(t) {
     }
 
     if(elapsedTime > 100) {
-        console.warn(`elapsed time is ${elapsedTime}`);
+        console.warn(`elapsed time is ${elapsedTime.toFixed(2)}ms`);
         elapsedTime = 1000/60;
     }
 
@@ -359,7 +357,7 @@ function frame(t) {
     if(keys.length > 0) {
         const tilePos = [(mousePos[0] - offset[0])/scale, (mousePos[1] - offset[1])/scale];
         for(let i = 0; i < keys.length; i++) {
-            const skillName = toCamelCase(keyRegistry[keys[i]]);
+            const skillName = skillConversionTable[keyRegistry[keys[i]]];
 
             if(skills.tick[skillName]) skills.tick[skillName]({
                 ctx,

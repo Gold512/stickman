@@ -202,7 +202,7 @@ function curveShotArc(a, b, angle) {
 
     const intersection = Vector.intersection(a, v1, b, v2);
 
-    const a2 = .5 * (180 - 2 * angle);
+    // const a2 = .5 * (180 - 2 * angle);
     const l = math.line_length(a, intersection);
     return {
         center: intersection,
@@ -214,16 +214,17 @@ function curveShotArc(a, b, angle) {
     };
 }
 
-export const keydown = (function() {
-    function singleShot({ grid, caster, vector, foward = 1 } = {}) {
+// casting functions
+export const skillCaster = (function() {
+    function singleShot({ grid, caster, vector } = {}) {
         multiShot(grid, caster, vector, [0]);
     }
 
-    function doubleShot({ grid, caster, vector, foward = 1 } = {}) {
+    function doubleShot({ grid, caster, vector } = {}) {
         multiShot(grid, caster, vector, [5, -5]);
     }
 
-    function tripleShot({ grid, caster, vector, foward = 1 } = {}) {
+    function tripleShot({ grid, caster, vector } = {}) {
         multiShot(grid, caster, vector, [8, 0, -8])
     }
 
@@ -410,7 +411,91 @@ export const keydown = (function() {
         caster.speed = speed.move;
         caster.AddTag('NoGravity');
     }
+    
+    function curveShot({ caster, tile, grid, vector } = {}, curveAngle) {
+        if(caster.mana < skills.curve_shot.mana) return;
 
+        caster.mana -= skills.curve_shot.mana;
+        const center = caster.GetCenter();
+
+        const arc = curveShotArc(center, tile, curveAngle);
+
+        let {size, dmg} = getOrbStats(caster.mpl);
+
+        const circumference = 2 * Math.PI * arc.radius;
+        // initial angle of player relative to center of arc
+        let angle = Vector.getAngle(Vector.sub(center, arc.center));
+        const speed = 15;
+        const direction = skills.curve_shot.direction;
+
+        angle += direction * (size / circumference * 360);
+        const pos = Vector.add(arc.center, Vector.create(angle, arc.radius));
+        grid.InsertClient(new MagicProjectile(pos, size, vector, speed, {
+            dmg: dmg,
+            color: 'black',
+            owner: caster.id,
+            mpl: caster.mpl,
+            curve: {
+                center: Vector.sub(arc.center, [.5 * size, .5 * size]),
+                radius: arc.radius,
+                angle: angle,
+                direction: direction,
+                distance: Math.abs(Vector.getAngle(Vector.sub(center, arc.center)) - angle)
+            }
+        }));
+    }
+    
+    function doubleCurveShot({ caster, tile, grid, vector } = {}, curveAngle) {
+        if(caster.mana < skills.double_curve_shot.mana) return;
+
+        caster.mana -= skills.double_curve_shot.mana;
+        const center = caster.GetCenter();
+        const speed = 15;
+        let {size, dmg} = getOrbStats(caster.mpl);
+
+        const points = [
+            [center, tile],
+            [tile, center]
+        ]
+
+        for(let i = 0; i < 2; i++) {
+            const arc = curveShotArc(...points[i], curveAngle);
+            // initial angle of player relative to center of arc
+            let angle = Vector.getAngle(Vector.sub(center, arc.center));
+
+            const circumference = 2 * Math.PI * arc.radius;
+            // convert i into 1 or -1 instead of 1 or 0
+            const direction = -(i*2-1);
+
+            angle += direction * (size / circumference * 360);
+            const pos = Vector.add(arc.center, Vector.create(angle, arc.radius));
+            grid.InsertClient(new MagicProjectile(pos, size, vector, speed, {
+                dmg: dmg,
+                color: 'black',
+                owner: caster.id,
+                mpl: caster.mpl,
+                curve: {
+                    center: Vector.sub(arc.center, [.5 * size, .5 * size]),
+                    radius: arc.radius,
+                    angle: angle,
+                    direction: direction,
+                    distance: Math.abs(Vector.getAngle(Vector.sub(center, arc.center)) - angle),
+                }
+            }));
+
+        }
+    }
+
+    return {singleShot, doubleShot, tripleShot, shield, shieldShot, superSpeed, recursiveShot, volleyShot, levitation, flight, curveShot, doubleCurveShot}
+})();
+
+// UI events
+
+export const keydown = (function() {
+    // directly casted from keydown event
+    // only extract the needed functions
+    // this will enable detection of whether the skill has an event handler or not
+    let {singleShot, doubleShot, tripleShot, shield, shieldShot, superSpeed, recursiveShot, volleyShot, levitation, flight} = skillCaster;
     return {singleShot, doubleShot, tripleShot, shield, shieldShot, superSpeed, recursiveShot, volleyShot, levitation, flight}
 }());
 
@@ -482,78 +567,12 @@ export const tick = (function() {
 })();
 
 export const click = (function() {
-    function curveShot({ caster, tile, grid, vector } = {}) {
-        if(caster.mana < skills.curve_shot.mana) return;
-
-        caster.mana -= skills.curve_shot.mana;
-        const center = caster.GetCenter();
-
-        const arc = curveShotArc(center, tile, skills.curve_shot.curve);
-
-        let {size, dmg} = getOrbStats(caster.mpl);
-
-        const circumference = 2 * Math.PI * arc.radius;
-        // initial angle of player relative to center of arc
-        let angle = Vector.getAngle(Vector.sub(center, arc.center));
-        const speed = 15;
-        const direction = skills.curve_shot.direction;
-
-        angle += direction * (size / circumference * 360);
-        const pos = Vector.add(arc.center, Vector.create(angle, arc.radius));
-        grid.InsertClient(new MagicProjectile(pos, size, vector, speed, {
-            dmg: dmg,
-            color: 'black',
-            owner: caster.id,
-            mpl: caster.mpl,
-            curve: {
-                center: Vector.sub(arc.center, [.5 * size, .5 * size]),
-                radius: arc.radius,
-                angle: angle,
-                direction: direction,
-                distance: Math.abs(Vector.getAngle(Vector.sub(center, arc.center)) - angle)
-            }
-        }));
+    function curveShot(ev) {
+        skillCaster.curveShot(ev, skills.curve_shot.curve);
     }
 
-    function doubleCurveShot({ caster, tile, grid, vector } = {}) {
-        if(caster.mana < skills.double_curve_shot.mana) return;
-
-        caster.mana -= skills.double_curve_shot.mana;
-        const center = caster.GetCenter();
-        const speed = 15;
-        let {size, dmg} = getOrbStats(caster.mpl);
-
-        const points = [
-            [center, tile],
-            [tile, center]
-        ]
-
-        for(let i = 0; i < 2; i++) {
-            const arc = curveShotArc(...points[i], skills.double_curve_shot.curve);
-            // initial angle of player relative to center of arc
-            let angle = Vector.getAngle(Vector.sub(center, arc.center));
-
-            const circumference = 2 * Math.PI * arc.radius;
-            // convert i into 1 or -1 instead of 1 or 0
-            const direction = -(i*2-1);
-
-            angle += direction * (size / circumference * 360);
-            const pos = Vector.add(arc.center, Vector.create(angle, arc.radius));
-            grid.InsertClient(new MagicProjectile(pos, size, vector, speed, {
-                dmg: dmg,
-                color: 'black',
-                owner: caster.id,
-                mpl: caster.mpl,
-                curve: {
-                    center: Vector.sub(arc.center, [.5 * size, .5 * size]),
-                    radius: arc.radius,
-                    angle: angle,
-                    direction: direction,
-                    distance: Math.abs(Vector.getAngle(Vector.sub(center, arc.center)) - angle),
-                }
-            }));
-
-        }
+    function doubleCurveShot(ev) {
+        skillCaster.doubleCurveShot(ev, skills.double_curve_shot.curve);
     }
     
     return {curveShot, doubleCurveShot}

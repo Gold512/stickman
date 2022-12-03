@@ -1,5 +1,7 @@
 // store important global constants and functions 
 
+import { skills } from "../skill.js";
+
 export function getOrbStats(mpl) {
     return {
         dmg: Math.round((mpl + 2)**(1.8) * .5),
@@ -17,3 +19,16 @@ export const camera = {
     scale: 50,
     offset: [window.innerWidth / 2, window.innerHeight / 2]
 };
+
+const toCamelCase = s => s.toLowerCase().replace(/[-_][a-z]/g, (group) => group.slice(-1).toUpperCase());
+
+export let skillConversionTable;
+setTimeout(() => {
+    let res = {};
+    for(let i in skills) {
+        let camelcase=toCamelCase(i);
+        res[i] = camelcase;
+        res[camelcase] = i;
+    }
+    skillConversionTable = res;
+},0);

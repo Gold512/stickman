@@ -95,6 +95,13 @@ export const math = (function() {
       return [x, y];
     },
 
+    /**
+     * 
+     * @param {object[]} options
+     * @param {number} options[].weight
+     * @param {any} options[].item
+     * @returns {any} - selected item
+     */
     weighted_random(options) {
       let i;
       let weights = [];

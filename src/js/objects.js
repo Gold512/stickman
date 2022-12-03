@@ -356,12 +356,28 @@ export class PlayerClient extends Client {
 }
 
 export class Enemy extends Client {
+    /**
+     * 
+     * @param {[number,number]} position 
+     * @param {[number,number]} dimensions 
+     * 
+     * @param {object} options 
+     * @param {number} options.maxHealth
+     * @param {number} options.maxMana
+     * @param {number} options.healthRegen
+     * @param {number} options.manaRegen
+     * @param {number} options.mpl
+     * @param {string} options.color
+     * @param {object} options.ai - config for ai settings
+     */
     constructor(position, dimensions, {
-        maxHealth = 5,
+        maxHealth = 20,
         maxMana = 25,
         healthRegen = .2,
         manaRegen = 2,
         mpl = 1,
+        color = 'rgba(200, 0, 0, 1)',
+        skills = [],
         ai
     }={}) {
         super(position, dimensions);
@@ -379,6 +395,9 @@ export class Enemy extends Client {
 
         this.mpl = mpl;
 
+        this.color = color;
+        this.skills = skills;
+        
         this._regen = {mana: 0, health: 0}
         this.stats = {
             owner: this,
@@ -391,24 +410,13 @@ export class Enemy extends Client {
             ai = new AI(this, ai);
         }
 
-        let aiConfig = {
+        let aiConfig = ai?.config || {
             wander: true,
             stayWithin: true,
             dodge: 'low'
-        } || ai.config;
+        };
 
         this.AI = ai || new AI(this, aiConfig)
-    }
-
-    ShootAt(pos) {
-        const [x, y] = pos;
-        const [cx, cy] = this.position;
-        let vector = [x - cx, y - cy];
-        const scaler = 1/Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
-        vector[0] *= scaler;
-        vector[1] *= scaler;
-        this.grid.InsertClient(new MagicProjectile([cx + vector[0] + .5 * this.dimensions[0], cy + vector[1] + .5 * this.dimensions[1]], 3, vector, .3, {dmg: 1, color: 'black'}));
-
     }
 
     Step(t) {
@@ -458,7 +466,7 @@ export class Enemy extends Client {
     Render(ctx, offset, scale) {
         const pos = offset;
         // Render player 
-        ctx.fillStyle = 'rgba(200, 0, 0, 1)';
+        ctx.fillStyle = this.color;
 
         ctx.fillRect(this.position[0] * scale + pos[0], this.position[1] * scale + pos[1], this.dimensions[0] * scale, this.dimensions[1] * scale);
 
