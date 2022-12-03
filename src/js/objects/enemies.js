@@ -5,7 +5,7 @@ export function summonMagician(grid, position, type) {
     const stats = enemies[type];
     if (!stats) throw new Error("Invalid enemy type: " + type);
 
-    console.log(grid.InsertClient(new Enemy(position, [0.5,0.5], stats)).id);
+    grid.InsertClient(new Enemy(position, [0.5,0.5], stats));
 }
 
 export const enemies = {
