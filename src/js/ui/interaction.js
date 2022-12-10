@@ -11,7 +11,8 @@ import { ElementCreator } from '../classes/element_creator.js'
  * @param {Boolean} [options.options[].close] - whether to close interactive element when option chosen, defaults to true
  * @param {Boolean} [options.options[].onClose] - called when interactive UI is closed
  * @param {String} options.options[].text - option text
- * @param {Function} options.options[].callback - option click handler
+ * @param {('button'|'scroll')} [options.options[].type] - control type; defaults to 'button'
+ * @param {Function} [options.options[].callback] - option click handler
  */
 export function newInteractive(text, {x, y, options = [], onClose = null} = {}) {
     const container = document.getElementById('menu');
@@ -40,16 +41,62 @@ export function newInteractive(text, {x, y, options = [], onClose = null} = {}) 
                     document.removeEventListener('click', close);
                     if(onClose) onClose();
                 }
+
+                function scroll(ev, e, n) {
+                    const textContainer = ev.currentTarget.parentElement.children[1];
+                    let index = Number(textContainer.dataset.index);
+                    index += n;
+                    if(index >= e.text.length) {
+                        index = 0;
+                    } else if(index == -1) {
+                        index = e.text.length - 1;
+                    }
+
+                    textContainer.dataset.index = index;
+                    textContainer.innerText = e.text[index];
+
+                    return e.text[index];
+                }
                 
                 for (let i = 0; i < options.length; i++) {
                     const e = options[i];
-                    o.newChild('button')
-                        .text(e.text)
-                        .addEventListener('click', ev => {
-                            if(e.close === undefined || e.close === true) close();
-                            e.callback(ev);
-                        })
-                        .end
+                    switch(e.type) {
+                        case 'scroll':
+                            o.newChild('div')
+                                .class('interactive-scroll')
+                                .newChild('button')
+                                    .class('interactive-left')
+                                    .addEventListener('click', ev => {
+                                        let txt = scroll(ev, e, -1);
+                                        if(e.callback) e.callback(ev, txt)
+                                    })
+                                    .end
+
+                                .newChild('span')
+                                    .text(e.text[0])
+                                    .dataset('index', 0)
+                                    .end
+
+                                .newChild('button')
+                                    .class('interactive-right')
+                                    .addEventListener('click', ev => {
+                                        let txt = scroll(ev, e, 1);
+                                        if(e.callback) e.callback(ev, txt)
+                                    })
+                                    .end
+                                .end
+                        break;
+                        default:
+                        case 'button': 
+                            o.newChild('button')
+                                .text(e.text)
+                                .addEventListener('click', ev => {
+                                    if(e.close === undefined || e.close === true) close();
+                                    e.callback(ev);
+                                })
+                                .end
+                    }
+                    
                     
                 }
 

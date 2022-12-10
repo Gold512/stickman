@@ -178,6 +178,117 @@
     box-sizing: border-box;
 }
 
+.interactive-scroll {
+    margin-bottom: 8px;
+}
+
+.interactive-scroll button {
+    outline: 0;
+}
+
+.interactive-scroll > span {
+    display: inline-block;
+    transform: translateY(25%);
+    margin-left: .2em;
+    margin-right:.2em;
+    border: 3px solid black;
+    background: lightgray;
+    padding-left: .2em;
+    padding-right:.2em;
+    border-radius: .25em;
+    min-width: 8rem;
+    text-align: center;
+}
+
+/* left arrow btn */
+button.interactive-left {
+    --width: 3px;
+    width: 0; 
+    height: 0; 
+    background: transparent;
+    border: none;
+    border-top: .5em solid transparent;
+    border-bottom: .5em solid transparent; 
+    
+    border-right: 1em solid black;
+    position: relative;
+}
+
+/* outline left btn */
+button.interactive-left::before {
+    content: "";
+    position: absolute;
+
+    padding: 0px 6px;
+
+    top: 20%;
+    right: calc(20% - var(--width)/2);
+    transform: translate(60%, -43%);
+    
+    border-top: calc(.5em - var(--width)) solid transparent;
+    border-bottom: calc(.5em - var(--width)) solid transparent; 
+    
+    border-right: calc(1em - var(--width)) solid white;
+    background: transparent;
+    border-radius: inherit;
+}
+
+button.interactive-left::after {
+    content: "";
+    position: absolute;
+    width: 2px;
+    height: 1em;
+    top: 50%; 
+    right: -100%;
+    transform: translate(50%, -50%);
+    background: black;
+}
+
+/* right arrow */
+button.interactive-right {
+    --width: 3px;
+    width: 0; 
+    height: 0; 
+    background: transparent;
+    border: none;
+    border-top: .5em solid transparent;
+    border-bottom: .5em solid transparent; 
+    
+    border-left: 1em solid black;
+    position: relative;
+}
+
+/* right arrow outline */
+button.interactive-right::before {
+    content: "";
+    position: absolute;
+
+    padding: 0px 6px;
+
+    top: 20%;
+    left: calc(20% - var(--width)/2);
+    transform: translate(-60%, -43%);
+    
+    border-top: calc(.5em - var(--width)) solid transparent;
+    border-bottom: calc(.5em - var(--width)) solid transparent; 
+    
+    border-left: calc(1em - var(--width)) solid white;
+    background: transparent;
+    border-radius: inherit;
+}
+
+button.interactive-right::after {
+    content: "";
+    position: absolute;
+    width: 2px;
+    height: 1em;
+    top: 50%; 
+    left: -100%;
+    transform: translate(-50%, -50%);
+    background: black;
+}
+
+
 #movement-buttons {
     z-index: 2000;
     bottom: 5vh;
@@ -210,3 +321,4 @@
 #movement-buttons > button {
     position: relative;
 }
+

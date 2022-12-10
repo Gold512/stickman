@@ -397,7 +397,7 @@ export class Enemy extends Client {
 
         this.color = color;
         this.skills = skills;
-        
+
         this._regen = {mana: 0, health: 0}
         this.stats = {
             owner: this,
@@ -493,7 +493,10 @@ export class Enemy extends Client {
     OnRemove() {
         if(!this.spawner) return;
         const spawner = this.grid.GetClientById(this.spawner)
-        if(spawner) spawner.killed++;
+        if(spawner) {
+            spawner.spawned.delete(this.id);
+            spawner.killed++;
+        }
     }
 
     toJSON() {
@@ -519,7 +522,16 @@ export class Enemy extends Client {
 }
 
 export class Spawner extends Client {
-    constructor(position, bounds, objectGenerator, count) {
+    /**
+     * 
+     * @param {[number,number]} position 
+     * @param {[number, number]} bounds 
+     * @param {object} options
+     * @param {function(this:Spawner)} [options.objectGenerator] - function that returns the client to spawn
+     * @param {number} options.count 
+     * @param {string} [type] - used to store spawn type information if needed
+     */
+    constructor(position, {bounds, objectGenerator, count, type}) {
         super(position, [1, 1]);
 
         this.collision.type = 'none';
@@ -531,6 +543,9 @@ export class Spawner extends Client {
 
         this.objectGenerator = objectGenerator;
         this.count = count;
+
+        this.spawned = new Set();
+        this.type = type||'beginner'
     }
 
     OnFocusBeforeRender(ctx, offset, scale) {
@@ -552,6 +567,13 @@ export class Spawner extends Client {
             }, 
             options: [
                 {
+                    text: ['beginner', 'rookie', 'intermediate', 'expert', 'master', 'legend', 'myth'],
+                    type: 'scroll',
+                    callback: (ev, option) => {
+                        this.type = option;
+                    }
+                },
+                {
                     close: true,
                     text: 'Force spawn',
                     callback: () => this.Spawn()
@@ -564,8 +586,15 @@ export class Spawner extends Client {
      * Enemy spawning event
      */
     Spawn() {
+        for(let i = 0, arr = Array.from(this.spawned); i < arr.length; i++) {
+            const client = this.grid.GetClientById(arr[i]);
+            this.total = Infinity;
+            if(client) this.grid.Remove(client);
+            this.total = this.count; 
+        }
+
         for(let i = 0; i < this.count; i++) {
-            const obj = this.objectGenerator();
+            const obj = this.objectGenerator(this);
             const bounds = [
                 [this.position[0] - .5 * this.bounds[0], this.position[1] - .5 * this.bounds[1]],
                 [this.position[0] + .5 * this.bounds[0], this.position[1] + .5 * this.bounds[1]]
@@ -588,6 +617,8 @@ export class Spawner extends Client {
             obj.bounds = bounds;
             
             this.grid.InsertClient(obj);
+
+            this.spawned.add(obj.id);
         }
     }
 
@@ -972,6 +1003,8 @@ export class Shield extends Client {
             return;
         }
         const owner = this.grid.GetClientById(this.owner);
+        if(!owner) this.grid.Remove();
+        
         let [cx, cy] = owner.GetCenter();
         this.direction = owner.facing == 'right' ? 1 : -1;
         cx += this.direction * owner.dimensions[0] - .5 * this.dimensions[0];

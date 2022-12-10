@@ -17,7 +17,16 @@ export const speed = {
 
 export const camera = {
     scale: 50,
-    offset: [window.innerWidth / 2, window.innerHeight / 2]
+    offset: [window.innerWidth / 2, window.innerHeight / 2],
+    
+    /**
+     * Get the tile position from pixels in camera
+     * @param {number} x 
+     * @param {number} y 
+     */
+    getTile(x, y) {
+        return [(x - this.offset[0])/this.scale, (y - this.offset[1])/this.scale]
+    }
 };
 
 const toCamelCase = s => s.toLowerCase().replace(/[-_][a-z]/g, (group) => group.slice(-1).toUpperCase());

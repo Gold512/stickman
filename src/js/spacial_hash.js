@@ -69,7 +69,7 @@ export class SpatialHash {
   }
 
   /**
-   * Fully removes the client from the spacial has grid
+   * Fully removes the client from the spacial hash grid
    * @param {Client} client client to remove
    */
   Remove(client) {
@@ -150,6 +150,43 @@ export class SpatialHash {
 
     const clients = [];
     const queryId = this._queryIds++;
+
+//     // Define the size of the grid and the circle's center and radius
+// const gridSize = 10;
+// const center = [5, 5];
+// const radius = 4;
+
+// // Initialize the grid as a 2D array of zeros
+// const grid = new Array(gridSize).fill(0).map(() => new Array(gridSize).fill(0));
+
+// // Define the Bresenham's algorithm for circle drawing
+// function bresenhamCircle(x0, y0, radius) {
+//   let x = radius;
+//   let y = 0;
+//   let decisionOver2 = 1 - x;   // Decision criterion divided by 2 evaluated at x=r, y=0
+
+//   while (y <= x) {
+//     // Octant 1
+//     grid[x0 + x][y0 + y] = 1;
+//     grid[x0 + y][y0 + x] = 1;
+//     // Octant 2
+//     grid[x0 - x][y0 + y] = 1;
+//     grid[x0 - y][y0 + x] = 1;
+//     // Octant 3
+//     grid[x0 - x][y0 - y] = 1;
+//     grid[x0 - y][y0 - x] = 1;
+//     // Octant 4
+//     grid[x0 + x][y0 - y] = 1;
+//     grid[x0 + y][y0 - x] = 1;
+//     y++;
+//     if (decisionOver2 <= 0) {
+//       decisionOver2 += 2 * y + 1;
+//     } else {
+//       x--;
+//       decisionOver2 += 2 * (y - x) + 1;
+//     }
+//   }
+// }
 
     for (let x = i1[0], xn = i2[0]; x <= xn; ++x) {
       for (let y = i1[1], yn = i2[1]; y <= yn; ++y) {

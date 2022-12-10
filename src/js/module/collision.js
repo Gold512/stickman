@@ -1,128 +1,236 @@
 export const collision = {
-    /**
-     * Check collision of 2 circles
-     * @param {Number} p1x first circle x coord
-     * @param {Number} p1y first circle y coord
-     * @param {Number} r1 first circle radious
-     * @param {Number} p2x second circle x pos
-     * @param {Number} p2y second circle y pos
-     * @param {Number} r2 second circle radius   
-     * @returns {Boolean} whether the circles are overlapping
+	/**
+	 * Check collision of 2 circles
+	 * @param {Number} p1x first circle x coord
+	 * @param {Number} p1y first circle y coord
+	 * @param {Number} r1 first circle radious
+	 * @param {Number} p2x second circle x pos
+	 * @param {Number} p2y second circle y pos
+	 * @param {Number} r2 second circle radius
+	 * @returns {Boolean} whether the circles are overlapping
+	 */
+	Circles(p1x, p1y, r1, p2x, p2y, r2) {
+		return (r1 + r2) ** 2 > (p1x - p2x) ** 2 + (p1y - p2y) ** 2;
+	},
+
+	/**
+	 * Check collision of 2 rectangles
+	 * @param {Number} x1 first rect x coord
+	 * @param {Number} y1 first rect y coord
+	 * @param {Number} w1 first rect width
+	 * @param {Number} h1 first rect height
+	 * @param {Number} x2 second rect x coord
+	 * @param {Number} y2 second rect y coord
+	 * @param {Number} w2 second rect width
+	 * @param {Number} h2 second rect height
+	 */
+	Rects(x1, y1, w1, h1, x2, y2, w2, h2) {
+		return !(y1 + h1 < y2 || y1 > y2 + h2 || x1 + w1 < x2 || x1 > x2 + w2);
+	},
+
+	/**
+	 * Check collision of a rectangle and circle
+	 * @param {Number} x1 rectangle x coord
+	 * @param {Number} y1 rectangle y coord
+	 * @param {Number} w1 rectangle width
+	 * @param {Number} h1 rectangle height
+	 * @param {Number} x2 circle x coord
+	 * @param {Number} y2 circle y coord
+	 * @param {Number} r2 circle radius
+	 * @returns {Boolean}
+	 */
+	RectAndCircle(x1, y1, w1, h1, x2, y2, r2) {
+		const rect = { x: x1, y: y1, w: w1, h: h1 };
+		const circle = { x: x2, y: y2, r: r2 };
+
+		let distX = Math.abs(circle.x - rect.x - rect.w / 2);
+		let distY = Math.abs(circle.y - rect.y - rect.h / 2);
+
+		if (distX > rect.w / 2 + circle.r) {
+			return false;
+		}
+		if (distY > rect.h / 2 + circle.r) {
+			return false;
+		}
+
+		if (distX <= rect.w / 2) {
+			return true;
+		}
+		if (distY <= rect.h / 2) {
+			return true;
+		}
+
+		let dx = distX - rect.w / 2;
+		let dy = distY - rect.h / 2;
+		return dx * dx + dy * dy <= circle.r * circle.r;
+	},
+
+	/**
+     * 
+     * @param {number} x1 - points of line
+     * @param {number} y1 - points of line
+     * @param {number} x2 - points of line
+     * @param {number} y2 - points of line
+     * @param {number} x - center of circle
+     * @param {number} y - center of circle
+     * @param {number} radius - radius of circle 
      */
-    Circles(p1x, p1y, r1, p2x, p2y, r2) { 
-        return (r1 + r2) ** 2 > (p1x - p2x) ** 2 + (p1y - p2y) ** 2;
-    },
+	LineAndCircle(x1, y1, x2, y2, x, y, radius) {
+        // change equation of line to form a*x + b*y + c = 0
+        const a = y1 - y2;
+        const b = x2 - x1;
+        const c = x1 * y2 - x2 * y1;
+
+        // Finding the distance of line from center.
+        let dist = (Math.abs(a * x + b * y + c)) /
+                        Math.sqrt(a * a + b * b);
+       
+        // Checking if the distance is less than,
+        // greater than or equal to radius.
+        return radius >= dist;
+	},
 
     /**
-     * Check collision of 2 rectangles
-     * @param {Number} x1 first rect x coord
-     * @param {Number} y1 first rect y coord
-     * @param {Number} w1 first rect width
-     * @param {Number} h1 first rect height
-     * @param {Number} x2 second rect x coord
-     * @param {Number} y2 second rect y coord
-     * @param {Number} w2 second rect width
-     * @param {Number} h2 second rect height
+     * line and rectangle intersection (by ChatGPT)
+     * @param {number} x1 first line x coordinate
+     * @param {number} y1 first line y coordinate
+     * @param {number} x2 first line x coordinate
+     * @param {number} y2 first line y coordinate
+     * @param {number} x3 x of top left corner of rectangle
+     * @param {number} y3 y of top left corner of rectangle
+     * @param {number} rectangleWidth width of rectangle
+     * @param {number} rectangleHeight height of rectangle
+     * @returns {boolean}
      */
-    Rects(x1, y1, w1, h1, x2, y2, w2, h2) {
-        return !(
-            ((y1 + h1) < (y2)) ||
-            (y1 > (y2 + h2)) ||
-            ((x1 + w1) < x2) ||
-            (x1 > (x2 + w2))
-        );
-    },
+    LineAndRect(x1, y1, x2, y2, x3, y3, rectangleWidth, rectangleHeight) {
+        // Get the coordinates of the rectangle
+        const x4 = x3 + rectangleWidth;
+        const y4 = y3 + rectangleHeight;
+      
+        // Calculate the intersection points of the line and the rectangle
+        const denominator = ((x1 - x2) * (y3 - y4)) - ((y1 - y2) * (x3 - x4));
+        const numerator1 = ((x1 * y2) - (y1 * x2)) * (x3 - x4);
+        const numerator2 = ((x1 * y2) - (y1 * x2)) * (y3 - y4);
+        const x = (numerator1 - numerator2) / denominator;
+        const y = (((x1 * y2) - (y1 * x2)) * (y3 - y4) - ((x1 - x2) * (y3 * y4))) / denominator;
+      
+        // Check if the intersection points are within the bounds of the line and the rectangle
+        return (x >= Math.min(x1, x2) && x <= Math.max(x1, x2)) && (y >= Math.min(y1, y2) && y <= Math.max(y1, y2)) && (x >= Math.min(x3, x4) && x <= Math.max(x3, x4)) && (y >= Math.min(y3, y4) && y <= Math.max(y3, y4));
+      },      
 
-    /**
-     * Check collision of a rectangle and circle
-     * @param {Number} x1 rectangle x coord
-     * @param {Number} y1 rectangle y coord
-     * @param {Number} w1 rectangle width
-     * @param {Number} h1 rectangle height
-     * @param {Number} x2 circle x coord
-     * @param {Number} y2 circle y coord
-     * @param {Number} r2 circle radius
-     * @returns {Boolean}
-     */
-    RectAndCircle(x1, y1, w1, h1, x2, y2, r2) {
-        const rect = {x: x1, y: y1, w: w1, h: h1};
-        const circle = {x: x2, y: y2, r: r2};
+	/**
+	 * Helper function to determine whether there is an intersection between the two polygons described
+	 * by the lists of vertices. Uses the Separating Axis Theorem
+	 *
+	 * @param {Object[]} a an array of connected points [{x:, y:}, {x:, y:},...] that form a closed polygon
+	 * @param {Object[]} b an array of connected points [{x:, y:}, {x:, y:},...] that form a closed polygon
+	 * @return {Boolean} true if there is any intersection between the 2 polygons, false otherwise
+	 */
+	Polygon(a, b) {
+		var polygons = [a, b];
+		var minA, maxA, projected, i, i1, j, minB, maxB;
 
-        let distX = Math.abs(circle.x - rect.x-rect.w/2);
-        let distY = Math.abs(circle.y - rect.y-rect.h/2);
+		for (i = 0; i < polygons.length; i++) {
+			// for each polygon, look at each edge of the polygon, and determine if it separates
+			// the two shapes
+			var polygon = polygons[i];
+			for (i1 = 0; i1 < polygon.length; i1++) {
+				// grab 2 vertices to create an edge
+				var i2 = (i1 + 1) % polygon.length;
+				var p1 = polygon[i1];
+				var p2 = polygon[i2];
 
-        if (distX > (rect.w/2 + circle.r)) { return false; }
-        if (distY > (rect.h/2 + circle.r)) { return false; }
+				// find the line perpendicular to this edge
+				var normal = { x: p2.y - p1.y, y: p1.x - p2.x };
 
-        if (distX <= (rect.w/2)) { return true; } 
-        if (distY <= (rect.h/2)) { return true; }
+				minA = maxA = undefined;
+				// for each vertex in the first shape, project it onto the line perpendicular to the edge
+				// and keep track of the min and max of these values
+				for (j = 0; j < a.length; j++) {
+					projected = normal.x * a[j].x + normal.y * a[j].y;
+					if (minA == undefined || projected < minA) {
+						minA = projected;
+					}
+					if (maxA == undefined || projected > maxA) {
+						maxA = projected;
+					}
+				}
 
-        let dx=distX-rect.w/2;
-        let dy=distY-rect.h/2;
-        return (dx*dx+dy*dy<=(circle.r*circle.r));
-    },
+				// for each vertex in the second shape, project it onto the line perpendicular to the edge
+				// and keep track of the min and max of these values
+				minB = maxB = undefined;
+				for (j = 0; j < b.length; j++) {
+					projected = normal.x * b[j].x + normal.y * b[j].y;
+					if (minB == undefined || projected < minB) {
+						minB = projected;
+					}
+					if (maxB == undefined || projected > maxB) {
+						maxB = projected;
+					}
+				}
 
-    /**
-     * Helper function to determine whether there is an intersection between the two polygons described
-     * by the lists of vertices. Uses the Separating Axis Theorem
-     *
-     * @param {Object[]} a an array of connected points [{x:, y:}, {x:, y:},...] that form a closed polygon
-     * @param {Object[]} b an array of connected points [{x:, y:}, {x:, y:},...] that form a closed polygon
-     * @return {Boolean} true if there is any intersection between the 2 polygons, false otherwise
-     */
-    Polygon(a, b) {
-        var polygons = [a, b];
-        var minA, maxA, projected, i, i1, j, minB, maxB;
+				// if there is no overlap between the projects, the edge we are looking at separates the two
+				// polygons, and we know there is no overlap
+				if (maxA < minB || maxB < minA) {
+					return false;
+				}
+			}
+		}
+		return true;
+	},
+};
 
-        for (i = 0; i < polygons.length; i++) {
+const intersection = {
+	/**
+	 *
+	 * @param {[[number, number], [number, number]]} line 2 points of the line
+	 * @param {[[number, number], [number, number]]} square [(x, y), (width, height)] of the square
+	 * @returns {[number, number][]} - list of points of intersection
+	 */
+	LineAndSquare(line, square) {
+		// First, we need to get the equation of the line in the form of "y = mx + b"
+		// We can use the coordinates of two points on the line to do this
+		const [x1, y1] = line[0];
+		const [x2, y2] = line[1];
+		let m, b;
+		if (x1 === x2) {
+			// The line is vertical, so its slope is infinite
+			m = Infinity;
+			b = x1;
+		} else {
+			m = (y2 - y1) / (x2 - x1);
+			b = y1 - m * x1;
+		}
 
-            // for each polygon, look at each edge of the polygon, and determine if it separates
-            // the two shapes
-            var polygon = polygons[i];
-            for (i1 = 0; i1 < polygon.length; i1++) {
+		// Next, we need to get the coordinates of the square's edges
+		const [xMin, yMin] = square[0];
+		const [xMax, yMax] = [
+			square[0][0] + square[1][0],
+			square[0][1] + square[1][1],
+		];
 
-                // grab 2 vertices to create an edge
-                var i2 = (i1 + 1) % polygon.length;
-                var p1 = polygon[i1];
-                var p2 = polygon[i2];
-
-                // find the line perpendicular to this edge
-                var normal = { x: p2.y - p1.y, y: p1.x - p2.x };
-
-                minA = maxA = undefined;
-                // for each vertex in the first shape, project it onto the line perpendicular to the edge
-                // and keep track of the min and max of these values
-                for (j = 0; j < a.length; j++) {
-                    projected = normal.x * a[j].x + normal.y * a[j].y;
-                    if (minA == undefined || projected < minA) {
-                        minA = projected;
-                    }
-                    if (maxA == undefined || projected > maxA) {
-                        maxA = projected;
-                    }
-                }
-
-                // for each vertex in the second shape, project it onto the line perpendicular to the edge
-                // and keep track of the min and max of these values
-                minB = maxB = undefined;
-                for (j = 0; j < b.length; j++) {
-                    projected = normal.x * b[j].x + normal.y * b[j].y;
-                    if (minB == undefined || projected < minB) {
-                        minB = projected;
-                    }
-                    if (maxB == undefined || projected > maxB) {
-                        maxB = projected;
-                    }
-                }
-
-                // if there is no overlap between the projects, the edge we are looking at separates the two
-                // polygons, and we know there is no overlap
-                if (maxA < minB || maxB < minA) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-}
-
+		// Now we can use the equation of the line and the coordinates of the square's edges
+		// to find the points where the line intersects the square
+		const intersections = [];
+		if (m === Infinity) {
+			// The line is vertical, so it intersects the square at the line's x-coordinate
+			if (yMin <= x1 && x1 <= yMax) {
+				intersections.push([x1, yMin], [x1, yMax]);
+			}
+		} else {
+			if (xMin <= (yMin - b) / m && (yMin - b) / m <= xMax) {
+				intersections.push([(yMin - b) / m, yMin]);
+			}
+			if (xMin <= (yMax - b) / m && (yMax - b) / m <= xMax) {
+				intersections.push([(yMax - b) / m, yMax]);
+			}
+			if (yMin <= m * xMin + b && m * xMin + b <= yMax) {
+				intersections.push([xMin, m * xMin + b]);
+			}
+			if (yMin <= m * xMax + b && m * xMax + b <= yMax) {
+				intersections.push([xMax, m * xMax + b]);
+			}
+		}
+		return intersections;
+	},
+};

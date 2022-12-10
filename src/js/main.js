@@ -7,6 +7,7 @@ import { loadFromStorage } from './save.js';
 import { FPS } from './libs/fps.min.js'
 import { Vector } from './module/vector.js';
 import { camera, skillConversionTable, speed } from './module/calc.js';
+import { createMagician } from './objects/enemies.js';
 const grid = new SpatialHash([-30, -30], [60, 60]);
 
 const player = grid.InsertClient(new PlayerClient([0, 0], [.5, .5], {
@@ -19,7 +20,14 @@ const player = grid.InsertClient(new PlayerClient([0, 0], [.5, .5], {
 player.speed = speed.move;
 loadFromStorage(player);
 
-grid.InsertClient(new Spawner([0, 0], [12, 12], () => new Enemy(null, [.5, .5]), 3).SetZIndex(-1)).Spawn();
+grid.InsertClient(new Spawner([0, 0], {
+    bounds: [12, 12],
+    objectGenerator: o => {
+        return createMagician([0,0], o.type)
+    },
+    count: 3,
+    type: 'beginner'
+}).SetZIndex(-1)).Spawn();
 
 grid.InsertClient(new RectSolid([-5, 3], [10, 1]));
 grid.InsertClient(new RectSolid([-6, 0], [1, 3]));
@@ -460,7 +468,10 @@ window.dev = () => {
     if(url.searchParams.get('dev') == 'true') {
         window.player = player;
         window.grid = grid;
-        import('./ui/dev_tools.js').then(o => window.dev = o.dev);
+        import('./ui/dev_tools.js').then(o => {
+            window.dev = o.dev;
+            o.init();
+        });
     }
 }();
 

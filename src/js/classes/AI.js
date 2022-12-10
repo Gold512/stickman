@@ -267,7 +267,7 @@ export class AI {
             const manaDiff = client.mana - skillStats.mana;
             weights.push({
                 // favour using more mana
-                weight: Math.round((manaDiff*10) ** -.1)*10,
+                weight: Math.round(((manaDiff + 1)*10) ** -.1)*10,
                 item: skillId
             });
         }
