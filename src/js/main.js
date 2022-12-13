@@ -148,7 +148,7 @@ document.addEventListener('keydown', function keydown(ev) {
         if(keyState.state[ev.key]) keydown({key: ev.key}); 
         delete keyState.timeouts[ev.key];
     }, skill.cd * 1000);
-});
+}, false);
 
 document.addEventListener('keyup', ev => {
     switch (ev.key) {
@@ -183,7 +183,7 @@ document.addEventListener('keyup', ev => {
         document.querySelector(`[data-id="${keyRegistry[ev.key]}"]`).classList.remove('casting')
         return;
     }
-});
+}, false);
 
 !function() {
     function remeasureScreen() {

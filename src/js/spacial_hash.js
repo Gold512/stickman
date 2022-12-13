@@ -406,10 +406,9 @@ export class SpatialHash {
     const [x, y] = client.position;
     const [w, h] = client.dimensions;
 
-    //console.log(x, y, w, h);
-
-    const i1 = this._GetCellIndex([x - w / 2, y - h / 2]);
-    const i2 = this._GetCellIndex([x + w / 2, y + h / 2]);
+    // get corner points of object
+    const i1 = this._GetCellIndex([x, y]);
+    const i2 = this._GetCellIndex([x + w, y + h]);
 
     //console.log(i1, i2);
 
