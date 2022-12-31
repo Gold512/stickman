@@ -320,8 +320,15 @@ function frame(t) {
         start = t;
     }
 
+    if(grid.paused == true) {
+        fps.frame();
+        window.requestAnimationFrame(frame);
+        return;
+    }
+
+    // Cause game to slow down if the framerate is too low
     if(elapsedTime > 100) {
-        console.warn(`elapsed time is ${elapsedTime.toFixed(2)}ms`);
+        console.warn(`elapsed time is ${elapsedTime.toFixed(2)}ms, setting elapsed time to 1/60s`);
         elapsedTime = 1000/60;
     }
 
@@ -443,7 +450,7 @@ function frame(t) {
         o.Render(ctx, offset, scale);
     }
 
-    fps.frame()
+    fps.frame();
     window.requestAnimationFrame(frame);
 }
 

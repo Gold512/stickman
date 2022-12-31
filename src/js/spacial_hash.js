@@ -333,6 +333,11 @@ export class SpatialHash {
     }
   }
 
+  // addEventListener(event, listener) {
+  //   if(!this._events[event]) this._events[event] = [];
+  //   this._events[event].push(listener);
+  // }
+
   /**
    * Call step function for objects that need to be updated like projectiles
    * @param {Number} t the amount of time elapsed
@@ -406,9 +411,13 @@ export class SpatialHash {
     const [x, y] = client.position;
     const [w, h] = client.dimensions;
 
+    // amount that the client should be in the tile to the right and bottom to be inserted
+    // into those tiles
+    const OVERLAP_THRESHOLD = 0.1;
+
     // get corner points of object
     const i1 = this._GetCellIndex([x, y]);
-    const i2 = this._GetCellIndex([x + w, y + h]);
+    const i2 = this._GetCellIndex([x + w - OVERLAP_THRESHOLD, y + h - OVERLAP_THRESHOLD]);
 
     //console.log(i1, i2);
 

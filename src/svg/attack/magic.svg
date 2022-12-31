@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" xmlns:bx="https://boxy-svg.com">
+  <defs>
+    <linearGradient id="color-0" gradientUnits="userSpaceOnUse" bx:pinned="true">
+      <stop style="stop-color: rgb(197, 0, 190)"/>
+    </linearGradient>
+    <linearGradient id="color-1" gradientUnits="userSpaceOnUse" gradientTransform="matrix(1, 0, 0, 1, -47.013456, 30.327316)" bx:pinned="true">
+      <stop style="stop-color: rgb(94, 0, 91);"/>
+    </linearGradient>
+    <linearGradient id="color-2" gradientUnits="userSpaceOnUse" gradientTransform="matrix(1, 0, 0, 1, -16.625725, 200.477463)" bx:pinned="true">
+      <stop style="stop-color: rgba(255, 255, 255, 0.43);"/>
+    </linearGradient>
+    <linearGradient id="color-3" gradientUnits="userSpaceOnUse" gradientTransform="matrix(1, 0, 0, 1, 21.432339, 41.990532)" bx:pinned="true">
+      <stop style="stop-color: rgb(151, 0, 146)"/>
+    </linearGradient>
+  </defs>
+  <path d="M 256.568 143.431 L 298.995 298.995 L 143.431 256.568 L 101.005 101.005" style="stroke-linejoin: round; stroke-linecap: round; paint-order: fill; stroke-width: 10px; fill: url(#color-0); stroke: url(#color-1);" transform="matrix(0.707107, 0.707107, -0.707107, 0.707107, 199.999985, -82.842712)"/>
+  <line style="fill: rgb(216, 216, 216); stroke-width: 10px; stroke-linecap: round; stroke-linejoin: round; stroke: url(#color-1);" x1="200" y1="60" x2="280" y2="200"/>
+  <line style="fill: rgb(216, 216, 216); stroke-width: 10px; stroke-linecap: round; stroke-linejoin: round; stroke: url(#color-2);" x1="200" y1="101.884" x2="207.664" y2="116.792"/>
+  <line style="fill: rgb(216, 216, 216); stroke-width: 10px; stroke-linecap: round; stroke-linejoin: round; stroke: url(#color-2);" x1="215.425" y1="129.046" x2="217.203" y2="132.254"/>
+  <polyline style="stroke-width: 10px; stroke-linejoin: round; stroke-linecap: round; stroke: rgb(151, 0, 146); fill: url(#color-2);" points="200 140 169.01 200 200 260 229.474 200"/>
+  <line style="stroke-width: 10px; stroke-linecap: round; stroke-linejoin: round; fill: none; stroke: url(#color-3);" x1="200" y1="140" x2="205.102" y2="150.661"/>
+  <line style="stroke-width: 10px; stroke-linecap: round; stroke-linejoin: round; fill: none; stroke: url(#color-3);" x1="217.834" y1="177.249" x2="229.549" y2="200"/>
+  <line style="fill: rgb(216, 216, 216); stroke-width: 10px; stroke-linecap: round; stroke-linejoin: round; stroke: url(#color-1);" x1="194.753" y1="292.812" x2="194.737" y2="292.829"/>
+  <line style="fill: rgb(216, 216, 216); stroke-width: 10px; stroke-linecap: round; stroke-linejoin: round; stroke: url(#color-1);" x1="175.439" y1="260" x2="187.091" y2="280.462"/>
+</svg>

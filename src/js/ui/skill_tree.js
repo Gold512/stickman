@@ -3,7 +3,7 @@ import {skills, mpl_colors} from '../skill.js'
 import {ElementCreator} from '../classes/element_creator.js'
 import { CreateAnimation } from '../module/animation.js'
 import { saveToStorage } from '../save.js'
-import { updateSkills } from '../ui.js'
+import { updateSkills } from './character.js'
 import { math } from '../module/math.js'
 
 const SKILL_TREE = [
@@ -26,8 +26,8 @@ const descriptions = {
 
 const menu_container = document.getElementById('menu')
 
-function createStatMenu() {
-    menu_container.style.display = 'block';
+export function createStatMenu(menu_container) {
+    // menu_container.style.display = 'block';
     const main = document.createElement('div');
     main.classList.add('skill-tree');
 
@@ -56,33 +56,33 @@ function createStatMenu() {
     });
 
     // Close btn 
-    new ElementCreator('button')
-        .style({
-            position: 'relative',
-            display: 'inline-block',
-            width: '2em',
-            height: '2em',
-            border: 'none',
-            background: 'none',
-            left: '5px',
-            top: '5px',
-        })
-        .class('overlay')
-        .addEventListener('click', ev => {
-            main.remove();
-            menu_container.style.display = '';
-        })
-        .newChild(newSVG('./src/svg/icons/close.svg'))
-            .style({
-                position: 'absolute',
-                width: '75%',
-                height: '75%',
-                left: '50%', 
-                top: '50%',
-                transform: 'translate(-50%, -50%)'
-            })
-            .end
-        .appendTo(main);
+    // new ElementCreator('button')
+    //     .style({
+    //         position: 'relative',
+    //         display: 'inline-block',
+    //         width: '2em',
+    //         height: '2em',
+    //         border: 'none',
+    //         background: 'none',
+    //         left: '5px',
+    //         top: '5px',
+    //     })
+    //     .class('overlay')
+    //     .addEventListener('click', ev => {
+    //         main.remove();
+    //         menu_container.style.display = '';
+    //     })
+    //     .newChild(newSVG('./src/svg/icons/close.svg'))
+    //         .style({
+    //             position: 'absolute',
+    //             width: '75%',
+    //             height: '75%',
+    //             left: '50%', 
+    //             top: '50%',
+    //             transform: 'translate(-50%, -50%)'
+    //         })
+    //         .end
+    //     .appendTo(main);
 
     // Stat point display
     new ElementCreator('div')
@@ -98,10 +98,9 @@ function createStatMenu() {
         })
         .appendTo(main);
 
-    const container = document.getElementById('menu');
-    container.innerHTML = '';
-    container.style.overflow = 'hidden';    
-    container.appendChild(main);
+    menu_container.innerHTML = '';
+    menu_container.style.overflow = 'hidden';    
+    menu_container.appendChild(main);
 }
 
 /**
@@ -529,6 +528,9 @@ export const stat_menu = {
 
     },
     init: () => {
-        document.getElementById('stat-menu-btn').addEventListener('click', createStatMenu)
+        document.getElementById('stat-menu-btn').addEventListener('click', () => { 
+            menu_container.style.display = 'block';
+            createStatMenu(menu_container);
+        })
     }
 }

@@ -47,11 +47,17 @@ export class ElementCreator {
     /**
      * Append a pre-created child element to this element as is
      * without creating a new ElementCreator
-     * @param {HTMLElement} element - element to append
+     * @param {HTMLElement|ElementCreator} element - element to append
      */
     appendChild(element) {
-        if(!(element instanceof HTMLElement)) throw new Error('input is not a HTMLElement');
-        this.element.appendChild(element);
+        if(element instanceof HTMLElement) {
+            this.element.appendChild(element);
+        } else if(element instanceof ElementCreator) {
+            element.appendTo(this.element);
+        } else {
+            throw new Error('input is not a HTMLElement or element creator\n encountered type: ' + (element.constructor.name));
+        }
+        
         return this;
     }
 
@@ -155,7 +161,7 @@ export class ElementCreator {
     /**
      * Perform operations conditionally
      * @param {Boolean} bool - whether or not to execute the callback
-     * @param {function(ElementCreator):void} callback - callback when the boolean is true; 
+     * @param {function(ElementCreator):void} callback - callback when the boolean is true
      * @returns {ElementCreator} - reference to this object
      */
     if(bool, callback) {

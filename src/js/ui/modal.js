@@ -101,11 +101,14 @@ export function highlightElement(e, label) {
     let resolve;
     const p = new Promise(res => {resolve = res});
 
-    e.addEventListener('click', () => {
+    function onClick(e) {
         clear();
         e.classList.remove('flash');
         resolve();
-    });
+        e.removeEventListener('click', onClick)
+    }
+
+    e.addEventListener('click', onClick);
     
     return p;
 }

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <rect x="80" y="280" width="60" height="60" style="fill: rgb(216, 216, 216); stroke: rgb(216, 216, 216); stroke-width: 10px; stroke-linejoin: round; stroke-linecap: round;"/>
+  <rect x="160" y="200" width="60" height="140" style="fill: rgb(216, 216, 216); stroke: rgb(216, 216, 216); stroke-width: 10px; stroke-linejoin: round; stroke-linecap: round;"/>
+  <rect x="240" y="80" width="60" height="260" style="fill: rgb(216, 216, 216); stroke: rgb(216, 216, 216); stroke-width: 10px; stroke-linejoin: round; stroke-linecap: round;"/>
+</svg>

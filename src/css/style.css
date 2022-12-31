@@ -1,9 +1,19 @@
 @import url('modal.css');
 
-/* this file should contain widely used skills */
+@import url('font/style.css');
+body, input {
+    font-family: 'action_man', sans-serif;
+}
+
+*::before, *::after {
+    font-family: 'action_man', sans-serif;
+}
+
+/* this file should contain widely used styles */
 
 body {
-    overflow: hidden
+    overflow: hidden;
+    background: #000;
 }
 
 #canvas {
@@ -13,6 +23,7 @@ body {
     left: 0;
     top: 0;
     border: none;
+    background: rgb(70, 128, 151);
 }
 
 #stats {
@@ -400,4 +411,12 @@ onto the tooltip without the hover being disabled */
 
 .casting {
     box-shadow: 0px 0px 3px 3px #fff;
+}
+
+.handdrawn-border {
+    border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+}
+
+span.unit {
+    color:rgb(180, 180, 180)
 }

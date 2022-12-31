@@ -3,59 +3,55 @@ import { mpl_colors, skills } from "./skill.js";
 import {newSVG} from "./module/svg.js";
 import { stat_menu } from "./ui/skill_tree.js";
 import * as touch from "./ui/touch.js";
+import { createMenu, reloadMenu } from "./ui/menu.js";
 
-const display = {
-    menu: 'block'
+export const keyRegistry = {
+
 }
 
-function toggleStatMenu() {
-    const menu = document.getElementById('stat-menu');
+export const EQUIPPED_SKILLS = new Set();
 
-    if(menu.style.display != 'none') {
-        menu.style.display = 'none';
+export const RESERVED_HOTKEYS = [
+    'w', 'a', 's', 'd'
+]
+
+const display = {
+    menu: null
+}
+
+function createUI() {
+    createMenu().appendTo(document.body);
+    stat_menu.init()
+}
+
+export function toggleStatMenu() {
+    if(display.menu === null) {
+        createUI();
+        display.menu = true;
     } else {
-        menu.style.display = display.menu;
+        display.menu = !display.menu;
     }
 
-    updateStats(ref.player);
-    updateSkills(ref.player);
+    let state = display.menu;
+
+    let fps = document.querySelector('[id^="yy-counter"]');
+    if(state) {
+        display.fps = fps.style.display;
+        fps.style.display = 'none';
+        reloadMenu(ref.player);
+    } else {
+        fps.style.display = display.fps;
+    }
+
+    document.querySelector('.menu-container').style.display = state ? '' : 'none';
+
+    grid.paused = state;
 }
 
 let ref = {};
 export function initUI(player) {
-    document.getElementById('stats').addEventListener('click', toggleStatMenu);
-    document.querySelector('#stat-menu #close').addEventListener('click', toggleStatMenu);
-
-    document.getElementById('download-save').addEventListener('click', () => downloadSave(player));
-    document.getElementById('load-save').addEventListener('click', () => loadSaveFile(player));
-    
     ref.player = player;
-
-    // drag and drop
-    const addSkill = document.querySelector('.skill#plus');
-    addSkill.addEventListener('drop', ev => {
-        ev.preventDefault();
-
-        const dragged = document.getElementById(ev.dataTransfer.getData("text"));
-        const dropped = ev.currentTarget;
-        const id = `skill-equipped-${dragged.dataset.id}`;
-        if(document.getElementById(id)) return;
-
-        if(dragged == null) {
-            alert("That's not a skill!");
-            return;
-        }
-
-        let card = createSkillCard(dragged, id);
-
-        ev.currentTarget.parentElement.insertBefore(card, dropped);
-        EQUIPPED_SKILLS.add(dragged.dataset.id);
-        loadSkillBar();
-    });
-
-    addSkill.addEventListener('dragover', ev => ev.preventDefault());
-
-    stat_menu.init();
+    document.getElementById('stats').addEventListener('click', toggleStatMenu);
     touch.init();
 }
 
@@ -87,94 +83,10 @@ export function createSkillCard(icon, id, currentKey = '') {
     return card;
 }
 
-function updateStats(player) {
-    document.getElementById('max-mana').innerText = player.maxMana;
-    document.getElementById('mana-regen').innerText = player.manaRegen;
-
-    document.getElementById('max-health').innerText = player.maxHealth;
-    document.getElementById('health-regen').innerText = player.healthRegen;
-
-    document.getElementById('player-level').innerText = player.level;
-    document.getElementById('player-xp').innerText = player.xp;
-    document.getElementById('player-mpl').innerText = player.mpl;
-}
-
 // update the localStorage save data
 function updateSave() {
     saveToStorage(ref.player);
 }
-
-export function updateSkills() {
-    const list = document.getElementById('skill-select');
-    list.innerHTML = '';
-
-    for(let i = 0, k = Object.keys(skills); i < k.length; i++) {
-        const e = skills[k[i]];
-        if(!player.skills.has(e.id)) continue;
-
-        // const el = document.createElement('div');
-        //     el.draggable = 'true';
-        //     el.classList.add('skill');
-        //     el.dataset.id = e.id;
-        //     el.id = `skill-${e.id}`;
-
-        let el = createSkillIcon(skills[e.id]);
-            el.draggable = 'true'; 
-            el.dataset.id = e.id;
-            el.id = `skill-${e.id}`;
-
-            // handle tooltip on drag
-            el.addEventListener('mousedown', ev => ev.target.classList.add('dragged') );
-        
-            el.addEventListener('dragend', ev => {
-                setTimeout(() => ev.target.classList.remove('dragged'), 500);
-            });
-
-            el.addEventListener('dragstart', ev => {
-                ev.dataTransfer.setData("text", ev.target.id);
-            });
-
-            // const svg = document.createElement('svg');
-            //     svg.setAttribute('viewBox', '0 0 400 400');
-
-            // const image = document.createElement('image');
-            //     image.setAttribute('xlink:href', `./src/svg/attack/${e.id}.svg`);
-            //     image.setAttribute('width', '400');
-            //     image.setAttribute('height', '400');
-            //     svg.appendChild(image);
-
-            // el.appendChild(svg);
-            
-            // el.appendChild(createSkillIcon(skills[e.id]));
-        
-        list.appendChild(el);
-    }
-}
-
-export function loadEquippedSKills() {
-    const skillDrop = document.getElementById('skill-drop');
-    const skillDropPlus = skillDrop.querySelector('#plus')
-    for(let id of EQUIPPED_SKILLS.values()) {
-        const card = createSkillCard(createSkillIcon(skills[id]), `skill-equipped-${id}`, keyRegistry[id].toUpperCase());
-        skillDrop.insertBefore(card, skillDropPlus);
-    }
-}
-
-function updateSkillHotkey(id) {
-    const bar = document.getElementById('skill-bar');
-    bar.querySelector('.skill[data-id="' + id + '"] .skill-hotkey').innerText = keyRegistry[id];
-    updateSave();
-}
-
-export const keyRegistry = {
-
-}
-
-export const EQUIPPED_SKILLS = new Set();
-
-const RESERVED_HOTKEYS = [
-    'w', 'a', 's', 'd'
-]
 
 export function loadSkillBar(save = true) { 
     const bar = document.getElementById('skill-bar');
@@ -192,7 +104,7 @@ export function loadSkillBar(save = true) {
     if(save) updateSave();
 }
 
-function createSkillIcon(skill) {
+export function createSkillIcon(skill) {
     const e = document.createElement('span');
         e.classList.add('skill');
         e.style.setProperty('--cd', skill.cd);
@@ -232,39 +144,5 @@ function createSkillIcon(skill) {
     
     e.appendChild(statData);
 
-    return e;
-}
-
-function newHotkeyInput() { 
-    const e = document.createElement('input');
-    e.classList.add('hotkey-input');
-    e.addEventListener('keypress', ev => {
-        ev.preventDefault();
-        const el = ev.currentTarget;
-        if(!ev.key) return;
-
-        // Key already assigned 
-        if(keyRegistry[ev.key] != undefined || RESERVED_HOTKEYS.includes(ev.key)) {
-            el.style.outline = 'red 2px dashed';
-
-            if(el.dataset.animid != undefined) clearTimeout(Number(el.dataset.animid));
-
-            el.dataset.animid = setTimeout(() => {
-                el.style.outline = '';
-                el.dataset.animid = '';
-            }, 200);
-            return;
-        }
-
-        el.value = ev.key.toUpperCase();
-        let id = el.parentElement.querySelector('.skill').dataset.id;
-
-        // Remove old hotkey registry entry
-        delete keyRegistry[keyRegistry[id]];
-
-        keyRegistry[ev.key] = id;
-        keyRegistry[id] = ev.key;
-        updateSkillHotkey(id);
-    });
     return e;
 }

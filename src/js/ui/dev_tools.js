@@ -1,6 +1,7 @@
 import * as clients from '../objects.js'
 import { ElementCreator } from '../classes/element_creator.js';
 import { camera, speed } from '../module/calc.js';
+import { Vector } from '../module/vector.js';
 
 function parsePos(s) {
     const pos = s.split(',');
@@ -18,6 +19,28 @@ function parsePos(s) {
 }
 
 export function init() {
+    function addCheckBox(label) {
+        return (_, elementCreator) => {
+            elementCreator.newChild('label')
+                .style({
+                    display: 'block',
+                    paddingLeft: '22px',
+                    textIndent: '-22px'
+                })
+                .newChild('span').style({'vertical-align': 'middle'})
+                    .text(label)
+                    .end
+                .newChild('input').style({'vertical-align': 'middle'})
+                    .attribute('type', 'checkbox')
+                    .addEventListener('change', ev => {
+                        ev.currentTarget.blur();
+                        dev[label](ev.currentTarget.checked)
+                    })
+                    .end
+                .end
+        }
+    }
+
     new ElementCreator('div')
         .style({
             position: 'fixed',
@@ -28,62 +51,18 @@ export function init() {
             border: '1px solid gray',
             padding: '2px 5px',
             color: 'lightgray',
-            borderRadius: '.25em'
+            borderRadius: '.25em',
+            textAlign: 'right'
         })
-        .newChild('label')
-            .style({
-                display: 'block',
-                paddingLeft: '22px',
-                textIndent: '-22px'
-            })
-            .newChild('span').style({'vertical-align': 'middle'})
-                .text('inspect')
-                .end
-            .newChild('input').style({'vertical-align': 'middle'})
-                .attribute('type', 'checkbox')
-                .addEventListener('change', (ev) => {
-                    ev.currentTarget.blur();
-                    dev.inspect(ev.currentTarget.checked)
-                })
-                .end
-            .end
+        .exec(addCheckBox('inspect'))
+        .exec(addCheckBox('noclip'))
+        .exec(addCheckBox('infinite'))
+        .exec(addCheckBox('paused'))
 
-        .newChild('label')
-            .style({
-                display: 'block',
-                paddingLeft: '22px',
-                textIndent: '-22px'
-            })
-            .newChild('span').style({'vertical-align': 'middle'})
-                .text('noclip')
-                .end
-            .newChild('input').style({'vertical-align': 'middle'})
-                .attribute('type', 'checkbox')
-                .addEventListener('change', (ev) => {
-                    ev.currentTarget.blur();
-                    dev.noclip(ev.currentTarget.checked)
-                })
-                .end
-            .end
-        
-        .newChild('label')
-            .style({
-                display: 'block',
-                paddingLeft: '22px',
-                textIndent: '-22px'
-            })
-            .newChild('span').style({'vertical-align': 'middle'})
-                .text('infinite')
-                .end
-            .newChild('input').style({'vertical-align': 'middle'})
-                .attribute('type', 'checkbox')
-                .addEventListener('change', (ev) => {
-                    ev.currentTarget.blur();
-                    dev.infinite(ev.currentTarget.checked)
-                })
-                .end
-            .end
         .appendTo(document.body);
+
+    // defualt export access location
+    dev.importAll().then(v => dev.exports = v)
 }
 
 // define dev functions to global scope
@@ -178,12 +157,14 @@ export const dev = {
             // if shiftlock is on a single shift will disable it 
             if(shiftLock) {
                 shiftLock = false;
+                inspectOverlay.style.width = camera.scale + 'px';
+                inspectOverlay.style.height = camera.scale + 'px';
                 return;
             }
 
             if(hasShifted) {
                 lastPos = camera.getTile(mousePos[0], mousePos[1]);
-                shiftLock = true
+                shiftLock = true;
             }
         })
 
@@ -195,6 +176,23 @@ export const dev = {
             const pos = camera.getTile(mousePos[0], mousePos[1]);
             positionOverlay(pos);
         });
+
+        document.addEventListener('click', event => {
+            if(!event.getModifierState('Shift')) return;
+
+            const pos = camera.getTile(event.clientX, event.clientY);
+            let idx = grid._GetCellIndex([Math.floor(pos[0]), Math.floor(pos[1])]);
+            let cell = grid._cells[idx[0]][idx[1]];
+            
+            if(!cell || !cell.client) return;
+
+            let client = cell.client;
+            shiftLock = true;
+            positionOverlay(client.position);
+            let size = Vector.multiply(client.dimensions, camera.scale);
+            inspectOverlay.style.width = size[0] + 'px';
+            inspectOverlay.style.height = size[1] + 'px';
+        })
 
         let intervalID = setInterval(() => {
             if(frozen || (mousePos[0] === undefined)) {
@@ -224,7 +222,7 @@ export const dev = {
 
                 let line = `${client.constructor.name}\n`
                 if(client.id) line += ` - ID: ${client.id}\n`;
-                if(client.dimensions) line += ` - Size: [${client.dimensions[0]}, ${client.dimensions[1]}]\n`;
+                if(client.dimensions) line += ` - Size: [${client.dimensions[0].toFixed(3)}, ${client.dimensions[1].toFixed(3)}]\n`;
                 if(client.health) line += ` - Health: ${client.health}\n`;
                 if(client.mana) line += ` - Mana: ${client.mana}\n`;
 
@@ -324,5 +322,47 @@ export const dev = {
         }
 
         player.speed = n;
+    },
+
+    paused(state) {
+        grid.paused = state;
+    },
+
+    /**
+     * 
+     * @param {string} [resultLocation] the name of the property of window to assign the result to
+     */
+    importAll(resultLocation = null) {
+        const src = [
+            'ui/character',
+            'ui/interaction',
+            'ui/modal',
+            'skill',
+            'objects',
+            'save'
+        ]
+
+
+        let queue = [];
+        for(let i in src) {
+            queue.push(dev.get(src[i]));
+        }
+
+        let promise = Promise.all(queue).then(results => {
+            let res = {};
+
+            for(let i in results) {
+                for(let j in results[i]) {
+                    res[j] = results[i][j];
+                }
+            }
+            return res;
+        });
+
+        if(resultLocation !== null) {
+            promise.then(v => window[resultLocation] = v)
+        }
+
+        return promise;
     }
 }

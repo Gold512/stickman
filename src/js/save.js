@@ -1,6 +1,6 @@
 import {LZString} from "./libs/lzstring.js";
 import { skills } from "./skill.js";
-import {keyRegistry, EQUIPPED_SKILLS, loadSkillBar, loadEquippedSKills} from "./ui.js";
+import {keyRegistry, EQUIPPED_SKILLS, loadSkillBar} from "./ui.js";
 
 function getSaveJSON(player) {
     if(!player.stats) return;
@@ -63,7 +63,6 @@ function load(obj, player) {
     }
 
     loadSkillBar(false);
-    loadEquippedSKills();
 }
 
 export function saveToStorage(player) {

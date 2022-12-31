@@ -52,7 +52,8 @@ export const skills = {
         mana: 3,
         cd: .3,
         cost: 0,
-        mpl: 1
+        mpl: 1,
+        type: 'attack'
     },
     double_shot: {
         name: 'Double Shot',
@@ -60,7 +61,8 @@ export const skills = {
         mana: 6,
         cd: .3, 
         cost: 2,
-        mpl: 2
+        mpl: 2,
+        type: 'attack'
     },
     triple_shot: {
         name: 'Triple Shot',
@@ -68,7 +70,8 @@ export const skills = {
         mana: 9,
         cd: .3, 
         cost: 5,
-        mpl: 2
+        mpl: 2,
+        type: 'attack'
     },
     curve_shot: {
         name: 'Curve Shot',
@@ -80,7 +83,8 @@ export const skills = {
         desc: 'using mana to change the trojectory of the projectile, an arc path can be achieved\nClick - fire\nScroll - change arc degree',
 
         curve: 60,
-        direction: 1
+        direction: 1,
+        type: 'attack'
     },
     double_curve_shot: {
         name: 'Double Curve Shot',
@@ -91,7 +95,8 @@ export const skills = {
         mpl: 4,
         desc: 'by using 2 curve shots, a larger explosion can be created where aimed at',
 
-        curve: 60
+        curve: 60,
+        type: 'attack'
     },
     levitation: {
         name: 'Levitation',
@@ -99,7 +104,8 @@ export const skills = {
         mana: 3,
         cd: 2,
         cost: 3,
-        mpl: 2
+        mpl: 2,
+        type: 'movement'
     },
     flight: {
         name: 'Flight',
@@ -107,7 +113,8 @@ export const skills = {
         mana: 8,
         cd: 2,
         cost: 8,
-        mpl: 3
+        mpl: 3,
+        type: 'movement'
     },
     super_speed: {
         name: 'Super Speed',
@@ -115,7 +122,8 @@ export const skills = {
         mana: 20,
         cd: 2,
         cost: 20,
-        mpl: 6
+        mpl: 6,
+        type: 'movement'
     },
     hyperspeed: {
         name: 'Hyperspeed',
@@ -123,7 +131,8 @@ export const skills = {
         mana: 150,
         cd: 1,
         cost: 50,
-        mpl: 8
+        mpl: 8,
+        type: 'movement'
     },
     shield: {
         name: 'Shield',
@@ -132,15 +141,18 @@ export const skills = {
         mana: 15,
         cd: 7,
         cost: 5,
-        mpl: 2
+        mpl: 2,
+        type: 'defense'
     },
     shield_expand: {
         name: 'Shield Expand',
+        desc: 'incresse the size of the shield to block curve shots more efficently',
         id: 'shield_expand',
         mana: 3,
         cd: 0,
         cost: 8,
-        mpl: 3
+        mpl: 3,
+        type: 'defense'
     },
     shield_shot: {
         name: 'Shield Shot',
@@ -148,7 +160,8 @@ export const skills = {
         mana: 15,
         cd: 0 , 
         cost: 15,
-        mpl: 5
+        mpl: 5,
+        type: 'attack'
         // Limited by shield cast time as a shield has to be created before it can be shot 
     },
 
@@ -160,7 +173,8 @@ export const skills = {
         mana: 25,
         cd: .1, 
         cost: 20,
-        mpl: 5
+        mpl: 5,
+        type: 'attack'
     },
 
     recursive_shot: {
@@ -170,9 +184,17 @@ export const skills = {
         mana: 12,
         cd: .75,
         cost: 10,
-        mpl: 5
+        mpl: 5,
+        type: 'attack'
     }
+}
 
+export function skillSort(skillList) {
+    let res = {};
+    for(let i = 0; i < skillList.length; i++) {
+        res[skillList[i].type] = skillList[i];
+    }
+    return res;
 }
 
 export const mpl_colors = [

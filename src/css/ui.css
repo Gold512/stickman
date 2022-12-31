@@ -48,7 +48,7 @@
 }
 
 .bar::after {
-    transform: translateY(-2px);
+    transform: translateY(-5px);
     counter-reset: current calc(var(--current)) max var(--max);
     content: var(--prefix, var(--default-prefix)) counter(current) '/' counter(max);
     display: block;
@@ -58,7 +58,9 @@
     top: 0;
     width: 100%;
     height: 100%;
-}
+    font-size: .94em;
+}    
+
 
 .bar:hover > .regen {
     position: absolute;
@@ -116,7 +118,11 @@
     right: 0;
     width: 0;
     height: 0;
-    transform: translateX(100%);
+    transform: translate(100%, -1px);
+
+    /* reduce missing center pixel due to pixel color blending */
+    background: linear-gradient(90deg, black 50%, transparent 100%);
+    background-clip: content-box;
 
     --size: calc(.5em + 2px);
     border-left: var(--size) solid black;

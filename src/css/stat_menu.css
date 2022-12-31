@@ -3,7 +3,7 @@
     height: 10em;
     position: absolute;
     left: 50%;
-    top: 20%;
+    top: 21%;
     transform: translateX(-50%);
     background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255, 255, 255, .8) 45%, rgba(0,0,0,0) 60%);
     border-radius: 50%;
@@ -19,16 +19,6 @@
     position: relative;
 }
 
-.stroke-title {
-    color: black;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
-    text-transform: uppercase;
-    font-family: monospace;
-}
-
 .title > #close {
     position: absolute;
     right: .25em;
@@ -36,7 +26,7 @@
 }
 
 .box.solid {
-    border: 2px solid black;
+    border: 4px solid lightgray;
     background: rgb(48, 48, 48);
     color:white;
 }
@@ -48,10 +38,18 @@
     margin-right: 5em;
 }
 
+#mana-box > .box-header {
+    color: rgb(100, 100, 235)
+}
+
 #health-box {
     position: absolute;
     right: 12%;
     width: 25%;
+}
+
+#health-box > .box-header {
+    color: rgb(235, 100, 100)
 }
 
 #save-box {
@@ -61,8 +59,10 @@
 }
 
 #player-box {
-    width: 20%;
-    left: 55%;
+    width: 15%;
+    left: 50%;
+    top: 3%;
+    transform: translateX(-50%);
 }
 
 #skill-box {
@@ -152,7 +152,6 @@
 
 } */
 
-/* black magic, do not touch if possible */
 .auto-height {
     display: flex;
     flex-flow: column;
@@ -163,7 +162,7 @@
     border: 1px dotted grey;
 }
 
-.auto-height .row.header {
+.auto-height .header {
     flex: 0 1 auto;
     /* The above is shorthand for:
     flex-grow: 0,
@@ -172,11 +171,9 @@
     */
 }
 
-.auto-height .row.content {
+.auto-height .content {
     flex: 1 1 auto;
 }
-
-/* end of black magic */
 
 /* make stickfigure appear from the bottom and move to the current place */
 
@@ -211,9 +208,10 @@
     height: 100%;
     padding: 0;
     margin: 0;
+    /* position: relative; */
 }
 
-.skill-tree::before {
+/* .skill-tree::before {
     content: '';
     display: block;
 
@@ -224,7 +222,7 @@
     width: 100%;
     height: 100%;
     z-index:10;
-}
+} */
 
 .skill-tree > *:where(canvas, .skill-container) {
     width: 100%;
@@ -271,7 +269,7 @@
 
 .skill-tree > * {
     position: absolute;
-    z-index: 20;
+    /* z-index: -1; */
 }
 
 .st-skill {
@@ -327,4 +325,99 @@
     80% { transform: translate(-1px, -1px) rotate(1deg); }
     90% { transform: translate(1px, 2px) rotate(0deg); }
     100% { transform: translate(1px, -2px) rotate(-1deg); }
+}
+
+/* New Menu stuff */
+.menu-container {
+    z-index: 100;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: black;
+    isolation: isolate;
+}
+
+.menu-nav-container {
+    --border: 4px;
+
+    display: flex;
+    margin-left: .625rem;
+    margin-top: calc(.625rem - var(--border));
+    gap: .25rem;
+    transform: translateY(var(--border));
+    user-select: none;
+    z-index: 999;
+}
+
+.menu-nav-item {
+    border: solid var(--border) gray;
+    border-bottom: none;
+    color: gray;
+    margin-bottom: var(--border);
+    border-top-left-radius: 30px 200px;
+    border-top-right-radius: 30px 200px;
+    /* z-index: -1; */
+}
+
+.menu-nav-item > span {
+    color: inherit;
+    padding: .3125rem 1rem;
+}
+
+.menu-nav-item > input { display: none; }
+
+.menu-nav-item:has(> input:checked) {
+    border-color: lightgray;
+    border-bottom: solid var(--border) black;
+    color: rgb(0, 185, 0);
+    margin-bottom: 0;
+}
+
+.menu-main-content {
+    border-top: solid 4px lightgray;
+}
+
+.menu-nav-item > .img {
+    position: relative;
+    display: block;
+    width: 1em;
+    height: 1em;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.menu-nav-item > .img::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    transform: translateX(-100%)
+}
+
+button.menu-nav-item {
+    border-radius: 0;
+    
+    border-top-left-radius: 30px 200px;
+    border-top-right-radius: 30px 200px;
+}
+
+.menu-nav-item.close {
+    border-color: lightgray;
+    border-bottom: solid var(--border) black;
+    color: rgb(0, 185, 0);
+    margin-bottom: 0;
+    background-color: black;
+    margin-left: 1em;
+}
+
+.page {
+    width: 100%;
+    height: 100%;
+
+}
+
+#settings-page {
+    color: white;
 }
