@@ -12,6 +12,6 @@ export function settingsPage() {
         .newChild('div')
             .class('box')
             .text('DOWNLOAD Save')
-            .addEventListener('click', downloadSave)
+            .addEventListener('click', () => downloadSave(player))
             .end
 }
