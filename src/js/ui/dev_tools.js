@@ -177,6 +177,7 @@ export const dev = {
             positionOverlay(pos);
         });
 
+        // Shift click
         document.addEventListener('click', event => {
             if(!event.getModifierState('Shift')) return;
 
@@ -192,6 +193,69 @@ export const dev = {
             let size = Vector.multiply(client.dimensions, camera.scale);
             inspectOverlay.style.width = size[0] + 'px';
             inspectOverlay.style.height = size[1] + 'px';
+
+            let originalDimensions;
+
+            /**
+             * 
+             * @param {number} n the number to convert in tiles
+             * @param {number} index 0 - x, 1 - y (the equavalant index of a positional array)
+             * @returns 
+             */
+            function convertToPixels(n, index = 0) {
+                return n * camera.scale + camera.offset[index]
+            }
+
+            let dragEvent = {
+                left: ev => {
+                    const x = ev.clientX;
+
+                    inspectOverlay.style.transform = `translate(${x}px, ${convertToPixels(originalDimensions.top,1)}px)`
+                    inspectOverlay.style.width = convertToPixels(originalDimensions.left - x / camera.scale + originalDimensions.width, 0) + 'px';
+                }
+            }
+            
+            function dragStart(clickX, clickY, direction) {
+                console.log('dragStart')
+                originalDimensions = {
+                    left: client.position[0],
+                    top: client.position[1],
+                    width: client.dimensions[0],
+                    height: client.dimensions[1],
+                    clickX, clickY
+                }
+
+                document.addEventListener('mousemove', dragEvent[direction]);
+                document.addEventListener('mouseup', () => { dragEnd(direction) });
+            }
+
+            function dragEnd(direction) {
+                document.removeEventListener('mousemove', dragEvent[direction]);
+                document.removeEventListener('mouseup', dragEnd);
+            }
+            
+            // resize and reposition tools 
+            new ElementCreator('div').id('object.editor')
+                .style({
+                    position: 'absolute',
+                    left: '0',
+                    top: '0',
+                    width: '100%',
+                    height: '100%',
+                })
+                .newChild('div').id('left')
+                    .style({
+                        position: 'absolute',
+                        left: '0',
+                        top: '0',
+                        height: '100%',
+                        width: '8px'
+                    })
+                    .addEventListener('mousedown', ev => { dragStart(ev.clientX, ev.clientY, 'left') })
+                    .end
+                .appendTo(inspectOverlay);
+
+            inspectOverlay.style.pointerEvents = ''
         })
 
         let intervalID = setInterval(() => {

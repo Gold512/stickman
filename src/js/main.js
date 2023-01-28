@@ -345,9 +345,12 @@ function frame(t) {
     ctx.clearRect(0, 0, width, height);
     grid.Step(elapsedTime);
 
+    // get objects to render
     let objects = grid.FindNear(center, [Math.ceil(1.5 * width / scale), Math.ceil(1.5 * height / scale)]);
-    objects.sort((a, b) => a.zIndex - b.zIndex);
 
+    // Used for overlays like spawn area
+    // ONLY use for interaction code 
+    // use Client.zIndex for client layering
     if(focusedClient && focusedClient.OnFocusBeforeRender) {
         focusedClient.OnFocusBeforeRender(ctx, offset, scale)
     }
@@ -445,10 +448,7 @@ function frame(t) {
     offset[1] = height/2 - center[1] * scale;
 
     // Render the objects 
-    for(let i = 0; i < objects.length; i++) {
-        const o = objects[i];
-        o.Render(ctx, offset, scale);
-    }
+    renderFrameObjects(objects);
 
     fps.frame();
     window.requestAnimationFrame(frame);
@@ -482,4 +482,24 @@ window.dev = () => {
     }
 }();
 
+
+function renderFrameObjects(objects) {
+    let objectLayers = {};
+    for (let i = 0; i < objects.length; i++) {
+        const o = objects[i];
+        if (objectLayers[o.zIndex]) {
+            objectLayers[o.zIndex].push(o);
+        } else {
+            objectLayers[o.zIndex] = [o];
+        }
+    }
+
+    let k = Object.keys(objectLayers).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    for (let i = 0; i < k.length; i++) {
+        const layer = objectLayers[k[i]];
+        for (let j = 0; j < layer.length; j++) {
+            layer[j].Render(ctx, offset, scale);
+        }
+    }
+}
 

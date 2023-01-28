@@ -144,6 +144,7 @@
     border-radius: 3px;
     padding: 2px 3px;
     background: lightgray;
+    text-transform: uppercase;
 }
 
 .interactive-ui > .buttons > button {
@@ -156,6 +157,9 @@
     border-radius: 3px;
     background: lightgray;
     color: black;
+    font-family: inherit;
+    text-transform: uppercase;
+    font-weight: bold;
 
     transition: background-color .25s linear,
                 color .05s linear

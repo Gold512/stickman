@@ -286,4 +286,8 @@ export class AI {
         if(status !== false) this.client.mana -= skills[selectedSkill].mana;
         this.attack_cd = 1000*skills[selectedSkill].cd;
     }
+
+    _getManaPercentage() {
+        return 100 * this.client.mana / this.client.maxMana;
+    }
 }
