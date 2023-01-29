@@ -117,13 +117,14 @@
     z-index: 1;
 }
 
-.skill#plus { 
-    filter: none;
-    display: inline-block;
+.skill#plus {
+    filter: brightness(.5);
+    display: none;
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
     margin-left: 3px;
+    pointer-events: none;
 }
 
 .card {
@@ -133,6 +134,24 @@
     position: relative;
     background: rgb(25, 25, 25);
     margin-left: 3px;
+
+    transform: all;
+}
+
+.card.insert-here {
+    margin-left: .75em;
+}
+
+.card.insert-here::after {
+    display: inline-block;
+    content: '';
+    position: absolute;
+    background: green;
+    width: .5em;
+    height: 100%;
+    left: -5px;
+    transform: translateX(-50%);
+    border-radius: .25em;
 }
 
 .card > .skill {

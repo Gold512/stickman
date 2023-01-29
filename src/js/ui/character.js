@@ -2,7 +2,7 @@ import { ElementCreator } from "../classes/element_creator.js";
 import { saveToStorage } from "../save.js";
 import { skills } from "../skill.js";
 import { newSVG } from "../module/svg.js";
-import { keyRegistry, EQUIPPED_SKILLS, RESERVED_HOTKEYS, createSkillIcon } from "../ui.js";
+import { keyRegistry, EQUIPPED_SKILLS, RESERVED_HOTKEYS, createSkillIcon, loadSkillBar } from "../ui.js";
 
 export function characterPage() {
     return new ElementCreator('div')
@@ -85,12 +85,14 @@ export function characterPage() {
             .newChild('div')
                 .id('skill-drop')
                 .class(['row','header'])
+                .addEventListener('drop', addNewSkill)
+                .addEventListener('dragover', addNewSkillDragOver)
+                .addEventListener('dragenter', addNewSkillDragEnter)
+                .addEventListener('dragleave', addNewSkillDragLeave)
+
                 .newChild('span')
                     .class('skill')
                     .id('plus')
-                    .addEventListener('drop', plusIconDropEvent)
-                    .addEventListener('dragover', ev => { ev.preventDefault() })
-
                     .newChild('object')
                         .attribute('data', './src/svg/icons/plus.svg')
                         .attribute('type', 'image/svg+xml')
@@ -104,14 +106,25 @@ export function characterPage() {
             .end
 }
 
-function plusIconDropEvent(ev) {
+function addNewSkill(ev) {
     ev.preventDefault();
+    ev.currentTarget.querySelector('#plus').style.display = '';
 
     const dragged = document.getElementById(ev.dataTransfer.getData("text"));
-    const dropped = ev.currentTarget;
+    const dropped = ev.target.matches('.card') ? ev.target : 
+    ev.target.parentElement.matches('.card') ? ev.target.parentElement : ev.currentTarget.querySelector('#plus');
     const id = `skill-equipped-${dragged.dataset.id}`;
-    if (document.getElementById(id))
+    
+    let oldInsertionElement = document.querySelector('.card.insert-here');
+    if(oldInsertionElement) oldInsertionElement.classList.remove('insert-here');
+
+    let alreadyEquippedSkill = document.getElementById(id);
+    if (alreadyEquippedSkill) {
+        // red glow effect on the already selected skill
+        alreadyEquippedSkill.classList.add('box-glow');
+        setTimeout(() => { alreadyEquippedSkill.classList.remove('box-glow') }, 500)
         return;
+    }
 
     if (dragged == null) {
         alert("That's not a skill!");
@@ -120,11 +133,32 @@ function plusIconDropEvent(ev) {
 
     let card = createSkillCard(dragged, id);
 
-    ev.currentTarget.parentElement.insertBefore(card, dropped);
+    ev.currentTarget.insertBefore(card, dropped);
+    
     EQUIPPED_SKILLS.add(dragged.dataset.id);
     loadSkillBar();
 }
 
+function addNewSkillDragOver(ev) {
+    ev.preventDefault();
+    let card = ev.target.matches('.card') ? ev.target : ev.target.parentElement.matches('.card') ? ev.target.parentElement : null;
+    
+    let oldInsertionElement = document.querySelector('.card.insert-here');
+    if(oldInsertionElement && oldInsertionElement !== card) oldInsertionElement.classList.remove('insert-here');
+
+
+    if(card) {
+        card.classList.add('insert-here');
+    }
+}
+
+function addNewSkillDragEnter(ev) {
+    ev.currentTarget.querySelector('#plus').style.display = 'inline-block';
+}
+
+function addNewSkillDragLeave(ev) {
+    ev.currentTarget.querySelector('#plus').style.display = 'none';
+}
 
 function updateStats(player) {
     document.getElementById('max-mana').innerText = player.maxMana;
@@ -198,7 +232,7 @@ export function updateSkills() {
     }
 }
 
-function loadEquippedSKills() {
+function loadEquippedSkills() {
     const skillDrop = document.getElementById('skill-drop');
     const skillDropPlus = new ElementCreator('span')
         .class('skill')
@@ -210,7 +244,7 @@ function loadEquippedSKills() {
         .appendTo(skillDrop, true);
         
     for(let id of EQUIPPED_SKILLS.values()) {
-        const card = createSkillCard(createSkillIcon(skills[id]), `skill-equipped-${id}`, keyRegistry[id].toUpperCase());
+        const card = createSkillCard(createSkillIcon(skills[id]), `skill-equipped-${id}`, (keyRegistry[id] || '').toUpperCase());
         skillDrop.insertBefore(card, skillDropPlus);
     }
 }
@@ -261,5 +295,5 @@ export function reloadCharacterPage(player) {
     playerReference = player;
     updateStats(player);
     updateSkills(player);
-    loadEquippedSKills();
+    loadEquippedSkills();
 }

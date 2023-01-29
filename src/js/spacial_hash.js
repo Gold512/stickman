@@ -73,11 +73,11 @@ export class SpatialHash {
    * @param {Client} client client to remove
    */
   Remove(client) {
-    if(client.OnRemove) client.OnRemove();
     this._Remove(client);
     client.inGrid = false;
     if(client._step_entry_id) delete this._step[client._step_entry_id];
     delete this._idTable[client.id];
+    if(client.OnRemove) client.OnRemove();
   }
 
   /**

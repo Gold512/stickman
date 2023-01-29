@@ -333,6 +333,12 @@ export class PlayerClient extends Client {
 
     get mpl() { return this.stats.mpl; }
 
+    OnRemove() {
+        this.health = this.maxHealth;
+        this.grid.InsertClient(this);
+        alert('you died')
+    }
+
     toJSON() {
         return {
             position: this.position,
@@ -883,12 +889,8 @@ export class MagicProjectile extends Client {
             o.health -= this.projectile.damage;
             if(o.health <= 0) {
                 this.grid.Remove(o);
-
-                if(o instanceof PlayerClient) {
-                    alert('you died')
-                    o.health = o.maxHealth;
-                    this.grid.InsertClient(o);
-                } else if(owner && owner instanceof PlayerClient) {
+                
+                if(owner && owner instanceof PlayerClient) {
                     // If killed by player award xp to player
                     owner.xp += o.xp || 1;
                 }

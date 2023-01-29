@@ -9,13 +9,13 @@ import { Enemy } from "../objects.js";
  * @returns 
  */
 export function createMagician(position, type) {
-    const stats = enemies[type];
+    const stats = magicians[type];
     if (!stats) throw new Error("Invalid enemy type: " + type);
 
     return new Enemy(position, [0.5,0.5], stats);
 }
 
-export const enemies = {
+export const magicians = {
     beginner: {
         color: 'magenta',
         maxHealth: 100,
@@ -26,7 +26,8 @@ export const enemies = {
         skills: ['single_shot'],
         ai: {
             dodge: 'none'
-        }
+        },
+        xp: 1
     },
     rookie: {
         color: 'lime',
@@ -38,7 +39,8 @@ export const enemies = {
         skills: ['single_shot', 'double_shot', 'shield', 'levitation'],
         ai: {
             dodge: 'none'
-        }
+        },
+        xp: 3
     },
     intermediate: {
         color: 'yellow',
@@ -50,7 +52,8 @@ export const enemies = {
         skills: ['single_shot', 'double_shot', 'triple_shot', 'shield', 'levitation'],
         ai: {
             dodge: 'low'
-        }
+        },
+        xp: 5
     },
     expert: {
         color: 'red',
@@ -62,7 +65,8 @@ export const enemies = {
         skills: ['single_shot', 'double_shot', 'triple_shot', 'shield', 'flight'],
         ai: {
             dodge: 'low'
-        }
+        },
+        xp: 10
     },
     master: {
         color: 'blue',
@@ -74,7 +78,8 @@ export const enemies = {
         skills: ['single_shot', 'double_shot', 'triple_shot', 'shield', 'flight', 'recursive_shot', 'shield_shot', 'curve_shot'],
         ai: {
             dodge: 'low'
-        }
+        },
+        xp: 25
     },
     legend: {
         color: 'purple',
@@ -86,6 +91,7 @@ export const enemies = {
         skills: ['single_shot', 'double_shot', 'triple_shot', 'shield', 'flight', 'recursive_shot', 'shield_shot', 'curve_shot', 'penta_shot', 'super_speed'],
         ai: {
             dodge: 'low'
-        }
+        },
+        xp: 60
     }
 }
