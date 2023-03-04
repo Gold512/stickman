@@ -1,4 +1,4 @@
-import { MagicProjectile, RecursiveMagicProjectile, Shield } from "./objects.js";
+import { MagicProjectile, RecursiveMagicProjectile, Shield, RectSolid } from "./objects.js";
 import { Vector } from "./module/vector.js";
 import { math } from "./module/math.js";
 import { speed, getOrbStats } from "./module/calc.js";
@@ -43,6 +43,19 @@ function getFiredObjectPosition(caster, radius, vector) {
 
         return;
     }
+
+    
+}
+
+function alignY(projectile) {
+    // check if an orb will collide with the floor and if so move it upward
+    let nearBySolids = grid.ClientSelector({
+        origin: projectile.position,
+        bounds: [1, 1],
+        type: RectSolid
+    });
+
+    
 }
 
 export const skills = {
