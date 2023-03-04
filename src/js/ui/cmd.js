@@ -216,8 +216,8 @@ class Symbol_Selector {
                 while(true) {
                     let c = yield;
 
-                    // if a space is found it should be the end of input
-                    if(c === ' ') {
+                    // if a space or null is found it should be the end of input
+                    if(c === ' ' || c === null) {
                         return new this({id});
                     }
 
@@ -233,7 +233,7 @@ class Symbol_Selector {
 
                 while(true) {
                     let c = yield;
-                    if(c === ' ') return new this({type});
+                    if(c === ' ' || c === null) return new this({type});
                 }
                 
                 break;
@@ -255,6 +255,7 @@ class Symbol_Selector {
                             break;
                         
                         case ' ':
+                        case null:
                             if(nesting !== 0) break;
 
                             return new this(JSON.parse(json));
