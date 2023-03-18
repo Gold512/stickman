@@ -1,8 +1,12 @@
 import { ElementCreator } from '../classes/element_creator.js'
-// text interaction
+
+// define the container for all UI elements
+function getContainer() {
+    return document.getElementById('menu');
+}
 
 /**
- * 
+ * Open a list-like menu of buttons
  * @param {String} text text to display
  * @param {Object} options - change behaviour of interactive
  * @param {Number} [options.x] - x position of interactive element
@@ -15,7 +19,7 @@ import { ElementCreator } from '../classes/element_creator.js'
  * @param {Function} [options.options[].callback] - option click handler
  */
 export function newInteractive(text, {x, y, options = [], onClose = null} = {}) {
-    const container = document.getElementById('menu');
+    const container = getContainer()
 
     new ElementCreator('div')
         .class('interactive-ui')
@@ -118,4 +122,58 @@ export function newInteractive(text, {x, y, options = [], onClose = null} = {}) 
         .appendTo(container, true);
 
     container.style.display = 'block';
+}
+
+/**
+ * @typedef {object} Button 
+ * @property {string} text the text of the button 
+ * @property {function():void} callback function to call when the button is clicked
+ * @property {boolean} [close] whether to close the current box after the callback 
+ *                             default:
+ *                               - true when ref is unset 
+ *                               - false when ref is set
+ * @property {string} ref the ID of the page to go to after the button is clicked      
+ */
+
+/**
+ * A page in speech or interaction
+ * usually with a 'living' character
+ * @typedef {object} Subpage
+ * @property {string} [text] - the speech said by the client 
+ * @property {Button[]} [buttons] - buttons to use, defaults to 'Ok' which just closes the speech or
+ *                                       goes to the next page if any 
+ */
+
+/**
+ * A page in speech or interaction
+ * usually with a 'living' character
+ * this is just convenience access to the speech function of interaction
+ * @param {Client} client the client that is performing the speech action
+ * @param {object} options
+ * @param {string} [options.text] - the speech said by the client 
+ * @param {Button[]} [options.buttons] - buttons to use, defaults to 'Ok' which just closes the speech or
+ *                                       goes to the next page if any
+ * @param {Object.<string, Subpage>} [options.pages] - other pages of the interaction with the key of the page being its ID
+ * 
+ */
+export function speech(client, options) {
+    new ElementCreator('div')
+        .class('speech-ui')
+        .text(text)
+
+        .if(Object.keys(buttons).length > 0, o => {
+            o.newChild('div')
+                .class('speech-ui-btn-container')
+                .exec((_, o) => {
+                    for(let i = 0, k = Object.keys(buttons); i < k.length; i++) {
+                        const e = buttons[k[i]];
+                        o.newChild('button')
+                            .class('speech-ui-button')
+                            .text(e.text ?? '')
+                            .end
+                    }
+                })
+            
+        })
+        .appendTo(getContainer());
 }

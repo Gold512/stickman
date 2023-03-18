@@ -273,6 +273,36 @@ class Symbol_Selector {
     }
 }
 
+// Basic string 
+class Symbol_String {
+    constructor(str) {
+        this.str = str;
+    }
+
+    Resolve() {
+        return this.str
+    }
+
+    static *Generator() {
+        let str = '';
+
+        while(true) {
+            let c = yield;
+
+            switch(c) {
+                case ' ':
+                case null:
+                    return new this(str);
+                    break;
+
+                default: 
+                    str += c;
+                    break;
+            }
+        }
+    }
+}
+
 // Keyword symbol constructor for sumcommand support
 function Symbol_Keyword_Factory(keywords) {
     return class Symbol_Keyword {
