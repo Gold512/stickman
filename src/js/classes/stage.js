@@ -27,10 +27,21 @@ export class Stage {
 
         this.functions = {};
         this.getNextID = IDGeneratorFactory();
+
+        this.events = {
+            animationEnd: {}
+        }
     }
 
-    addEvent(name, callback) {
-        
+    /**
+     * 
+     * @param {Client|string} client
+     * @param {('animationEnd')} event 
+     * @param {function(Client):void} callback 
+     */
+    addEvent(client, event, callback) {
+        client = this._ResolveClient(client);
+        this.events.animationEnd[client.id] = callback;
     }
 
     /**
@@ -60,16 +71,28 @@ export class Stage {
      * @param {number} duration the time in milliseconds that the animation will take
      */
     moveClient(client, endPos, duration) {
-        
-        if(typeof client === 'string') {
-            const c = this.idTable[client];
-            if(!c) throw new Error(`client of name '${client}' not found`);
-            client = c;
-        }
+        client = this._ResolveClient(client);
 
         const ID = this.getNextID.next().value;
         const startPos = structuredClone(client.position);
-        this.functions[ID] = ['move', client, startPos, endPos, duration]
+        this.functions[ID] = ['move', client, startPos, endPos, duration, null]
+    }
+
+    /**
+     * 
+     * @param {Client|String} client reference to client or its name 
+     * @param {Object[]} movements
+     * @param {[number, number]} movements[].pos position to end this movement segment at
+     * @param {number} movements[].duration duration of the segment in milliseconds 
+     */
+    multiMoveClient(client, movements) {
+        client = this._ResolveClient(client);
+
+        const ID = this.getNextID.next().value;
+        const startPos = structuredClone(client.position);
+        const segment = movements.shift();
+
+        this.functions[ID] = ['move', client, startPos, segment.pos, segment.duration, movements]
     }
 
     /**
@@ -120,12 +143,36 @@ export class Stage {
         for(let i = 0, k = Object.keys(this.functions); i < k.length; i++) {
             const e = this.functions[k[i]];
             switch(e[0]) {
-                // ['move', client, startPos, endPos, duration]
                 case 'move':
-                    const t = dt / e[4];
-                    e[1].position = math.lerp2d(t, e[2], e[3])
+                    const [operation, client, startPos, endPos, duration, extra] = e;
+                    const t = dt / duration;
+                    client.position = math.lerp2d(t, startPos, endPos);
+                    
+                    // end of animation
+                    if(t >= 1) {
+                        if(extra && extra.length >= 1) {
+                            const segment = extra.shift();
+                            this.functions[k[i]] = [operation, client, endPos, segment.pos, segment.duration, extra];
+                        } else {
+                            delete this.functions[k[i]];
+                        
+                            const callback = this.events.animationEnd[client.id];
+                            if(callback) callback(client);
+                        }
+                    }
+
                     break;
             }
         }
+    }
+
+    _ResolveClient(client) {
+        if(typeof client === 'string') {
+            const c = this.idTable[client];
+            if(!c) throw new Error(`client of name '${client}' not found`);
+            return c;
+        }
+
+        return client;
     }
 }
