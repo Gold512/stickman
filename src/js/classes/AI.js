@@ -212,6 +212,7 @@ export class AI {
                     continue;
                 }
 
+                // Find the shortest distance to go out of the path of the projectile
                 if(
                     ((e.position[0] - sideVect[0] - c[0])**2 + (e.position[1] - sideVect[1] - c[1])**2) <=
                     ((e.position[0] + sideVect[0] - c[0])**2 + (e.position[1] + sideVect[1] - c[1])**2)

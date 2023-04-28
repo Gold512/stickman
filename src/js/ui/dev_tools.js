@@ -83,6 +83,30 @@ export function init() {
         .exec(addCheckBox('noclip'))
         .exec(addCheckBox('infinite'))
         .exec(addCheckBox('paused'))
+        .newChild('button')
+            .addEventListener('click', ev => {
+                player.health = player.stats.maxHealth;
+                ev.currentTarget.blur();
+            })
+            .text('Heal')
+            .style({
+                transform: 'translateX(25%)',
+                display: 'block',
+                marginBottom: '3px'
+            })
+            .end
+        .newChild('button')
+            .addEventListener('click', () => {
+                if(!confirm('Confirm reset save')) return;
+                localStorage.removeItem('save');
+                location.reload();
+            })
+            .text('Reset')
+            .style({
+                display: 'block',
+                transform: 'translateX(25%)'
+            })
+            .end
 
         .appendTo(document.body);
 

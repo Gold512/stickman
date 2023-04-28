@@ -153,3 +153,7 @@ export function confirmation(text='') {
     
     return p;
 }
+
+export function deathScreen() {
+    
+}
