@@ -1,4 +1,4 @@
-import { MagicProjectile, PlayerClient } from "../objects.js";
+import { MagicProjectile, PlayerClient } from "../objects/objects.js";
 import { math } from "../module/math.js";
 import { Vector } from "../module/vector.js";
 import { collision } from '../module/collision.js';

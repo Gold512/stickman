@@ -40,8 +40,38 @@ export async function getSVG(url) {
         .then(function(response) {
             return response.text();
         }).then(function(data) {
+            window.SVG_CACHE[url] = data;
             return data; // this will be a string
-        });;
+        });
+}
+
+export function syncGetSVG(url) {
+    if(window.SVG_CACHE[url] != undefined) {
+
+    }
+    
+    let svg = document.createElement('svg');
+
+    fetch(url)
+        .then(function(response) {
+            return response.text();
+        }).then(function(data) {
+            window.SVG_CACHE[url] = data;
+
+            let template = document.createElement('template');
+            template.innerHTML = data;
+            let newSVG = template.content.firstChild;
+
+            let svgAttributes = newSVG.getAttributeNames();
+            for(let i = 0; i < svgAttributes.length; i++) {
+                const attr = svgAttributes[i];
+                svg.setAttribute(attr, newSVG.getAttribute(attr))
+            }
+
+            svg.innerHTML = newSVG.innerHTML;
+        });
+
+    return svg;
 }
 
 window.getSVG = getSVG

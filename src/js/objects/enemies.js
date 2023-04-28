@@ -1,11 +1,11 @@
-import { Enemy } from "../objects.js";
+import { Enemy } from "./objects.js";
 
 // single shot only stats: 1,1
 
 /**
  * 
  * @param {[number, number]} position 
- * @param {keyof enemies} type 
+ * @param {keyof magicians} type 
  * @returns 
  */
 export function createMagician(position, type) {
@@ -14,6 +14,8 @@ export function createMagician(position, type) {
 
     return new Enemy(position, [0.5,0.5], stats);
 }
+
+export const enemyGenerators = {createMagician}
 
 export const magicians = {
     beginner: {

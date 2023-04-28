@@ -1,7 +1,8 @@
-import * as clients from '../objects.js'
+import * as clients from '../objects/objects.js'
 import { ElementCreator } from '../classes/element_creator.js';
 import { camera, speed } from '../module/calc.js';
 import { Vector } from '../module/vector.js';
+import { Bitfield } from '../module/bitfield.js';
 
 function parsePos(s) {
     const pos = s.split(',');
@@ -18,6 +19,26 @@ function parsePos(s) {
     return pos;
 }
 
+let devtoolStateBitfield = new Bitfield([
+    'inspect',
+    'noclip',
+    'infinite',
+    'paused'
+])
+
+function saveStates() {
+    let url = new URL(window.location.href);
+
+    let checkboxes = document.querySelectorAll('.dev-tool-checkbox');
+    let json = {};
+    for(let i = 0; i < checkboxes.length; i++) {
+        json[checkboxes[i].dataset.label] = checkboxes[i].checked;
+    }
+
+    url.searchParams.set('state', devtoolStateBitfield.toBits(json).toString(36));
+    window.history.replaceState('', '', url);
+}
+
 export function init() {
     function addCheckBox(label) {
         return (_, elementCreator) => {
@@ -31,10 +52,14 @@ export function init() {
                     .text(label)
                     .end
                 .newChild('input').style({'vertical-align': 'middle'})
+                    .class('dev-tool-checkbox')
+                    .dataset('label', label)
                     .attribute('type', 'checkbox')
                     .addEventListener('change', ev => {
                         ev.currentTarget.blur();
-                        dev[label](ev.currentTarget.checked)
+                        dev[label](ev.currentTarget.checked);
+
+                        saveStates();
                     })
                     .end
                 .end
@@ -94,6 +119,12 @@ export const dev = {
             const e = grid._idTable[k[i]];
             if(!(e instanceof clients.PlayerClient)) grid.Remove(e);
         }
+    },
+
+    edit: (state = true) => {
+        document.addEventListener('click', event => {
+        
+        });
     },
 
     // display info about the tile that is hovered over
@@ -258,6 +289,9 @@ export const dev = {
             inspectOverlay.style.pointerEvents = ''
         })
 
+        const updateInterval = 10;
+        let intervalCount = 0;
+
         let intervalID = setInterval(() => {
             if(frozen || (mousePos[0] === undefined)) {
                 // update 4x as frequently as repositioning is cheap
@@ -272,8 +306,12 @@ export const dev = {
             positionOverlay(pos)
             let idx = grid._GetCellIndex([Math.floor(pos[0]), Math.floor(pos[1])]);
             let cell = grid._cells[idx[0]][idx[1]];
-            
-            let text = `[${pos[0]}, ${pos[1]}] (cell: ${idx[0]}, ${idx[1]})\n`;
+
+            intervalCount++;
+            if(intervalCount !== updateInterval) return; 
+            intervalCount = 0;
+
+            let text = `[${pos[0].toFixed(5)}, ${pos[1].toFixed(5)}] (cell: ${idx[0]}, ${idx[1]})\n`;
             txt.innerText = '';
             if(!cell || !cell.client) {
                 txt.innerText = text;
@@ -297,7 +335,7 @@ export const dev = {
             if(shiftLock) text += '[Shift Lock Enabled]';
             txt.innerText = text;
             
-        }, 100);
+        }, 10);
 
         dev._data.inspect = {
             intervalID, 
@@ -398,12 +436,15 @@ export const dev = {
      */
     importAll(resultLocation = null) {
         const src = [
+            'module/svg',
+            'module/math',
             'ui/character',
             'ui/interaction',
             'ui/modal',
             'skill',
-            'objects',
-            'save'
+            'objects/objects',
+            'save',
+            'objects/enemies'
         ]
 
 
@@ -428,5 +469,9 @@ export const dev = {
         }
 
         return promise;
+    },
+
+    saveGrid() {
+
     }
 }

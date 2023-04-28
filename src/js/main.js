@@ -1,5 +1,5 @@
 import {SpatialHash} from './spacial_hash.js';
-import {PlayerClient, Enemy, MagicProjectile, Spawner, RectSolid} from './objects.js';
+import {PlayerClient, Enemy, MagicProjectile, Spawner, RectSolid} from './objects/objects.js';
 import {collision} from './module/collision.js'
 import {initUI, keyRegistry, loadSkillBar} from './ui.js'
 import * as skills from './skill.js'
@@ -7,7 +7,7 @@ import { loadFromStorage } from './save.js';
 import { FPS } from './libs/fps.min.js'
 import { Vector } from './module/vector.js';
 import { camera, skillConversionTable, speed } from './module/calc.js';
-import { createMagician } from './objects/enemies.js';
+
 const grid = new SpatialHash([-30, -30], [60, 60]);
 
 const player = grid.InsertClient(new PlayerClient([0, 0], [.5, .5], {
@@ -22,8 +22,9 @@ loadFromStorage(player);
 
 grid.InsertClient(new Spawner([0, 0], {
     bounds: [12, 12],
-    objectGenerator: o => {
-        return createMagician([0,0], o.type)
+    objectGenerator: {
+        name: 'createMagician',
+        args: [[0,0], '$type']
     },
     count: 3,
     type: 'beginner'
@@ -229,6 +230,7 @@ let focusedClient;
 
 canvas.addEventListener('contextmenu', ev => {
     ev.preventDefault();
+    console.log('context menu')
     const pos = [(ev.clientX - offset[0])/scale, (ev.clientY - offset[1])/scale];
     const clicked = grid.ClientSelector({
         origin: pos, 
@@ -462,12 +464,18 @@ initUI(player);
 
 loadSkillBar();
 
-window.dev = () => {
-    let url = (new URL(location.href))
-    if(!url.pathname) url.pathname = 'index.html';
-    url.searchParams.append('dev', 'true');
-    location.replace(url)
-};
+Object.defineProperty(window, 'dev', {
+    get: () => {
+        let url = (new URL(location.href))
+        if(!url.pathname) url.pathname = 'index.html';
+        url.searchParams.append('dev', 'true');
+        location.replace(url)
+    },
+    set: (value) => {
+        Object.defineProperty(window, 'dev', {value});
+    },
+    configurable: true
+});
 
 // Load dev tools 
 !function() {

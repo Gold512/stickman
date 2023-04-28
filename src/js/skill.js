@@ -1,4 +1,4 @@
-import { MagicProjectile, RecursiveMagicProjectile, Shield, RectSolid } from "./objects.js";
+import { MagicProjectile, RecursiveMagicProjectile, Shield } from "./objects/objects.js";
 import { Vector } from "./module/vector.js";
 import { math } from "./module/math.js";
 import { speed, getOrbStats } from "./module/calc.js";

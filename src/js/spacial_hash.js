@@ -4,10 +4,12 @@ import {math} from './module/math.js';
 export class SpatialHash {
   /**
    * A grid like object container with basic helper functions to manage the objects
-   * @param {[Number, Number]} bounds the topleft corner of the spacial hash grid
+   * @param {[Number, Number]|null} bounds the topleft corner of the spacial hash grid or null to create a blank spacial hash
    * @param {[Number, Number]} dimensions the size of the hash grid
    */
   constructor(bounds, dimensions) {
+    if(bounds === null) return;
+
     if(!(bounds[0] instanceof Array)) {
       // If bounds is just the position of the top left corner 
       // Convert it to an array of the top left and bottom right corners
@@ -211,7 +213,7 @@ export class SpatialHash {
   /**
    * Get client by id
    * @param {String} id id of the client to get
-   * @returns {Client|Null} the client if found or undefined
+   * @returns {Client|Null} the client if found or null if the client is not found
    */
   GetClientById(id) {
     return this._idTable[id] || null;
@@ -241,16 +243,16 @@ export class SpatialHash {
 
   /**
    * @param {Object} query - Query to search
-   * @param {[Number, Number]} query.origin - centerpoint of search
-   * @param {[Number, Number]} query.bounds - x and y distance away from centerpoint to search
+   * @param {[Number, Number]} [query.origin] - centerpoint of search (REQUIRED if bounds are defined)
+   * @param {[Number, Number]} [query.bounds] - x and y distance away from centerpoint to search (REQUIRED if origin is defined)
    * @param {('arbitrary'|'nearest')} [query.sort] - pattern to sort
    * @param {Class|Class[]} [query.type] - class or array of classes to check (compares constructor, and as such is a shallow check)
    * @param {Number} [query.limit] - max amount of results to return
    * @returns {Object[]} array of objects found in search
    */
   ClientSelector({
-    origin = [],
-    bounds = [],
+    origin = null,
+    bounds = null,
     sort = 'arbitrary',
     type = null,
     limit = Infinity
@@ -265,13 +267,31 @@ export class SpatialHash {
       // Create set of classes to check 
       type = new Set(type);
     }
+    
+    let definedLocationParams = 0;
+    if(origin) definedLocationParams++;
+    if(bounds) definedLocationParams++;
+
+    let i1, i2;
+
+    // define origin x and y coordinates
+    const [x, y] = origin || [NaN, NaN];
+
+    if(definedLocationParams === 0) {
+      // if there are no location params just search the whole spacial hash
+      i1 = [0, 0];
+      i2 = [this._dimensions[0] - 1, this._dimensions[1] - 1]
+
+    } else if(definedLocationParams === 1)  {
+      throw new Error('Invalid positional search: origin and bounds must be either both defined or undefined')
+    
+    } else /* if(definedLocationParams === 2) */ {
+      const [w, h] = bounds;
+      i1 = this._GetCellIndex([x - w / 2, y - h / 2]);
+      i2 = this._GetCellIndex([x + w / 2, y + h / 2]);
+    }
 
     // Main search operation
-    const [x, y] = origin;
-    const [w, h] = bounds;
-    const i1 = this._GetCellIndex([x - w / 2, y - h / 2]);
-    const i2 = this._GetCellIndex([x + w / 2, y + h / 2]);
-
     for_x:for (let x = i1[0], xn = i2[0]; x <= xn; ++x) {
       for_y:for (let y = i1[1], yn = i2[1]; y <= yn; ++y) {
         let head = this._cells[x][y];
@@ -472,7 +492,44 @@ export class SpatialHash {
         }
       }
     }
-    return clients;
+
+    return {
+      clients: clients,
+      dimensions: this._dimensions,
+      bounds: this._bounds,
+      queryIds: this._queryIds
+    };
+  }
+
+  /**
+   * 
+   */
+  fromJSON(json) {
+    let {clients, dimensions, bounds, queryIds} = json;
+
+    if(!(bounds[0] instanceof Array)) {
+      // If bounds is just the position of the top left corner 
+      // Convert it to an array of the top left and bottom right corners
+      const [x, y] = bounds;
+      bounds = [
+        [x, y],
+        [x + dimensions[0], y + dimensions[1]]
+      ]
+    }
+    const [x, y] = dimensions;
+    this._cells = [...Array(x)].map(_ => [...Array(y)].map(_ => (null)));
+    this._dimensions = dimensions;
+    this._bounds = bounds;
+    this._queryIds = queryIds;
+    this._step = {};
+    this._step_id_counter = 0;
+    this._idTable = {};
+
+    for(let i = 0; i < clients.length; i++) {
+      this.InsertClient(clients[i]);
+    }
+
+    return this;
   }
 }
 

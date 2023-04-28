@@ -228,6 +228,11 @@
     padding: 0;
     margin: 0;
     /* position: relative; */
+
+    background-color: black;
+    background-image: 
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.01) 0, rgba(255, 255, 255, 0.04) 3em),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.01) 0, rgba(255, 255, 255, 0.04) 3em);
 }
 
 /* .skill-tree::before {

@@ -14,4 +14,17 @@ export function settingsPage() {
             .text('DOWNLOAD Save')
             .addEventListener('click', () => downloadSave(player))
             .end
+        .newChild('div')
+            .class('box')
+            .text('FPS Counter')
+            .appendChild(createCheckBox())
+            .end
+}
+
+function createCheckBox() {
+    return new ElementCreator('label')
+        .attribute('type', 'checkbox')
+        .class('settings-checkbox')
+        .newChild('input')
+        .end
 }
