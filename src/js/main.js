@@ -407,10 +407,12 @@ function frame(t) {
             let limit = o.collision.limit || Infinity; 
 
             // limit is the number of collisions to detect for an object
+            // o - this
+            // e - other object(s) 
             for(let i = 0; i < nearBy.length; i++) {
                 const e = nearBy[i];
-                if(e == o) continue;
-                if(e.collision.type == 'none') continue;
+                if(e === o) continue;
+                if(e.collision.type === 'none') continue;
 
                 const operation = `${o.collision.shape}+${e.collision.shape}`;
                 let isCollided = false;
@@ -429,6 +431,36 @@ function frame(t) {
                     case 'rectangle+rectangle':
                         isCollided = collision.Rects(o.position[0], o.position[1], o.dimensions[0], o.dimensions[1], e.position[0], e.position[1], e.dimensions[0], e.dimensions[1]);
                         break;
+                    // case 'polygon+rectangle':
+                    //     isCollided = collision.Polygon(o.collision.points, [
+                    //         [
+                    //             // top left point
+                    //             o.position[0],
+                    //             o.position[1]
+                    //         ],
+                    //         [
+                    //             // top right point
+                    //             o.position[0] + o.dimensions[0],
+                    //             o.position[1]
+                    //         ],
+                    //         [
+                    //             // bottom right point 
+                    //             o.position[0] + o.dimensions[0],
+                    //             o.position[1] + o.dimensions[1]
+                    //         ],
+                    //         [
+                    //             // bottom left 
+                    //             o.position[0],
+                    //             o.position[1] + o.dimensions[1]
+                    //         ]
+                    //     ]);
+                    //     break;
+                    // case 'rectangle+polygon':
+                    //     break;
+                    // case 'polygon+circle':
+                    //     break;
+                    // case 'circle+polygon':
+                    //     break;
                     default: throw new Error(`invalid collision type ${operation}`)
                 }
 
@@ -467,7 +499,7 @@ loadSkillBar();
 Object.defineProperty(window, 'dev', {
     get: () => {
         let url = (new URL(location.href))
-        if(!url.pathname) url.pathname = 'index.html';
+        if(!url.pathname || url.pathname === '/') url.pathname = '/index.html';
         url.searchParams.append('dev', 'true');
         location.replace(url)
     },

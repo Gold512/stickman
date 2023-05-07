@@ -23,8 +23,8 @@ export function settingsPage() {
 
 function createCheckBox() {
     return new ElementCreator('label')
-        .attribute('type', 'checkbox')
         .class('settings-checkbox')
         .newChild('input')
+            .attribute('type', 'checkbox')
         .end
 }

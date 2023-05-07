@@ -216,7 +216,7 @@ export class SpatialHash {
    * @returns {Client|Null} the client if found or null if the client is not found
    */
   GetClientById(id) {
-    return this._idTable[id] || null;
+    return this._idTable[id] ?? null;
   }
 
   // /**
@@ -579,6 +579,39 @@ export class Client {
     this.__queryId = -1;
     this.id = Date.now().toString(36) + Math.floor(1e12 + Math.random() * 9e12).toString(36);
     this.inGrid = false;
+  }
+
+  // easy positional read write functions 
+  get top() {
+    return this.position[1];
+  }
+
+  set top(value) {
+    this.position[1] = value;
+  }
+
+  get bottom() {
+    return this.position[1] + this.dimensions[1];
+  }
+
+  set bottom(value) {
+    this.position[1] = value - this.dimensions[1];
+  }
+
+  get left() {
+    return this.position[0];
+  }
+
+  set left(value) {
+    this.position[0] = value;
+  }
+
+  get right() {
+    return this.position[0] + this.dimensions[0];
+  }
+
+  set right(value) {
+    this.position[0] = value - this.dimensions[0];
   }
 
   /**

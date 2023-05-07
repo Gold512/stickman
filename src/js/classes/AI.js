@@ -157,40 +157,40 @@ export class AI {
             // projectile's velocity and check the collision with self 
             // to predict if the projectile will collide
             const willCollide = collision.Polygon([
-                {
-                    x: e.position[0] - sideVect[0],
-                    y: e.position[1] - sideVect[1]
-                },
-                {
-                    x: e.position[0] + sideVect[0],
-                    y: e.position[1] + sideVect[1]
-                },
-                {
-                    x: e.position[0] + sideVect[0] + lx,
-                    y: e.position[1] + sideVect[1] + ly
-                },
-                {
-                    x: e.position[0] - sideVect[0] + lx,
-                    y: e.position[1] - sideVect[1] + ly
-                }
+                [
+                    e.position[0] - sideVect[0],
+                    e.position[1] - sideVect[1]
+                ],
+                [
+                    e.position[0] + sideVect[0],
+                    e.position[1] + sideVect[1]
+                ],
+                [
+                    e.position[0] + sideVect[0] + lx,
+                    e.position[1] + sideVect[1] + ly
+                ],
+                [
+                    e.position[0] - sideVect[0] + lx,
+                    e.position[1] - sideVect[1] + ly
+                ]
             ],
             [
-                {
-                    x: this.client.position[0], 
-                    y: this.client.position[1]
-                },
-                {
-                    x: this.client.position[0] + this.client.dimensions[0],
-                    y: this.client.position[1]
-                },
-                {
-                    x: this.client.position[0] + this.client.dimensions[0],
-                    y: this.client.position[1] + this.client.dimensions[0]
-                },
-                {
-                    x: this.client.position[0],
-                    y: this.client.position[1] + this.client.dimensions[0]
-                }
+                [
+                    this.client.position[0], 
+                    this.client.position[1]
+                ],
+                [
+                    this.client.position[0] + this.client.dimensions[0],
+                    this.client.position[1]
+                ],
+                [
+                    this.client.position[0] + this.client.dimensions[0],
+                    this.client.position[1] + this.client.dimensions[0]
+                ],
+                [
+                this.client.position[0],
+                this.client.position[1] + this.client.dimensions[0]
+                ]
             ]);
 
             if(willCollide) {

@@ -122,8 +122,8 @@ export const collision = {
 	 * Helper function to determine whether there is an intersection between the two polygons described
 	 * by the lists of vertices. Uses the Separating Axis Theorem
 	 *
-	 * @param {Object[]} a an array of connected points [{x:, y:}, {x:, y:},...] that form a closed polygon
-	 * @param {Object[]} b an array of connected points [{x:, y:}, {x:, y:},...] that form a closed polygon
+	 * @param {import("./vector").Vector2D[]} a an array of connected points [{x:, y:}, {x:, y:},...] that form a closed polygon
+	 * @param {import("./vector").Vector2D[]} b an array of connected points [{x:, y:}, {x:, y:},...] that form a closed polygon
 	 * @return {Boolean} true if there is any intersection between the 2 polygons, false otherwise
 	 */
 	Polygon(a, b) {
@@ -141,13 +141,13 @@ export const collision = {
 				var p2 = polygon[i2];
 
 				// find the line perpendicular to this edge
-				var normal = { x: p2.y - p1.y, y: p1.x - p2.x };
+				var normal = [p2[1] - p1[1], p1[0] - p2[0]];
 
 				minA = maxA = undefined;
 				// for each vertex in the first shape, project it onto the line perpendicular to the edge
 				// and keep track of the min and max of these values
 				for (j = 0; j < a.length; j++) {
-					projected = normal.x * a[j].x + normal.y * a[j].y;
+					projected = normal[0] * a[j][0] + normal[1] * a[j][1];
 					if (minA == undefined || projected < minA) {
 						minA = projected;
 					}
@@ -160,7 +160,7 @@ export const collision = {
 				// and keep track of the min and max of these values
 				minB = maxB = undefined;
 				for (j = 0; j < b.length; j++) {
-					projected = normal.x * b[j].x + normal.y * b[j].y;
+					projected = normal[0] * b[j][0] + normal[1] * b[j][1];
 					if (minB == undefined || projected < minB) {
 						minB = projected;
 					}
