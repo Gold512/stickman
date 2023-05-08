@@ -50,6 +50,8 @@ export class AI {
                 targetDistance
             }
         }
+
+        this.attack_cd = 1000;
     }
 
     // AI tick function to calculate next action in current frame

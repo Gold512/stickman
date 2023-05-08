@@ -159,8 +159,8 @@ export class PlayerClient extends Client {
             // allow smaller jumps 
             if(up == false) this._gravity += 10 * t/1000;
             // prevent up and down movement while in the air
-            up = true;
-            down = false;
+            // up = true;
+            // down = false;
         }
 
         this.onGround = false;
@@ -1178,9 +1178,16 @@ class ExplosionParticle extends Client {
     }
 }
 
+let itemTextures = {};
+
 export class Item extends Client {
     constructor(position, item) {
+        super(position, [.25, .25]);
+        this.item = item;
+    }
 
+    Render(ctx, scale, offset) {
+        
     }
 }
 
@@ -1207,4 +1214,4 @@ function anchorPosition(anchor, position, size) {
     return position;
 }
 
-export {PolySolid, RectSolid} from './solid.js'
+export {SlopeSolid, RectSolid} from './solid.js'

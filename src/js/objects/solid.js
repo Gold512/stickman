@@ -134,24 +134,51 @@ export class SlopeSolid extends Client {
     Step() {}
 
     Collision(ev) {
+        const offset = this.dimensions[1] / 2;
+        const MAX_Y_MOVEMENT = 0.3;
+
         // TODO use gravity to make 'slippery' slopes
-        if(this.direction === SLOPE_LEFT) {
+        if(this.direction === SLOPE_RIGHT) {
             for(let i = 0; i < ev.objects.length; i++) {
                 const o = ev.objects[i];
-                o[i].bottom = this.top + o[i].right - this.right;
+                if(!this._checkBoundingBox(this, o.left, o.left, o.bottom, o.bottom)) continue;
+                
+                let newY = this.top + o.left - this.left;
+                let dy = newY - player.bottom;
+                if((Math.abs(dy) > MAX_Y_MOVEMENT) && dy > 0) continue; // limit Y movement to prevent 'teleporting'
+                
+                o.bottom = newY;
+                o._gravity = 0;
+                o.onGround = true;
             }
         } else {
             for(let i = 0; i < ev.objects.length; i++) {
                 const o = ev.objects[i];
-                o[i].bottom = this.top + this.left - o[i].left;
+                if(!this._checkBoundingBox(this, o.right, o.right, o.bottom, o.bottom)) continue;
+                
+                // limit Y movement to prevent 'teleporting'
+                let newY = this.top + this.right - o.right;
+                let dy = newY - player.bottom;
+                if(Math.abs(dy) > MAX_Y_MOVEMENT && dy > 0) continue; 
+                
+                o.bottom = newY;
+                o._gravity = 0;
+                o.onGround = true;
             }
         }
+    }
+
+    _checkBoundingBox(client, x1, x2, y1, y2) {
+        return (client.left <= x1 &&
+                client.right >= x2 &&
+                client.top <= y1 &&
+                client.bottom >= y2)
     }
     
     /**
      * 
      * @param {CanvasRenderingContext2D} ctx 
-     * @param {number} offset 
+     * @param {[number, number]} offset 
      * @param {number} scale 
      */
     Render(ctx, offset, scale) {
@@ -159,22 +186,23 @@ export class SlopeSolid extends Client {
         
         switch(this.direction) {
             case SLOPE_LEFT:
-                path.moveTo(this.right * scale + offset, this.top * scale + offset);
-                path.lineTo(this.right * scale + offset, this.bottom * scale + offset);
-                path.lineTo(this.left * scale + offset, this.bottom * scale + offset);
-                path.lineTo(this.right * scale + offset, this.top * scale + offset);
+                path.moveTo(this.right * scale + offset[0], this.top * scale + offset[1]);
+                path.lineTo(this.right * scale + offset[0], this.bottom * scale + offset[1]);
+                path.lineTo(this.left * scale + offset[0], this.bottom * scale + offset[1]);
+                path.lineTo(this.right * scale + offset[0], this.top * scale + offset[1]);
                 break;
 
             case SLOPE_RIGHT:
-                path.moveTo(this.left * scale + offset, this.top * scale + offset);
-                path.lineTo(this.right * scale + offset, this.bottom * scale + offset);
-                path.lineTo(this.left * scale + offset, this.bottom * scale + offset);
-                path.lineTo(this.left * scale + offset, this.top * scale + offset);
+                path.moveTo(this.left * scale + offset[0], this.top * scale + offset[1]);
+                path.lineTo(this.right * scale + offset[0], this.bottom * scale + offset[1]);
+                path.lineTo(this.left * scale + offset[0], this.bottom * scale + offset[1]);
+                path.lineTo(this.left * scale + offset[0], this.top * scale + offset[1]);
                 break;
 
         }
 
         ctx.strokeStyle = 'black';
+        ctx.fillStyle = '#aaa';
         ctx.lineCap = 'round';
         ctx.lineWidth = 5;
         ctx.lineCap = 'round';
@@ -187,6 +215,7 @@ export class SlopeSolid extends Client {
         ctx.lineCap = null;
         ctx.lineWidth = null;
         ctx.lineCap = null;
+        ctx.fillStyle = null;
         ctx.lineJoin = null;
     }
 }

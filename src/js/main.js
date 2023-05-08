@@ -1,5 +1,5 @@
 import {SpatialHash} from './spacial_hash.js';
-import {PlayerClient, Enemy, MagicProjectile, Spawner, RectSolid} from './objects/objects.js';
+import {PlayerClient, Enemy, MagicProjectile, Spawner, RectSolid, SlopeSolid} from './objects/objects.js';
 import {collision} from './module/collision.js'
 import {initUI, keyRegistry, loadSkillBar} from './ui.js'
 import * as skills from './skill.js'
@@ -38,6 +38,9 @@ grid.InsertClient(new RectSolid([5, 0], [1, 5]));
 // grid.InsertClient(new Enemy([3, 3], [.5, .5]));
 // grid.InsertClient(new Enemy([3, 3], [.5, .5]));
 // grid.InsertClient(new Enemy([3, 3], [.5, .5]));
+grid.InsertClient(new SlopeSolid([-3, 2], [1, 1]));
+grid.InsertClient(new RectSolid([-2, 2], [1, 1]))
+grid.InsertClient(new SlopeSolid([-1, 2], [1, 1], 'right'));
 
 window.spawn = function(n) { 
     for(let i = 0; i < n; i++) {
