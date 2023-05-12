@@ -139,55 +139,43 @@ export class SlopeSolid extends Client {
     Step() {}
 
     Collision(ev) {
-        // const offset = this.dimensions[1] / 2;
         const MAX_Y_MOVEMENT = 0.3;
 
         // TODO use gravity to make 'slippery' slopes
-        if(this.direction === SLOPE_RIGHT) {
-            for(let i = 0; i < ev.objects.length; i++) {
-                const o = ev.objects[i];
-                // if(!this._checkBoundingBox(this, o.left, o.left, o.bottom, o.bottom)) continue;
-                if(
-                    (this._pointRelativeToLine(o.left, o.bottom) < 0) ||
-                    (this.left > o.left) ||
-                    (this.bottom < o.bottom)
-                ) continue;
 
-                let newY = this.top + o.left - this.left;
-                let dy = newY - o.bottom;
-                if((Math.abs(dy) > MAX_Y_MOVEMENT) && dy > 0) continue; // limit Y movement to prevent 'teleporting'
-                
-                o.bottom = newY;
-                o._gravity = 0;
-                o.onGround = true;
-            }
-        } else if(this.direction === SLOPE_LEFT) {
-            for(let i = 0; i < ev.objects.length; i++) {
-                const o = ev.objects[i];
-                // if(!this._checkBoundingBox(this, o.right, o.right, o.bottom, o.bottom)) continue;
-                if(
-                    (this._pointRelativeToLine(o.right, o.bottom) > 0) ||
-                    (this.right < o.right) ||
-                    (this.bottom < o.bottom)
-                ) continue;
+        for(let i = 0; i < ev.objects.length; i++) {
+            const o = ev.objects[i];
+            let newY;
 
-                // limit Y movement to prevent 'teleporting'
-                let newY = this.top + this.right - o.right;
-                let dy = newY - o.bottom;
-                if(Math.abs(dy) > MAX_Y_MOVEMENT && dy > 0) continue; 
+            switch(this.direction) {
+                case SLOPE_LEFT: 
+                    if(
+                        (this._pointRelativeToLine(o.right, o.bottom) > 0) ||
+                        (this.right < o.right) ||
+                        (this.bottom < o.bottom)
+                    ) continue;
+
+                    newY = this.top + this.right - o.right;
+                    break;
                 
-                o.bottom = newY;
-                o._gravity = 0;
-                o.onGround = true;
+                case SLOPE_RIGHT:
+                    if(
+                        (this._pointRelativeToLine(o.left, o.bottom) < 0) ||
+                        (this.left > o.left) ||
+                        (this.bottom < o.bottom)
+                    ) continue;
+                    newY = this.top + o.left - this.left;
+                break
             }
+
+            // limit Y movement to prevent 'teleporting'
+            let dy = newY - o.bottom;
+            if((Math.abs(dy) > MAX_Y_MOVEMENT) && dy > 0) continue; // limit Y movement to prevent 'teleporting'
+            
+            o.bottom = newY;
+            o._gravity = 0;
+            o.onGround = true;
         }
-    }
-
-    _checkBoundingBox(client, x1, x2, y1, y2) {
-        return (client.left <= x1 &&
-                client.right >= x2 &&
-                client.top <= y1 &&
-                client.bottom >= y2)
     }
 
     /**
