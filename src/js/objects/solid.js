@@ -1,3 +1,4 @@
+import { Vector } from "../module/vector.js";
 import { Client } from "../spacial_hash.js";
 import { GROUPS } from "./objects.js";
 
@@ -122,9 +123,13 @@ export class SlopeSolid extends Client {
         switch(direction) {
             case 'left':
                 this.direction = SLOPE_LEFT;
+                this.slopeVectorOrigin = ['right', 'top']
+                this.slopeVector = [-1, 1];
                 break;
             case 'right':
                 this.direction = SLOPE_RIGHT;
+                this.slopeVector = [1, 1];
+                this.slopeVectorOrigin = ['left', 'top']
                 break;
             default: throw new Error('Invalid direction');
         }
@@ -134,31 +139,41 @@ export class SlopeSolid extends Client {
     Step() {}
 
     Collision(ev) {
-        const offset = this.dimensions[1] / 2;
+        // const offset = this.dimensions[1] / 2;
         const MAX_Y_MOVEMENT = 0.3;
 
         // TODO use gravity to make 'slippery' slopes
         if(this.direction === SLOPE_RIGHT) {
             for(let i = 0; i < ev.objects.length; i++) {
                 const o = ev.objects[i];
-                if(!this._checkBoundingBox(this, o.left, o.left, o.bottom, o.bottom)) continue;
-                
+                // if(!this._checkBoundingBox(this, o.left, o.left, o.bottom, o.bottom)) continue;
+                if(
+                    (this._pointRelativeToLine(o.left, o.bottom) < 0) ||
+                    (this.left > o.left) ||
+                    (this.bottom < o.bottom)
+                ) continue;
+
                 let newY = this.top + o.left - this.left;
-                let dy = newY - player.bottom;
+                let dy = newY - o.bottom;
                 if((Math.abs(dy) > MAX_Y_MOVEMENT) && dy > 0) continue; // limit Y movement to prevent 'teleporting'
                 
                 o.bottom = newY;
                 o._gravity = 0;
                 o.onGround = true;
             }
-        } else {
+        } else if(this.direction === SLOPE_LEFT) {
             for(let i = 0; i < ev.objects.length; i++) {
                 const o = ev.objects[i];
-                if(!this._checkBoundingBox(this, o.right, o.right, o.bottom, o.bottom)) continue;
-                
+                // if(!this._checkBoundingBox(this, o.right, o.right, o.bottom, o.bottom)) continue;
+                if(
+                    (this._pointRelativeToLine(o.right, o.bottom) > 0) ||
+                    (this.right < o.right) ||
+                    (this.bottom < o.bottom)
+                ) continue;
+
                 // limit Y movement to prevent 'teleporting'
                 let newY = this.top + this.right - o.right;
-                let dy = newY - player.bottom;
+                let dy = newY - o.bottom;
                 if(Math.abs(dy) > MAX_Y_MOVEMENT && dy > 0) continue; 
                 
                 o.bottom = newY;
@@ -173,6 +188,20 @@ export class SlopeSolid extends Client {
                 client.right >= x2 &&
                 client.top <= y1 &&
                 client.bottom >= y2)
+    }
+
+    /**
+     * Check if the corner of the object is to the left or right of the slope
+     * @param {number} x
+     * @param {number} y 
+     * @returns {number} 1 if intercept is to the right of slope 
+     *                   -1 if intercept is to the left of slope 
+     *                   0 if they are exactly overlapping (should not happen as the values are all floats)
+     */
+    _pointRelativeToLine(x, y) {
+        const orig = this.slopeVectorOrigin;
+        let intercept = Vector.intersection([this[orig[0]], this[orig[1]]], this.slopeVector, [x, y], [1, 0]);
+        return Math.sign(intercept[0] - x);
     }
     
     /**

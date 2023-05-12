@@ -154,30 +154,34 @@ export class PlayerClient extends Client {
 
         // time in seconds
         const ts = t * 0.001;
+        const jumping = (!this.HasTag('NoGravity')) && (this.onGround === false);
 
-        if((!this.HasTag('NoGravity')) && (this.onGround === false)) {
+        if(jumping) {
             // allow smaller jumps 
             if(up == false) this._gravity += 10 * t/1000;
             // prevent up and down movement while in the air
-            // up = true;
-            // down = false;
         }
 
         this.onGround = false;
         
         let vel = 1;
-        if(this.modifier && this.modifier.noMove) return;
-        if( (up || down) && !(up && down) && 
-        (left || right) &&  !(left && right)) vel = Math.SQRT1_2;
+        const JUMP_HEIGHT = 1;
 
-        if( !(up && down) && (up || down) ) {
-            if(down) {
-                this.velocity[1] = vel;
-            } else  {
-                this.velocity[1] = -vel;
-            }
-        } else { this.velocity[1] = 0; }
-        
+        if(this.modifier && this.modifier.noMove) return;
+        if(jumping || ((up || down) && !(up && down) && 
+        (left || right) &&  !(left && right))) vel = Math.SQRT1_2;
+
+        if(!jumping) {
+            if( !(up && down) && (up || down)) {
+                if(down) {
+                    this.velocity[1] = JUMP_HEIGHT;
+                } else  {
+                this.velocity[1] = -JUMP_HEIGHT;
+                }
+            
+            } else { this.velocity[1] = 0; }
+        }
+
         if( !(left && right) && (left || right) ) {
             if(right) {
                 this.velocity[0] = vel;
@@ -1187,7 +1191,7 @@ export class Item extends Client {
     }
 
     Render(ctx, scale, offset) {
-        
+
     }
 }
 
