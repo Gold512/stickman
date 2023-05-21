@@ -1,3 +1,4 @@
+import { GROUPS } from './const.js';
 import quickselect from './libs/quick_select.js';
 import {math} from './module/math.js';
 
@@ -496,40 +497,37 @@ export class SpatialHash {
     return {
       clients: clients,
       dimensions: this._dimensions,
-      bounds: this._bounds,
-      queryIds: this._queryIds
+      bounds: this._bounds
     };
   }
 
   /**
-   * 
+   * Convert spacial hash to json and stringify it (numbers to 3 decimal places)
+   * @returns {Object}
    */
-  fromJSON(json) {
-    let {clients, dimensions, bounds, queryIds} = json;
+  toString() {
+    return JSON.stringify(this.toJSON(), function(key, val) {
+      if(val === undefined) return val;
+      return val.toFixed ? Number(val.toFixed(3)) : val;
+    });
+  }
 
-    if(!(bounds[0] instanceof Array)) {
-      // If bounds is just the position of the top left corner 
-      // Convert it to an array of the top left and bottom right corners
-      const [x, y] = bounds;
-      bounds = [
-        [x, y],
-        [x + dimensions[0], y + dimensions[1]]
-      ]
-    }
-    const [x, y] = dimensions;
-    this._cells = [...Array(x)].map(_ => [...Array(y)].map(_ => (null)));
-    this._dimensions = dimensions;
-    this._bounds = bounds;
-    this._queryIds = queryIds;
-    this._step = {};
-    this._step_id_counter = 0;
-    this._idTable = {};
+  /**
+   * @param {Object|} json json from spacial_hash.prototype.toJSON or toString 
+   * @param {Object<string, Class>} constructors object containing classes with the keys being the name of the class
+   */
+  static from(json, constructors) {
+    if(typeof json === 'string') json = JSON.parse(json);
+    
+    const grid = new this(json.bounds, json.dimensions);
 
-    for(let i = 0; i < clients.length; i++) {
-      this.InsertClient(clients[i]);
+    for (let i = 0; i < json.clients.length; i++) {
+      const e = json.clients[i];
+      const constructor = constructors[e.constructor];
+      grid.InsertClient(constructor.from(e));
     }
 
-    return this;
+    return grid;
   }
 }
 
@@ -579,6 +577,7 @@ export class Client {
     this.__queryId = -1;
     this.id = Date.now().toString(36) + Math.floor(1e12 + Math.random() * 9e12).toString(36);
     this.inGrid = false;
+    this.group = GROUPS.SOLID; // default object group
   }
 
   // easy positional read write functions 

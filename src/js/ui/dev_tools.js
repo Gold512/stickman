@@ -23,8 +23,11 @@ let devtoolStateBitfield = new Bitfield([
     'inspect',
     'noclip',
     'infinite',
-    'paused'
-])
+    'paused',
+    'speedup'
+]);
+
+let checkState = devtoolStateBitfield.toJSON(parseInt(new URL(location.href).searchParams.get('state') ?? '0', 36));
 
 function saveStates() {
     let url = new URL(window.location.href);
@@ -40,6 +43,9 @@ function saveStates() {
 }
 
 export function init() {
+    /**
+     * @returns {function():function(any, ElementCreator)}
+     */
     function addCheckBox(label) {
         return (_, elementCreator) => {
             elementCreator.newChild('label')
@@ -55,6 +61,10 @@ export function init() {
                     .class('dev-tool-checkbox')
                     .dataset('label', label)
                     .attribute('type', 'checkbox')
+                    .if(checkState[label], e => { 
+                        e.element.checked = true;
+                        dev[label](true);
+                    })
                     .addEventListener('change', ev => {
                         ev.currentTarget.blur();
                         dev[label](ev.currentTarget.checked);
@@ -83,6 +93,7 @@ export function init() {
         .exec(addCheckBox('noclip'))
         .exec(addCheckBox('infinite'))
         .exec(addCheckBox('paused'))
+        .exec(addCheckBox('speedup'))
         .newChild('button')
             .addEventListener('click', ev => {
                 player.health = player.stats.maxHealth;
@@ -438,6 +449,15 @@ export const dev = {
         } else {
             player.collision.type = 'passive';
             player.RemoveTag('NoGravity');
+            player._gravity = 0;
+        }
+    },
+
+    speedup(state = true) {
+        if(state) {
+            player.speed = 15;
+        } else {
+            player.speed = speed.move;
         }
     },
     
@@ -466,9 +486,11 @@ export const dev = {
             'ui/interaction',
             'ui/modal',
             'skill',
+            'spacial_hash',
             'objects/objects',
             'save',
-            'objects/enemies'
+            'objects/enemies',
+            'module/worldgen'
         ]
 
 
@@ -495,7 +517,39 @@ export const dev = {
         return promise;
     },
 
-    saveGrid() {
+    import(src) {
+        let queue = [];
+        for(let i in src) {
+            queue.push(dev.get(src[i]));
+        }
 
+        let promise = Promise.all(queue).then(results => {
+            let res = {};
+
+            for(let i in results) {
+                for(let j in results[i]) {
+                    res[j] = results[i][j];
+                }
+            }
+            return res;
+        });
+
+        return promise;
+    },
+
+    async validateClasses() {
+        const exports = await this.import([
+            'spacial_hash',
+            'objects/objects',
+            'objects/enemies'
+        ]);
+        console.log(exports)
+        for(let i in exports) {
+            const e = exports[i];
+            if(e === undefined) continue;
+
+            if(!e.from) console.error(`${i} - Missing 'from' static method`);
+            if(!e.prototype.toJSON) console.error(`${i} - Missing 'toJSON' instance method`);
+        }
     }
 }

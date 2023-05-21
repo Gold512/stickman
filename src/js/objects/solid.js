@@ -1,6 +1,6 @@
+import { GROUPS } from "../const.js";
 import { Vector } from "../module/vector.js";
 import { Client } from "../spacial_hash.js";
-import { GROUPS } from "./objects.js";
 
 export class RectSolid extends Client {
     /**
@@ -15,7 +15,7 @@ export class RectSolid extends Client {
             shape: 'rectangle',
             solid: true
         }
-        this.groups = GROUPS.SOLID;
+        this.groups = GROUPS.STATIC;
     }
 
     Step() {}
@@ -26,7 +26,7 @@ export class RectSolid extends Client {
         for(let i = 0; i < ev.objects.length; i++) {
             const o = ev.objects[i];
             if(!o.collision.solid) continue;
-            if(o.group === GROUPS.PROJECTILE) continue;
+            if(o.group === GROUPS.STATIC) continue;
 
             // move object that collided away so it will no longer
             // overlap the solid 
@@ -96,9 +96,15 @@ export class RectSolid extends Client {
 
     toJSON() {
         return {
+            constructor: this.constructor.name,
+            
             position: this.position,
             dimensions: this.dimensions
         }
+    }
+
+    static from(json) {
+        return new this(json.position, json.dimensions)
     }
 }
 
@@ -122,17 +128,22 @@ export class SlopeSolid extends Client {
 
         switch(direction) {
             case 'left':
+            case SLOPE_LEFT:
                 this.direction = SLOPE_LEFT;
                 this.slopeVectorOrigin = ['right', 'top']
-                this.slopeVector = [-1, 1];
+                this.slopeVector = Vector.normalise([-this.dimensions[0], this.dimensions[1]]);
                 break;
             case 'right':
+            case SLOPE_RIGHT:
                 this.direction = SLOPE_RIGHT;
-                this.slopeVector = [1, 1];
+                this.slopeVector = Vector.normalise([this.dimensions[0], this.dimensions[1]]);
                 this.slopeVectorOrigin = ['left', 'top']
                 break;
             default: throw new Error('Invalid direction');
         }
+
+        this.dimensionRatio = this.dimensions[1] / this.dimensions[0];
+        this.group = GROUPS.STATIC;
     }
 
     // Restructure global tick function so this is not needed
@@ -145,26 +156,28 @@ export class SlopeSolid extends Client {
 
         for(let i = 0; i < ev.objects.length; i++) {
             const o = ev.objects[i];
+            if(o.groups === GROUPS.STATIC) continue;
+
             let newY;
 
             switch(this.direction) {
                 case SLOPE_LEFT: 
                     if(
                         (this._pointRelativeToLine(o.right, o.bottom) > 0) ||
-                        (this.right < o.right) ||
-                        (this.bottom < o.bottom)
+                        (this.right < o.right - .1) ||
+                        (this.bottom + .1 < o.bottom)
                     ) continue;
 
-                    newY = this.top + this.right - o.right;
+                    newY = this.top + Math.min(this.right - o.right, this.dimensions[0]) * this.dimensionRatio;
                     break;
                 
                 case SLOPE_RIGHT:
                     if(
                         (this._pointRelativeToLine(o.left, o.bottom) < 0) ||
                         (this.left > o.left) ||
-                        (this.bottom < o.bottom)
+                        (this.bottom + .1 < o.bottom)
                     ) continue;
-                    newY = this.top + o.left - this.left;
+                    newY = this.top + Math.min(o.left - this.left, this.dimensions[0]) * this.dimensionRatio;
                 break
             }
 
@@ -234,6 +247,20 @@ export class SlopeSolid extends Client {
         ctx.lineCap = null;
         ctx.fillStyle = null;
         ctx.lineJoin = null;
+    }
+
+    toJSON() {
+        return {
+            constructor: this.constructor.name,
+            
+            position: this.position,
+            dimensions: this.dimensions,
+            direction: this.direction
+        }
+    }
+
+    static from(json) {
+        return new this(json.position, json.dimensions, direction);
     }
 }
 

@@ -84,15 +84,27 @@
     background: var(--regen-color);
 }
 
+.bar:hover > .tooltip.mpl::after {
+    content: 'MPL: ' counter(mpl);
+    counter-reset: mpl var(--mpl, 1);
+}
+
+.sub-bar {
+    width: calc(100% * var(--percent) / var(--total));
+    left: 0;
+    position: absolute;
+    height: 100%;
+    background: linear-gradient(0deg, darkred .2em, transparent 0);
+    z-index: 1;
+    transition:width linear 200ms;
+}
+
 .tooltip.regen-text::after {
     content: 'Regen: ' counter(regen) '/s';
     counter-reset: regen var(--regen);
 }
 
-.bar:hover > .tooltip.mpl::after {
-    content: 'MPL: ' counter(mpl);
-    counter-reset: mpl var(--mpl, 1);
-}
+
 
 #level-container {
     font-size: .8em;

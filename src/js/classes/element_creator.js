@@ -71,11 +71,18 @@ export class ElementCreator {
     }
 
     /**
-     * Append raw HTML string to element innerHTML; script tags still work, use with caution
+     * Append raw HTML string to element innerHTML; script tags still work, use with caution; Parses and appends the elements without using .innerHTML to not affect eventlisteners etc
      * @param {String} html - the html to add
      */
     html(html) {
-        this.element.innerHTML += html;
+        const parser = new DOMParser();
+        const htmlDoc = parser.parseFromString(html, 'text/html');
+        
+        const elements = htmlDoc.body.children;
+        for (let i = 0; i < elements.length; i++) {
+            this.element.appendChild(elements[i]);
+        }
+
         return this;
     }
 

@@ -7,6 +7,8 @@ import { loadFromStorage } from './save.js';
 import { FPS } from './libs/fps.min.js'
 import { Vector } from './module/vector.js';
 import { camera, skillConversionTable, speed } from './module/calc.js';
+import { KEY_CIPHER } from './const.js';
+import { generateWorld } from './module/worldgen.js';
 
 const grid = new SpatialHash([-30, -30], [60, 60]);
 
@@ -30,23 +32,23 @@ grid.InsertClient(new Spawner([0, 0], {
     type: 'beginner'
 }).SetZIndex(-1)).Spawn();
 
-grid.InsertClient(new RectSolid([-5, 3], [10, 1]));
-grid.InsertClient(new RectSolid([-6, 0], [1, 3]));
-grid.InsertClient(new RectSolid([5, 0], [1, 5]));
-// grid.InsertClient(new MagicProjectile([3, 3], .5, [0, 0], 0, 0, 'black'))
+// grid.InsertClient(new RectSolid([-5, 3], [10, 1]));
 
-// grid.InsertClient(new Enemy([3, 3], [.5, .5]));
-// grid.InsertClient(new Enemy([3, 3], [.5, .5]));
-// grid.InsertClient(new Enemy([3, 3], [.5, .5]));
-grid.InsertClient(new SlopeSolid([-3, 2], [1, 1]));
-grid.InsertClient(new RectSolid([-2, 2], [1, 1]))
-grid.InsertClient(new SlopeSolid([-1, 2], [1, 1], 'right'));
+let objects = generateWorld(50, 30, -25, -10);
+objects.forEach(e => grid.InsertClient(e));
 
-window.spawn = function(n) { 
-    for(let i = 0; i < n; i++) {
-        grid.InsertClient(new Enemy([3, 3], [.5, .5]));
-    }
-}
+// grid.InsertClient(new RectSolid([-6, 0], [1, 3]));
+// grid.InsertClient(new RectSolid([5, 0], [1, 5]));
+// // grid.InsertClient(new MagicProjectile([3, 3], .5, [0, 0], 0, 0, 'black'))
+
+// // grid.InsertClient(new Enemy([3, 3], [.5, .5]));
+// // grid.InsertClient(new Enemy([3, 3], [.5, .5]));
+// // grid.InsertClient(new Enemy([3, 3], [.5, .5]));
+// grid.InsertClient(new SlopeSolid([-3, 2], [1, 1]));
+// grid.InsertClient(new RectSolid([-2, 2], [1, 1]))
+// grid.InsertClient(new SlopeSolid([-1, 2], [1, 1], 'right'));
+
+// grid.InsertClient(new SlopeSolid([4, -8], [1,11]))
 
 window.player = player;
 window.grid = grid;
@@ -64,7 +66,9 @@ const canvas = document.getElementById('canvas');
 
 document.addEventListener('keydown', function keydown(ev) {
     if(document.activeElement != document.body) return;
-    switch (ev.key) {
+    const key = KEY_CIPHER[ev.key] ?? ev.key;
+    
+    switch (key) {
         case 'w':
         case 'ArrowUp':
             keyState.up = true;
@@ -90,7 +94,7 @@ document.addEventListener('keydown', function keydown(ev) {
 
     if(ev.repeat) return;
 
-    const skill = skills.skills[keyRegistry[ev.key]];
+    const skill = skills.skills[keyRegistry[key]];
     if(skill == undefined) return;
 
     if(player.mana < skill.mana) return;
@@ -103,10 +107,10 @@ document.addEventListener('keydown', function keydown(ev) {
 
     const clickedGridTile = [(mousePos[0] - offset[0])/scale, (mousePos[1] - offset[1])/scale];
 
-    let functionName = skillConversionTable[keyRegistry[ev.key]];
+    let functionName = skillConversionTable[keyRegistry[key]];
     
     skill_selector: {
-        if(ev.key == keyRegistry.shield_shot && !player.shield) {
+        if(key == keyRegistry.shield_shot && !player.shield) {
             player.mana += skill.mana;
             break skill_selector;
         }
@@ -134,7 +138,7 @@ document.addEventListener('keydown', function keydown(ev) {
 
 
     // Modify keyState 
-    keyState.state[ev.key] = true;
+    keyState.state[key] = true;
 
     if(skills.tick[functionName]) {
         document.querySelector(`[data-id="${skill.id}"]`).classList.add('casting')
@@ -146,16 +150,18 @@ document.addEventListener('keydown', function keydown(ev) {
     setTimeout(() => el.classList.add('cooldown'), 1);
 
     // Replace old timeout to fire 
-    if(keyState.timeouts[ev.key] != undefined) clearTimeout(keyState.timeouts[ev.key]);
-    keyState.timeouts[ev.key] = setTimeout(() => {
+    if(keyState.timeouts[key] != undefined) clearTimeout(keyState.timeouts[key]);
+    keyState.timeouts[key] = setTimeout(() => {
         el.classList.remove('cooldown');
-        if(keyState.state[ev.key]) keydown({key: ev.key}); 
-        delete keyState.timeouts[ev.key];
+        if(keyState.state[key]) keydown({key: key}); 
+        delete keyState.timeouts[key];
     }, skill.cd * 1000);
 }, false);
 
 document.addEventListener('keyup', ev => {
-    switch (ev.key) {
+    const key = KEY_CIPHER[ev.key] ?? ev.key;
+
+    switch (key) {
         case 'w':
         case 'ArrowUp':
             keyState.up = false;
@@ -177,14 +183,14 @@ document.addEventListener('keyup', ev => {
         break;
     }
 
-    if(keyState.state[ev.key]) delete keyState.state[ev.key];
+    if(keyState.state[key]) delete keyState.state[key];
 
 
     
-    if(keyRegistry[ev.key]) {
-        const skillName = skillConversionTable[keyRegistry[ev.key]];
+    if(keyRegistry[key]) {
+        const skillName = skillConversionTable[keyRegistry[key]];
         if(!skills.tick[skillName]) return;
-        document.querySelector(`[data-id="${keyRegistry[ev.key]}"]`).classList.remove('casting')
+        document.querySelector(`[data-id="${keyRegistry[key]}"]`).classList.remove('casting')
         return;
     }
 }, false);
@@ -369,7 +375,7 @@ function frame(t) {
         }
     }
 
-    if(player.position[1] > 200) {
+    if(player.position[1] > 100) {
         alert('fell out of world');
         player.position = [0,0]
         player._gravity = 0;
@@ -471,11 +477,13 @@ function frame(t) {
                 if(collisions.length >= limit) break;
             }
 
-            if(collisions.length > 0) o.Collision({
-                objects: collisions,
-                grid: grid,
-                ctx: ctx
-            });
+            if(collisions.length > 0) {
+                o.Collision({
+                    objects: collisions,
+                    grid: grid,
+                    ctx: ctx
+                });
+            }
         }
     }
 
@@ -501,7 +509,7 @@ loadSkillBar();
 
 Object.defineProperty(window, 'dev', {
     get: () => {
-        let url = (new URL(location.href))
+        let url = new URL(location.href);
         if(!url.pathname || url.pathname === '/') url.pathname = '/index.html';
         url.searchParams.append('dev', 'true');
         location.replace(url)

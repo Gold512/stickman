@@ -6,11 +6,7 @@ import { AI } from '../classes/AI.js';
 import { Vector } from '../module/vector.js';
 import { getOrbStats, speed } from '../module/calc.js';
 import { enemyGenerators } from './enemies.js';
-
-export const GROUPS = {
-    PROJECTILE: 1,
-    SOLID: 2
-}
+import { GROUPS } from '../const.js';
 
 // base class with helper functions for moving clients
 export class Character extends Client {
@@ -121,6 +117,13 @@ export class PlayerClient extends Client {
         if(this.stats.health < this.stats.maxHealth) this._regen.health += (t / 1000) * this.stats.healthRegen;
         if(this.stats.mana < this.stats.maxMana) this._regen.mana += (t / 1000) * this.stats.manaRegen;
 
+        // update sub-health bar 
+        if(this._regen.health < 0) {
+            this.bars.health.style.setProperty('--percent', Math.abs(this._regen.health))
+        } else {
+            this.bars.health.style.setProperty('--percent', 0)
+        }
+
         const keys = {
             health: 'maxHealth',
             mana: 'maxMana'
@@ -152,9 +155,11 @@ export class PlayerClient extends Client {
     Move(keys, t) {
         let {up, down, left, right} = keys;
 
+        const noGravity = this.HasTag('NoGravity');
+
         // time in seconds
         const ts = t * 0.001;
-        const jumping = (!this.HasTag('NoGravity')) && (this.onGround === false);
+        const jumping = (!noGravity) && (this.onGround === false);
 
         if(jumping) {
             // allow smaller jumps 
@@ -250,10 +255,14 @@ export class PlayerClient extends Client {
 
     set health(v) {
         const diff = this.stats.health - v;
-        this._regen.health = Math.min(-diff * 3, this._regen.health);
-
+        this.bars.health.style.setProperty('--current', v);
         this.stats.health = v;
-        this.bars.health.style.setProperty('--current', v)
+
+        const healthRegenCd = Math.min(-diff * 3, this._regen.health);
+        if(healthRegenCd >= 0) return;
+
+        this._regen.health = healthRegenCd;
+        this.bars.health.style.setProperty('--total', -healthRegenCd);
     }
 
     get health() { return this.stats.health; }
@@ -351,6 +360,8 @@ export class PlayerClient extends Client {
 
     toJSON() {
         return {
+            constructor: this.constructor.name,
+            
             position: this.position,
             dimensions: this.dimensions,
 
@@ -432,7 +443,7 @@ export class Enemy extends Client {
             dodge: 'low'
         };
 
-        this.AI = ai || new AI(this, aiConfig)
+        this.AI = ai || new AI(this, aiConfig);
     }
 
     Step(t) {
@@ -517,6 +528,8 @@ export class Enemy extends Client {
 
     toJSON() {
         return {
+            constructor: this.constructor.name,
+            
             position: this.position,
             dimensions: this.dimensions,
 
@@ -532,8 +545,20 @@ export class Enemy extends Client {
             AIConfig: this.AIConfig,
 
             speed: this.speed,
-            velocity: this.velocity
+            velocity: this.velocity,
+            ai: this.AI.config,
+            color: this.color,
+            skills: this.skills
         }
+    }
+
+    static from(json) {
+        const position = json.position;
+        const dimensions = json.dimensions;
+        delete json.position;
+        delete json.dimensions;
+
+        return new this(position, dimensions, json)
     }
 }
 
@@ -682,6 +707,8 @@ export class Spawner extends Client {
 
     toJSON() {
         return {
+            constructor: this.constructor.name,
+            
             position: this.position,
             bounds: this.bounds,
             count: this.count,
@@ -943,6 +970,25 @@ export class MagicProjectile extends Client {
             this.grid.InsertClient(new ExplosionParticle(this.GetCenter(), [this.dimensions[0], 2.5 * this.dimensions[0]], 10));
         }
     }
+
+    toJSON() {
+        let o = {
+            constructor: this.constructor.name,
+            
+            projectile: this.projectile,
+            velocity: this.velocity,
+            speed: this.speed,
+            curve: this.curve,
+            mpl: this.mpl
+        }
+
+        if(this.owner) o.owner = this.owner;
+        return o;
+    }
+
+    static from(json) {
+        return new this()
+    }
 }
 
 export class RecursiveMagicProjectile extends MagicProjectile {
@@ -1173,6 +1219,8 @@ class ExplosionParticle extends Client {
 
     toJSON() {
         return {
+            constructor: this.constructor.name,
+            
             position: this.position,
             dimensions: this.dimensions,
             frame: this.frame,

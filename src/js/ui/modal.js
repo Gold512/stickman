@@ -155,5 +155,7 @@ export function confirmation(text='') {
 }
 
 export function deathScreen() {
-    
+    return new ElementCreator('div')
+        .class('modal')
+        .text('You died')
 }
