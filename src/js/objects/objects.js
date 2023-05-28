@@ -110,6 +110,12 @@ export class PlayerClient extends Client {
 
         this.skills = new Set();
         this.onGround = false;
+
+        this.collision = {
+            type: 'active',
+            shape: 'rectangle',
+            solid: true 
+        }
     }
 
     // Mana and health regen
@@ -359,26 +365,28 @@ export class PlayerClient extends Client {
     }
 
     toJSON() {
-        return {
-            constructor: this.constructor.name,
+        return false;
+        
+        
+        //     constructor: this.constructor.name,
             
-            position: this.position,
-            dimensions: this.dimensions,
+        //     position: this.position,
+        //     dimensions: this.dimensions,
 
-            maxHealth: this.maxHealth,
-            health: this.health,
-            healthRegen: this.healthRegen,
+        //     maxHealth: this.maxHealth,
+        //     health: this.health,
+        //     healthRegen: this.healthRegen,
 
-            maxMana: this.maxMana,
-            mana: this.mana,
-            manaRegen: this.manaRegen,
+        //     maxMana: this.maxMana,
+        //     mana: this.mana,
+        //     manaRegen: this.manaRegen,
 
-            mpl: this.mpl,
-            magicAffinity: this.magicAffinity,
+        //     mpl: this.mpl,
+        //     magicAffinity: this.magicAffinity,
 
-            speed: this.speed,
-            velocity: this.velocity
-        }
+        //     speed: this.speed,
+        //     velocity: this.velocity
+        // }
     }
 }
 
@@ -444,6 +452,9 @@ export class Enemy extends Client {
         };
 
         this.AI = ai || new AI(this, aiConfig);
+
+        this.collision.solid = true;
+        this.collision.type = 'active';
     }
 
     Step(t) {
@@ -712,8 +723,13 @@ export class Spawner extends Client {
             position: this.position,
             bounds: this.bounds,
             count: this.count,
-            entity: {}
+            objectGenerator: this.objectGenerator,
+            type: this.type
         }
+    }
+
+    static from(json) {
+        return new this(json.position, json);
     }
 
     set killed(v) {
@@ -974,7 +990,9 @@ export class MagicProjectile extends Client {
     toJSON() {
         let o = {
             constructor: this.constructor.name,
-            
+            position: this.position,
+            size: this.dimensions[0],
+
             projectile: this.projectile,
             velocity: this.velocity,
             speed: this.speed,
@@ -986,8 +1004,15 @@ export class MagicProjectile extends Client {
         return o;
     }
 
+    // TODO: have to fix owner reference being lost as IDs are not preserved
     static from(json) {
-        return new this()
+        return new this(json.position, json.size, json.velocity, json.speed, {
+            dmg: json.projectile.damage,
+            color: json.projectile.color,
+            mpl: json.mpl,
+            curve: json.curve,
+            anchor: 'top-left'
+        })
     }
 }
 
@@ -1176,6 +1201,10 @@ export class Shield extends Client {
 
         this.grid.Remove(this);
     }
+
+    toJSON() {
+        return false;
+    }
 }
 
 class ExplosionParticle extends Client {
@@ -1217,16 +1246,20 @@ class ExplosionParticle extends Client {
         this.frame++;   
     }
 
-    toJSON() {
-        return {
-            constructor: this.constructor.name,
+    // toJSON() {
+    //     return {
+    //         constructor: this.constructor.name,
             
-            position: this.position,
-            dimensions: this.dimensions,
-            frame: this.frame,
-            diameters: this.diameters,
-            duration: this.duration
-        }
+    //         position: this.position,
+    //         dimensions: this.dimensions,
+    //         frame: this.frame,
+    //         diameters: this.diameters,
+    //         duration: this.duration
+    //     }
+    // }
+
+    toJSON() {
+        return false;
     }
 }
 

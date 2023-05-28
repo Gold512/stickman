@@ -11,22 +11,19 @@ export class RectSolid extends Client {
     constructor(position, dimensions) {
         super(position, dimensions);
         this.collision = {
-            type: 'active', 
+            type: 'passive', 
             shape: 'rectangle',
             solid: true
         }
-        this.groups = GROUPS.STATIC;
+        this.group = GROUPS.STATIC;
     }
 
-    Step() {}
 
-    Collision(ev) {
+    SetPosition(o) {
         const center = this.GetCenter();
 
-        for(let i = 0; i < ev.objects.length; i++) {
-            const o = ev.objects[i];
-            if(!o.collision.solid) continue;
-            if(o.group === GROUPS.STATIC) continue;
+                // if(!o.collision.solid) return;
+                // if(o.group === GROUPS.STATIC) return;
 
             // move object that collided away so it will no longer
             // overlap the solid 
@@ -55,13 +52,13 @@ export class RectSolid extends Client {
             // check if the object collided from the right
             if( (obj_c[0] > center[0]) && (LR_diff < min_y_diff)) {
                 o.position[0] = this.position[0] + this.dimensions[0];
-                continue;
+                return;
             } 
             
             // check if the object collided from the left
             if( (obj_c[0] < center[0]) && (RL_diff < min_y_diff) ) {
                 o.position[0] = this.position[0] - o.dimensions[0];
-                continue;
+                return;
             }
             
 
@@ -70,15 +67,15 @@ export class RectSolid extends Client {
                 o.position[1] = this.position[1] - o.dimensions[1];
                 if(o._gravity !== undefined) o._gravity = 0;
                 if(o.onGround === false) o.onGround = true;
-                continue;
+                return;
             }
 
             // check if collided from bottom
             if( (obj_c[1] > center[1]) && (TB_diff < min_x_diff) ) {
                 o.position[1] = this.position[1] + this.dimensions[1];
-                continue;
+                return;
             }
-        }
+        
     }
 
     Render(ctx, offset, scale) {
@@ -121,23 +118,30 @@ export class SlopeSolid extends Client {
         super(position, dimensions);
 
         this.collision = {
-            type: 'active',
+            type: 'passive',
             shape: 'rectangle',
             solid: true
         }
 
-        switch(direction) {
+        this.Reload(direction);
+    }
+
+    /** Redefine precalculated values in case of position or height change etc */
+    Reload(direction = null) {
+        direction = direction ?? this.direction;
+
+        switch (direction) {
             case 'left':
             case SLOPE_LEFT:
                 this.direction = SLOPE_LEFT;
-                this.slopeVectorOrigin = ['right', 'top']
+                this.slopeVectorOrigin = ['right', 'top'];
                 this.slopeVector = Vector.normalise([-this.dimensions[0], this.dimensions[1]]);
                 break;
             case 'right':
             case SLOPE_RIGHT:
                 this.direction = SLOPE_RIGHT;
                 this.slopeVector = Vector.normalise([this.dimensions[0], this.dimensions[1]]);
-                this.slopeVectorOrigin = ['left', 'top']
+                this.slopeVectorOrigin = ['left', 'top'];
                 break;
             default: throw new Error('Invalid direction');
         }
@@ -147,49 +151,108 @@ export class SlopeSolid extends Client {
     }
 
     // Restructure global tick function so this is not needed
-    Step() {}
 
-    Collision(ev) {
+    SetPosition(o) {
         const MAX_Y_MOVEMENT = 0.3;
+        let newY;
 
-        // TODO use gravity to make 'slippery' slopes
+        switch(this.direction) {
+            case SLOPE_LEFT: 
+                if(
+                    (this._pointRelativeToLine(o.right, o.bottom) > 0) ||
+                    (this.right < o.right - .1) ||
+                    (this.bottom + .2 < o.bottom)
+                ) return;
 
-        for(let i = 0; i < ev.objects.length; i++) {
-            const o = ev.objects[i];
-            if(o.groups === GROUPS.STATIC) continue;
-
-            let newY;
-
-            switch(this.direction) {
-                case SLOPE_LEFT: 
-                    if(
-                        (this._pointRelativeToLine(o.right, o.bottom) > 0) ||
-                        (this.right < o.right - .1) ||
-                        (this.bottom + .1 < o.bottom)
-                    ) continue;
-
-                    newY = this.top + Math.min(this.right - o.right, this.dimensions[0]) * this.dimensionRatio;
-                    break;
-                
-                case SLOPE_RIGHT:
-                    if(
-                        (this._pointRelativeToLine(o.left, o.bottom) < 0) ||
-                        (this.left > o.left) ||
-                        (this.bottom + .1 < o.bottom)
-                    ) continue;
-                    newY = this.top + Math.min(o.left - this.left, this.dimensions[0]) * this.dimensionRatio;
-                break
-            }
-
-            // limit Y movement to prevent 'teleporting'
-            let dy = newY - o.bottom;
-            if((Math.abs(dy) > MAX_Y_MOVEMENT) && dy > 0) continue; // limit Y movement to prevent 'teleporting'
+                newY = this.top + (this.right - o.right) * this.dimensionRatio;
+                break;
             
-            o.bottom = newY;
-            o._gravity = 0;
-            o.onGround = true;
+            case SLOPE_RIGHT:
+                if(
+                    (this._pointRelativeToLine(o.left, o.bottom) < 0) ||
+                    (this.left > o.left + .1) ||
+                    (this.bottom + .2 < o.bottom)
+                ) return;
+                newY = this.top + (o.left - this.left) * this.dimensionRatio;
+            break
+
+            default: throw new Error('Invalid slope direction ' + this.direction)
+        }
+
+        // limit Y movement to prevent 'teleporting'
+        let dy = newY - o.bottom;
+        if((Math.abs(dy) > MAX_Y_MOVEMENT) && dy > 0) return; // limit Y movement to prevent 'teleporting'
+        
+        o.bottom = newY;
+        o._gravity = -.01;
+        o.onGround = true;
+    }
+
+    /**
+     * Execute pure collision check for whether an object is within the bounds of the slope
+     * @returns {Boolean}
+     */
+    CheckCollision(o) {
+        switch(this.direction) {
+            case SLOPE_LEFT: 
+                return !(
+                    (this._pointRelativeToLine(o.right, o.bottom) > 0) ||
+                    (this.right < o.right - .1) ||
+                    (this.bottom + .2 < o.bottom)
+                )
+            
+            case SLOPE_RIGHT:
+                return !(
+                    (this._pointRelativeToLine(o.left, o.bottom) < 0) ||
+                    (this.left > o.left) ||
+                    (this.bottom < o.bottom - .2)
+                );
+
+            default: throw new Error('Invalid slope direction ' + this.direction)
         }
     }
+
+    // Collision(ev) {
+    //     const MAX_Y_MOVEMENT = 0.3;
+
+    //     // TODO use gravity to make 'slippery' slopes
+
+    //     for(let i = 0; i < ev.objects.length; i++) {
+    //         const o = ev.objects[i];
+    //         if(o.groups === GROUPS.STATIC) continue;
+
+    //         let newY;
+
+    //         switch(this.direction) {
+    //             case SLOPE_LEFT: 
+    //                 if(
+    //                     (this._pointRelativeToLine(o.right, o.bottom) > 0) ||
+    //                     (this.right < o.right) ||
+    //                     (this.bottom < o.bottom)
+    //                 ) continue;
+
+    //                 newY = this.top + Math.min(this.right - o.right, this.dimensions[0]) * this.dimensionRatio;
+    //                 break;
+                
+    //             case SLOPE_RIGHT:
+    //                 if(
+    //                     (this._pointRelativeToLine(o.left, o.bottom) < 0) ||
+    //                     (this.left > o.left) ||
+    //                     (this.bottom < o.bottom)
+    //                 ) continue;
+    //                 newY = this.top + Math.min(o.left - this.left, this.dimensions[0]) * this.dimensionRatio;
+    //             break
+    //         }
+
+    //         // limit Y movement to prevent 'teleporting'
+    //         let dy = newY - o.bottom;
+    //         if((Math.abs(dy) > MAX_Y_MOVEMENT) && dy > 0) continue; // limit Y movement to prevent 'teleporting'
+            
+    //         o.bottom = newY;
+    //         o._gravity = 0;
+    //         o.onGround = true;
+    //     }
+    // }
 
     /**
      * Check if the corner of the object is to the left or right of the slope
@@ -260,7 +323,7 @@ export class SlopeSolid extends Client {
     }
 
     static from(json) {
-        return new this(json.position, json.dimensions, direction);
+        return new this(json.position, json.dimensions, json.direction);
     }
 }
 

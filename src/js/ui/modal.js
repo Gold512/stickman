@@ -1,4 +1,5 @@
 import { ElementCreator } from "../classes/element_creator.js";
+import { CreateAnimation } from "../module/animation.js";
 
 const modalZIndex = 100;
 
@@ -118,14 +119,14 @@ export function confirmation(text='') {
         currentElement.remove();
         currentElement = null;
     }
-    
+
     if(currentElement) clear();
 
     let resolve, reject;
     const p = new Promise((res, rej) => {resolve = res, reject = rej});
 
     currentElement = new ElementCreator('div')
-        .class('confirmation-modal')
+        .class(['confirmation-modal'])
         .newChild('div')
             .class('confirmation-modal-text')
             .text(text)
@@ -154,8 +155,47 @@ export function confirmation(text='') {
     return p;
 }
 
+export function alert(text='') {
+    function clear() {
+        currentElement.remove();
+        currentElement = null;
+    }
+
+    if(currentElement) clear();
+
+    let resolve, reject;
+    const p = new Promise((res, rej) => {resolve = res, reject = rej});
+
+    currentElement = new ElementCreator('div')
+        .class(['confirmation-modal'])
+        .newChild('div')
+            .class('confirmation-modal-text')
+            .text(text)
+            .end
+        .newChild('div')
+            .class('confirmation-modal-button-container')
+
+            .newChild('button')
+                .text('Ok')
+                .addEventListener('click', () => {
+                    resolve();
+                    clear();
+                })
+                .end
+            .end
+        .appendTo(document.body);
+    
+    return p;
+}
+
 export function deathScreen() {
-    return new ElementCreator('div')
-        .class('modal')
+    let element = new ElementCreator('div')
+        .style({
+            width: '100%',
+            height: '100%',
+            background: 'black',
+            
+        })
         .text('You died')
+    
 }

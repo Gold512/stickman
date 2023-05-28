@@ -46,11 +46,12 @@ export async function getSVG(url) {
 }
 
 export function syncGetSVG(url) {
-    if(window.SVG_CACHE[url] != undefined) {
-
-    }
-    
     let svg = document.createElement('svg');
+    
+    if(window.SVG_CACHE[url] != undefined) {
+        setSVG(window.SVG_CACHE[url]);
+        return svg;
+    }
 
     fetch(url)
         .then(function(response) {
@@ -58,20 +59,24 @@ export function syncGetSVG(url) {
         }).then(function(data) {
             window.SVG_CACHE[url] = data;
 
-            let template = document.createElement('template');
-            template.innerHTML = data;
-            let newSVG = template.content.firstChild;
-
-            let svgAttributes = newSVG.getAttributeNames();
-            for(let i = 0; i < svgAttributes.length; i++) {
-                const attr = svgAttributes[i];
-                svg.setAttribute(attr, newSVG.getAttribute(attr))
-            }
-
-            svg.innerHTML = newSVG.innerHTML;
+            setSVG(data);
         });
 
     return svg;
+
+    function setSVG(data) {
+        let template = document.createElement('template');
+        template.innerHTML = data;
+        let newSVG = template.content.firstChild;
+
+        let svgAttributes = newSVG.getAttributeNames();
+        for (let i = 0; i < svgAttributes.length; i++) {
+            const attr = svgAttributes[i];
+            svg.setAttribute(attr, newSVG.getAttribute(attr));
+        }
+
+        svg.innerHTML = newSVG.innerHTML;
+    }
 }
 
 window.getSVG = getSVG

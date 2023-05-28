@@ -110,7 +110,7 @@ export class ElementCreator {
 
     /**
      * Set css styles
-     * @param {Object[keyof CSSStyleDeclaration]} styles key value pair of styles and their value
+     * @param {Object<keyof CSSStyleDeclaration, string>} styles key value pair of styles and their value
      */
     style(styles) {
         for(let i = 0, k = Object.keys(styles); i < k.length; i++) {
@@ -200,4 +200,30 @@ export class ElementCreator {
         this.top.unappended--;
         return this.parent;
     }
-}
+
+    static style(css) {
+        if(typeof css === 'object') css = this._JSONToCSS(css);
+
+        var style = document.createElement('style');
+            
+        if (style.styleSheet) {
+            style.styleSheet.cssText = css;
+        } else {
+            style.appendChild(document.createTextNode(css));
+        }
+        
+        document.getElementsByTagName('head')[0].appendChild(style);
+    }
+
+    static _JSONToCSS(json) {
+        let result = '';
+        for(let i in json) {
+            let rule = '';
+            for(let j in json[i]) 
+                rule += j    + ':' + json[i][j] + ';';
+            
+            result += `${i}{${rule}}`;
+        }
+        return result;
+    }
+}   

@@ -7,35 +7,42 @@ import { loadFromStorage } from './save.js';
 import { FPS } from './libs/fps.min.js'
 import { Vector } from './module/vector.js';
 import { camera, skillConversionTable, speed } from './module/calc.js';
-import { KEY_CIPHER } from './const.js';
+import { GROUPS, KEY_CIPHER } from './const.js';
 import { generateWorld } from './module/worldgen.js';
 
-const grid = new SpatialHash([-30, -30], [60, 60]);
 
-const player = grid.InsertClient(new PlayerClient([0, 0], [.5, .5], {
+const player = new PlayerClient([0, 0], [.5, .5], {
     health: document.getElementById('health-bar'),
     mana: document.getElementById('mana-bar'),
     xp: document.getElementById('xp-bar'),
     magicAffinity: document.getElementById('magic-affinity-bar'),
     level: document.getElementById('level')
-}));
+});
+
+const grid = loadFromStorage(player) ?? createNewWorld();
+grid.InsertClient(player);
+
 player.speed = speed.move;
-loadFromStorage(player);
 
-grid.InsertClient(new Spawner([0, 0], {
-    bounds: [12, 12],
-    objectGenerator: {
-        name: 'createMagician',
-        args: [[0,0], '$type']
-    },
-    count: 3,
-    type: 'beginner'
-}).SetZIndex(-1)).Spawn();
+function createNewWorld() {
+    const grid = new SpatialHash([-30, -30], [60, 60])
+    grid.InsertClient(new Spawner([0, 0], {
+        bounds: [12, 12],
+        objectGenerator: {
+            name: 'createMagician',
+            args: [[0,0], '$type']
+        },
+        count: 3,
+        type: 'beginner'
+    }).SetZIndex(-1)).Spawn();
 
-// grid.InsertClient(new RectSolid([-5, 3], [10, 1]));
 
-let objects = generateWorld(50, 30, -25, -10);
-objects.forEach(e => grid.InsertClient(e));
+    let objects = generateWorld(50, [0, 0], -25, 5);
+    objects.forEach(e => grid.InsertClient(e));
+    return grid;
+}
+
+
 
 // grid.InsertClient(new RectSolid([-6, 0], [1, 3]));
 // grid.InsertClient(new RectSolid([5, 0], [1, 5]));
@@ -413,11 +420,14 @@ function frame(t) {
             const nearBy = grid.FindNear(o.GetCenter(), o.dimensions);
 
             let collisions = [];
+            let collisionCount = 0;
             let limit = o.collision.limit || Infinity; 
 
             // limit is the number of collisions to detect for an object
             // o - this
             // e - other object(s) 
+            const r1 = o.dimensions[0]/2;
+
             for(let i = 0; i < nearBy.length; i++) {
                 const e = nearBy[i];
                 if(e === o) continue;
@@ -425,7 +435,6 @@ function frame(t) {
 
                 const operation = `${o.collision.shape}+${e.collision.shape}`;
                 let isCollided = false;
-                const r1 = o.dimensions[0]/2;
                 const r2 = e.dimensions[0]/2;
                 switch(operation) {
                     case 'circle+circle':
@@ -473,8 +482,17 @@ function frame(t) {
                     default: throw new Error(`invalid collision type ${operation}`)
                 }
 
-                if(isCollided) collisions.push(e);
-                if(collisions.length >= limit) break;
+                if(isCollided) {
+                    collisionCount++;
+
+                    if(e.group === GROUPS.STATIC && o.collision.solid) {
+                        o.HandleSolidCollision(e); 
+                    } else if(!e.CheckCollision || e.CheckCollision(o)) {
+                        collisions.push(e)
+                    }
+                };
+
+                if(collisionCount >= limit) break;
             }
 
             if(collisions.length > 0) {

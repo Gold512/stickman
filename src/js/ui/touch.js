@@ -5,11 +5,13 @@ import { keyState } from "../main.js";
 import { newSVG } from "../module/svg.js";
 
 function touchStart(e) {
+    e.preventDefault();
     keyState[e.currentTarget.dataset.direction] = true;
     console.log(e.currentTarget.dataset.direction)
 }
 
 function touchEnd(e) {
+    e.preventDefault();
     keyState[e.currentTarget.dataset.direction] = false;
 }
 

@@ -103,6 +103,7 @@ export class SpatialHash {
 
     this._Remove(client);
     this._Insert(client);
+    if(client.Reload) client.Reload();
   }
 
   /**
@@ -487,8 +488,10 @@ export class SpatialHash {
           if (v._queryId != queryId) {
             v._queryId = queryId;
             if(!v.toJSON) throw new Error(`[object ${v.constructor.name}] does not have toJSON method`);
-
-            clients.push(v.toJSON());
+            
+            let json = v.toJSON();
+            if(!json) continue;
+            clients.push(json);
           }
         }
       }
@@ -518,12 +521,14 @@ export class SpatialHash {
    */
   static from(json, constructors) {
     if(typeof json === 'string') json = JSON.parse(json);
-    
+
     const grid = new this(json.bounds, json.dimensions);
 
     for (let i = 0; i < json.clients.length; i++) {
       const e = json.clients[i];
       const constructor = constructors[e.constructor];
+      if(!constructor) throw new Error('Unable to get constructor of ' + e.constructor);
+      if(!constructor.from) throw new Error(constructor)
       grid.InsertClient(constructor.from(e));
     }
 
@@ -682,6 +687,11 @@ export class Client {
   // OnRemove() {
   //
   // }
+
+  // helper function for solid collision
+  HandleSolidCollision(o) {
+    if(!o.CheckCollision || o.CheckCollision(this)) o.SetPosition(this); 
+  }
 
   // debug methods
   showBoundingBox(ctx, offset, scale) {

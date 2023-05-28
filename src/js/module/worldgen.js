@@ -1,19 +1,50 @@
 import { RectSolid, SlopeSolid } from "../objects/solid.js";
 import { math } from "./math.js";
 
+const TILE_TABLE = [
+    {
+        weight: 3,
+        item: 1
+    },
+    {
+        weight: 1,
+        item: 2
+    },
+    {
+        weight: 1,
+        item: 0.5
+    },
+    {
+        weight: 1,
+        item: 0.25
+    },
+    {
+        weight: 1,
+        item: 1.25
+    },
+    {
+        weight: 1,
+        item: 0.75
+    },
+    {
+        weight: 2,
+        item: 1.5
+    }
+];
+
 /**
  * 
  * @param {number} width 
- * @param {number} height 
+ * @param {import("./vector.js").Vector2D} origin the origin of the world, there will always be flat ground on that location 
  * @returns {import('../spacial_hash.js').Client[]} clients generated
  */
-export function generateWorld(width, height, offsetX = 0, offsetY = 0) {
+export function generateWorld(width, origin, offsetX = 0, offsetY = 0) {
     let clients = [];
-    height /= 2;
+    let height = origin[1] + offsetY;
 
     let lastRand = 0;
 
-    for(let i = 0; i < width; i++) {
+    for(let i = origin[0]; i < width; i++) {
         let rand = math.weighted_random([
             {
                 weight: (lastRand !== 1) ? 1 : 0,
@@ -30,38 +61,8 @@ export function generateWorld(width, height, offsetX = 0, offsetY = 0) {
         ]);
 
         let change;
-        if(rand !== 0) {
-            change = math.weighted_random([
-                {
-                    weight: 3,
-                    item: 1
-                },
-                {
-                    weight: 1,
-                    item: 2
-                },
-                {
-                    weight: 1,
-                    item: 0.5
-                },
-                {
-                    weight: 1,
-                    item: 0.25
-                },
-                {
-                    weight: 1,
-                    item: 1.25
-                },
-                {
-                    weight: 1,
-                    item: 0.75
-                },
-                {
-                    weight: 2,
-                    item: 1.5
-                }
-            ])
-        }
+        if(rand !== 0) change = math.weighted_random(TILE_TABLE)
+        
 
         switch(rand) {
             case -1:

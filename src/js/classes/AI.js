@@ -70,6 +70,9 @@ export class AI {
             if(!this.attack_cd) this.attack();
         }
 
+        // if client has shield make it face the target 
+        if(this.client.shield && this.target) this.shieldUpdate();
+
         this.action.time -= t;
         if(this.action.time <= 0) {
             this.client.velocity = [0, 0];
@@ -288,6 +291,14 @@ export class AI {
         });
         if(status !== false) this.client.mana -= skills[selectedSkill].mana;
         this.attack_cd = 1000*skills[selectedSkill].cd;
+    }
+    
+    shieldUpdate() {
+        if(this.client.GetCenter()[0] > grid.GetClientById(this.target).GetCenter()[0]) {
+            this.client.facing = 'left';
+        } else {
+            this.client.facing = 'right';
+        }
     }
 
     _getManaPercentage() {
