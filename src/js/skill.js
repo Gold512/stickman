@@ -162,7 +162,7 @@ export const skills = {
         desc: 'incresse the size of the shield to block curve shots more efficently',
         id: 'shield_expand',
         mana: 3,
-        cd: 0,
+        cd: 99999,
         cost: 8,
         mpl: 3,
         type: 'defense'
@@ -199,7 +199,9 @@ export const skills = {
         cost: 10,
         mpl: 5,
         type: 'attack'
-    }
+    },
+
+    
 }
 
 export function skillSort(skillList) {
@@ -521,7 +523,19 @@ export const skillCaster = (function() {
         }
     }
 
-    return {singleShot, doubleShot, tripleShot, shield, shieldShot, superSpeed, recursiveShot, volleyShot, levitation, flight, curveShot, doubleCurveShot}
+    function shieldExpand({caster}) {
+        if(!caster.shield) return false;
+        if(caster.shield.expand !== 1) return false;
+
+        const SCALE_FACTOR = 1.5;
+
+        caster.shield.dimensions[0] *= SCALE_FACTOR;
+        caster.shield.dimensions[1] *= SCALE_FACTOR;
+        caster.shield.expand = SCALE_FACTOR;
+        caster.shield.health *= 2;
+    }
+
+    return {singleShot, doubleShot, tripleShot, shield, shieldShot, superSpeed, recursiveShot, volleyShot, levitation, flight, curveShot, doubleCurveShot, shieldExpand}
 })();
 
 // UI events
@@ -530,8 +544,8 @@ export const keydown = (function() {
     // directly casted from keydown event
     // only extract the needed functions
     // this will enable detection of whether the skill has an event handler or not
-    let {singleShot, doubleShot, tripleShot, shield, shieldShot, superSpeed, recursiveShot, volleyShot, levitation, flight} = skillCaster;
-    return {singleShot, doubleShot, tripleShot, shield, shieldShot, superSpeed, recursiveShot, volleyShot, levitation, flight}
+    let {singleShot, doubleShot, tripleShot, shield, shieldShot, superSpeed, recursiveShot, volleyShot, levitation, flight, shieldExpand} = skillCaster;
+    return {singleShot, doubleShot, tripleShot, shield, shieldShot, superSpeed, recursiveShot, volleyShot, levitation, flight, shieldExpand}
 }());
 
 export const tick = (function() {

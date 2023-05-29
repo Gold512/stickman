@@ -108,11 +108,11 @@ document.addEventListener('keydown', function keydown(ev) {
     player.mana -= skill.mana;
 
     let [x, y] = Vector.normalise([
-        mousePos[0] - (player.position[0] * scale + offset[0]),
-        mousePos[1] - (player.position[1] * scale + offset[1])
+        mousePos[0] - (player.position[0] * camera.scale + offset[0]),
+        mousePos[1] - (player.position[1] * camera.scale + offset[1])
     ]);
 
-    const clickedGridTile = [(mousePos[0] - offset[0])/scale, (mousePos[1] - offset[1])/scale];
+    const clickedGridTile = [(mousePos[0] - offset[0])/camera.scale, (mousePos[1] - offset[1])/camera.scale];
 
     let functionName = skillConversionTable[keyRegistry[key]];
     
@@ -129,7 +129,7 @@ document.addEventListener('keydown', function keydown(ev) {
             vector: [x, y],
             tile: clickedGridTile, 
             ctx: ctx,
-            scale: scale,
+            scale: camera.scale,
             offset: offset
         });
 
@@ -237,7 +237,6 @@ let [width, height] = [window.innerWidth, window.innerHeight]
 canvas.width = width;
 canvas.height = height;
 const ctx = canvas.getContext('2d');
-const scale = camera.scale; // canvas pixels per grid tile
 const offset = camera.offset;
 const despawnRange = 20;
 let start;
@@ -247,7 +246,7 @@ let focusedClient;
 canvas.addEventListener('contextmenu', ev => {
     ev.preventDefault();
     console.log('context menu')
-    const pos = [(ev.clientX - offset[0])/scale, (ev.clientY - offset[1])/scale];
+    const pos = [(ev.clientX - offset[0])/camera.scale, (ev.clientY - offset[1])/camera.scale];
     const clicked = grid.ClientSelector({
         origin: pos, 
         bounds: [1, 1],
@@ -271,19 +270,19 @@ canvas.addEventListener('click', ev => {
     // Convert screen click coords to grid coordinates
     // tile at top left of the screen
 
-    const pos = [(ev.clientX - offset[0])/scale, (ev.clientY - offset[1])/scale];
+    const pos = [(ev.clientX - offset[0])/camera.scale, (ev.clientY - offset[1])/camera.scale];
 
     const keys = Object.keys(keyState.state);
     if(keys.length > 0) {
         const vector = Vector.normalise([
-            ev.clientX - (player.position[0] * scale + offset[0]),
-            ev.clientY - (player.position[1] * scale + offset[1])
+            ev.clientX - (player.position[0] * camera.scale + offset[0]),
+            ev.clientY - (player.position[1] * camera.scale + offset[1])
         ]);
 
         for(let i = 0; i < keys.length; i++) {
             const skillName = skillConversionTable[keyRegistry[keys[i]]];
             if(skills.click[skillName]) skills.click[skillName]({
-                grid, ctx, scale, offset, vector,
+                grid, ctx, scale: camera.scale, offset, vector,
                 caster: player,
                 tile: pos
             });
@@ -303,14 +302,14 @@ document.addEventListener("wheel", ev => {
             const keys = Object.keys(keyState.state);
             if(keys.length > 0) {
                 const vector = Vector.normalise([
-                    ev.clientX - (player.position[0] * scale + offset[0]),
-                    ev.clientY - (player.position[1] * scale + offset[1])
+                    ev.clientX - (player.position[0] * camera.scale + offset[0]),
+                    ev.clientY - (player.position[1] * camera.scale + offset[1])
                 ]);
             
                 for(let i = 0; i < keys.length; i++) {
                     const skillName = skillConversionTable[keyRegistry[keys[i]]];
                     if(skills.scroll[skillName]) skills.scroll[skillName]({
-                        grid, ctx, scale, offset, vector,
+                        grid, ctx, scale: camera.scale, offset, vector,
                         caster: player,
                         scrollDelta: ev.deltaY
                     });
@@ -356,6 +355,17 @@ function frame(t) {
     if(!player.HasTag('NoMovement')) player.Move(keyState, elapsedTime);
     grid.UpdateClient(player);
 
+    let objects = grid.FindNear(center, [Math.ceil(1.1 * width / camera.scale), Math.ceil(1.1 * height / camera.scale)]);
+    
+    // gravity 
+    const ts = elapsedTime / 1000;
+    for(let i = 0; i < objects.length; i++) {
+        if(!objects[i].HasTag('NoGravity') && (objects[i].gravity === true)) {
+            objects[i]._gravity = objects[i]._gravity ? objects[i]._gravity + Math.min(4**(1+objects[i]._gravity), 10) * ts : 6 * ts;
+            objects[i].position[1] += objects[i]._gravity * ts;
+        }
+    }
+
     // next use vector math to project the next place
     // the player will be and make the camera slightly behind the 
     // player by lerping time based on duration move keys are held down
@@ -364,22 +374,12 @@ function frame(t) {
     grid.Step(elapsedTime);
 
     // get objects to render
-    let objects = grid.FindNear(center, [Math.ceil(1.5 * width / scale), Math.ceil(1.5 * height / scale)]);
 
     // Used for overlays like spawn area
     // ONLY use for interaction code 
     // use Client.zIndex for client layering
     if(focusedClient && focusedClient.OnFocusBeforeRender) {
-        focusedClient.OnFocusBeforeRender(ctx, offset, scale)
-    }
-
-    // gravity 
-    const ts = elapsedTime / 1000;
-    for(let i = 0; i < objects.length; i++) {
-        if(!objects[i].HasTag('NoGravity') && (objects[i].gravity === true)) {
-            objects[i]._gravity = objects[i]._gravity ? objects[i]._gravity + Math.min(4**(1+objects[i]._gravity), 10) * ts : 6 * ts;
-            objects[i].position[1] += objects[i]._gravity * ts;
-        }
+        focusedClient.OnFocusBeforeRender(ctx, offset, camera.scale)
     }
 
     if(player.position[1] > 100) {
@@ -391,14 +391,14 @@ function frame(t) {
     // execute tick functions if skill key is being held down 
     const keys = Object.keys(keyState.state);
     if(keys.length > 0) {
-        const tilePos = [(mousePos[0] - offset[0])/scale, (mousePos[1] - offset[1])/scale];
+        const tilePos = [(mousePos[0] - offset[0])/camera.scale, (mousePos[1] - offset[1])/camera.scale];
         for(let i = 0; i < keys.length; i++) {
             const skillName = skillConversionTable[keyRegistry[keys[i]]];
 
             if(skills.tick[skillName]) skills.tick[skillName]({
                 ctx,
                 offset,
-                scale,
+                scale: camera.scale,
                 tile: tilePos,
                 caster: player
             });
@@ -507,8 +507,8 @@ function frame(t) {
 
     // camera movement
     center = player.GetCenter();
-    offset[0] = width/2 - center[0] * scale;
-    offset[1] = height/2 - center[1] * scale;
+    offset[0] = width/2 - center[0] * camera.scale;
+    offset[1] = height/2 - center[1] * camera.scale;
 
     // Render the objects 
     renderFrameObjects(objects);
@@ -567,7 +567,7 @@ function renderFrameObjects(objects) {
     for (let i = 0; i < k.length; i++) {
         const layer = objectLayers[k[i]];
         for (let j = 0; j < layer.length; j++) {
-            layer[j].Render(ctx, offset, scale);
+            layer[j].Render(ctx, offset, camera.scale);
         }
     }
 }

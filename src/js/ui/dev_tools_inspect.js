@@ -431,8 +431,9 @@ function openObjectEditor(dragStart, inspectOverlay) {
             .newChild('div')
                 .text('duplicate')
                 .addEventListener('click', ev => {
-                    let json = client.toJSON();
-                    grid.InsertClient(objects[json.constructor].from(json));
+                    let json = structuredClone(client.toJSON());
+                    const newObject = objects[json.constructor].from(json);
+                    grid.InsertClient(newObject);
                 })
                 .end
             .end

@@ -94,6 +94,28 @@ export function init() {
         .exec(addCheckBox('infinite'))
         .exec(addCheckBox('paused'))
         .exec(addCheckBox('speedup'))
+        .newChild('label')
+            .newChild('span').id('zoom-display')
+                .text('50')
+                .end
+            .newChild('input')
+                .attribute('type', 'range')
+                .attribute('min', '10')
+                .attribute('max', '100')
+                .attribute('step', '10')
+                .style({
+                    width: '5em'
+                })
+
+                .addEventListener('change', ev => {
+                    camera.scale = parseInt(ev.currentTarget.value)
+                    ev.currentTarget.parentElement.children[0].innerText = camera.scale;
+
+                    
+                })
+                .addEventListener('mouseup', ev => { ev.currentTarget.blur(); })
+                .end
+            .end
         .newChild('button')
             .addEventListener('click', ev => {
                 player.health = player.stats.maxHealth;
@@ -278,7 +300,8 @@ export const dev = {
             'save',
             'objects/enemies',
             'module/worldgen',
-            'classes/element_creator'
+            'classes/element_creator',
+            'module/calc'
         ]
 
 

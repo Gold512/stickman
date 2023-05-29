@@ -1108,6 +1108,7 @@ export class Shield extends Client {
         // this.collision.type= 'none';
 
         this.group = GROUPS.PROJECTILE;
+        this.expand = 1;
     }
 
     Step(t) {
@@ -1119,12 +1120,19 @@ export class Shield extends Client {
             return;
         }
         const owner = this.grid.GetClientById(this.owner);
-        if(!owner) this.grid.Remove();
+        if(!owner) this.grid.Remove(this);
         
-        let [cx, cy] = owner.GetCenter();
+        // let [cx, cy] = owner.GetCenter();
         this.direction = owner.facing == 'right' ? 1 : -1;
-        cx += this.direction * owner.dimensions[0] - .5 * this.dimensions[0];
-        cy -= this.dimensions[1] * .5;
+
+        // basically ensure the distance between their centeres is d 
+        const widthDiff = .5 * (owner.dimensions[0] - this.dimensions[0]);
+        const d = .5 * (1.2 * this.dimensions[0] + owner.dimensions[0]);
+        const cx = owner.position[0] + widthDiff + this.direction * d;
+
+
+        // let cx = owner.position[0] + this.direction * .5 * ( this.dimensions[0] + owner.dimensions[0] );
+        const cy = owner.position[1] + .5 * owner.dimensions[1] - this.dimensions[1] * .5;
         this.position = [cx, cy];
     }
 
