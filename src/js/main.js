@@ -382,12 +382,6 @@ function frame(t) {
         focusedClient.OnFocusBeforeRender(ctx, offset, camera.scale)
     }
 
-    if(player.position[1] > 100) {
-        alert('fell out of world');
-        player.position = [0,0]
-        player._gravity = 0;
-    }
-
     // execute tick functions if skill key is being held down 
     const keys = Object.keys(keyState.state);
     if(keys.length > 0) {
@@ -414,6 +408,20 @@ function frame(t) {
         if((o instanceof MagicProjectile) && ( Math.abs(player.position[0] - o.position[0]) >= despawnRange || 
         Math.abs(player.position[1] - o.position[1]) >= despawnRange ) ) {
             grid.Remove(o);
+        }
+
+        // check fall out of world
+        if(o.position[1] > (grid._bounds[1][1] + 10)) {
+
+            if(o instanceof PlayerClient) {
+                alert('fell out of world');
+                player.position = [0,0]
+                player._gravity = 0;
+            } else {
+                grid.Remove(o);
+            }
+
+            continue;
         }
 
         if(o.collision.type == 'active') {

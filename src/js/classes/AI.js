@@ -278,6 +278,8 @@ export class AI {
             });
         }
 
+        // console.table(weights )
+
         const selectedSkill = math.weighted_random(weights);
         if(selectedSkill == 'nothing') {
             this.attack_cd = 100;

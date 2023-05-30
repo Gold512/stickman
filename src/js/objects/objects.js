@@ -7,6 +7,7 @@ import { Vector } from '../module/vector.js';
 import { getOrbStats, speed } from '../module/calc.js';
 import { enemyGenerators } from './enemies.js';
 import { GROUPS } from '../const.js';
+import { RectSolid } from './solid.js';
 
 // base class with helper functions for moving clients
 export class Character extends Client {
@@ -1179,7 +1180,7 @@ export class Shield extends Client {
         for(let i = 0; i < ev.objects.length; i++) {
             const o = ev.objects[i];
             if(o instanceof MagicProjectile) return;
-            if(o instanceof RectSolid) {
+            if(o.group === GROUPS.STATIC) {
                 this._Explode();
                 return;
             }
