@@ -288,7 +288,8 @@ export const skillCaster = (function() {
         shield.velocity = vector;
         shield.projectile = true;
         shield.collision.type = 'active';
-        shield.damage = 3;
+        shield.damage = 3 * shield.expand; // 3 damage but increase if shied is expanded
+        shield.collision.solid = false;
 
         caster.shield = null;
     }

@@ -1,5 +1,6 @@
 // Declare to global scope to avoid creating multiple caches
 if(!window.SVG_CACHE) window.SVG_CACHE = {};
+if(!window.SVG_IMAGE_CACHE) window.SVG_IMAGE_CACHE = {};
 
 /**
  * 
@@ -79,4 +80,18 @@ export function syncGetSVG(url) {
     }
 }
 
-window.getSVG = getSVG
+export function createSVGImage(path) {
+    if(window.SVG_IMAGE_CACHE[path]) return window.SVG_IMAGE_CACHE[path];
+    let svgimg = document.createElementNS('http://www.w3.org/2000/svg','image');
+    svgimg.setAttributeNS('http://www.w3.org/1999/xlink','href',path);
+    window.SVG_IMAGE_CACHE[path] = svgimg;
+    return svgimg;
+}
+
+/**
+ * preload svg files into svg elements for fetching svg data instantly 
+ * @param {...string} paths - paths of svgs to preload 
+ */
+export function preloadSVGImages(...paths) {
+
+}

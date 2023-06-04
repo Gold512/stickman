@@ -67,6 +67,8 @@ function load(obj, player) {
     // grid = SpatialHash.from(obj.grid, objects);
 
     loadSkillBar(false);
+
+    if(!obj.grid) return null;
     return SpatialHash.from(obj.grid, objects);
 }
 

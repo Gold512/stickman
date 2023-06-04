@@ -190,8 +190,8 @@ export function toggleInspect(state=true) {
                 const x = (ev.clientX - camera.offset[0]) / camera.scale;
                 const y = (ev.clientY - camera.offset[1]) / camera.scale;
 
-                const dx = (originalDimensions.clickX - ev.clientX) / camera.scale;
-                const dy = (originalDimensions.clickY - ev.clientY) / camera.scale;
+                const dx = originalDimensions.posX - player.position[0] + (originalDimensions.clickX - ev.clientX) / camera.scale;
+                const dy = originalDimensions.posY - player.position[1] + (originalDimensions.clickY - ev.clientY) / camera.scale;
 
                 inspectOverlay.style.transform = `translate(${convertToPixels(x, 0)}, ${convertToPixels(y, 1)})`;
 
@@ -216,7 +216,9 @@ export function toggleInspect(state=true) {
                 top: client.position[1],
                 width: client.dimensions[0],
                 height: client.dimensions[1],
-                clickX, clickY
+                clickX, clickY,
+                posX: player.position[0],
+                posY: player.position[1]
             }
 
             document.addEventListener('mousemove', dragEvent[direction]);

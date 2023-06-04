@@ -8,6 +8,7 @@ import { getOrbStats, speed } from '../module/calc.js';
 import { enemyGenerators } from './enemies.js';
 import { GROUPS } from '../const.js';
 import { RectSolid } from './solid.js';
+import { createSVGImage } from '../module/svg.js';
 
 // base class with helper functions for moving clients
 export class Character extends Client {
@@ -673,7 +674,6 @@ export class Spawner extends Client {
 
             obj.spawner = this.id;
             obj.bounds = bounds;
-            console.log(obj)
             this.grid.InsertClient(obj);
 
             this.spawned.add(obj.id);
@@ -1282,6 +1282,86 @@ export class Item extends Client {
 
     Render(ctx, scale, offset) {
 
+    }
+}
+
+export class CarrotClient extends Client {
+    constructor(position, dimensions, growth = 0) {
+        super(position, dimensions);
+        this.sprites = [
+            createSVGImage('./src/svg/tile/carrot/carrot_1.svg'),
+            createSVGImage('./src/svg/tile/carrot/carrot_2.svg'),
+            createSVGImage('./src/svg/tile/carrot/carrot_3.svg')
+        ];
+
+        this.growth = growth;
+        this.stageGrowthTime = 20000; // 20s 
+        this.growthStages = 3;
+
+        this.growthTime = this.stageGrowthTime; 
+
+        this.collision.solid = false;
+    }
+
+    /**
+     * @param {CanvasRenderingContext2D} ctx
+     */
+    Render(ctx, offset, scale) {
+        const x = this.position[0] * scale + offset[0];
+        const y = this.position[1] * scale + offset[1];
+
+        let t = (this.stageGrowthTime / 1000).toFixed(1);
+        ctx.fillStyle = 'black';
+        ctx.fillText(t + 's left', x, y - .2 * scale);
+        ctx.drawImage(this.sprites[this.growth], x, y, this.dimensions[0] * scale, this.dimensions[1] * scale)
+    }
+
+    Step(t) {
+        if(this.growth >= (this.growthStages - 1)) return;
+        this.growthTime -= t;
+
+        if(this.growthTime < 0) {
+            this.growth++;
+            this.growthTime += this.stageGrowthTime; // start next stage
+        }
+    }
+
+    toJSON() {
+        return {
+            constructor: this.constructor.name,
+            position: this.position,
+            dimensions: this.dimensions,
+
+            growth: this.growth
+        }
+    }
+
+    Interaction(ev) {
+        let buttons = [];
+        if(this.growth === this.growthStages - 1) {
+            buttons.push({
+                text: 'Harvest',
+                close: true,
+                callback: () => this.Harvest()
+            });
+        }
+
+        newInteractive(`Carrot (Growth Stage ${this.growth+1}/${this.growthStages})`, {
+            x: ev.client[0],
+            y: ev.client[1],
+            options: buttons
+        });
+    }
+
+    Harvest() {
+        // harvest the carrot? 
+        player.health = player.stats.maxHealth;
+        player.mana = player.stats.maxMana;
+        this.grid.Remove(this);
+    }
+
+    static from(json) {
+        return new this(json.position, json.dimensions, json.growth);
     }
 }
 

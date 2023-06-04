@@ -283,6 +283,13 @@ export const dev = {
         grid.paused = state;
     },
 
+    regenerateWorld() {
+        const save = JSON.parse(window.localStorage.save);
+        delete save.grid;
+        window.localStorage.save = JSON.stringify(save);
+        location.reload();
+    },
+
     /**
      * 
      * @param {string} [resultLocation] the name of the property of window to assign the result to
@@ -369,5 +376,29 @@ export const dev = {
             if(!e.from) console.error(`${i} - Missing 'from' static method`);
             if(!e.prototype.toJSON) console.error(`${i} - Missing 'toJSON' instance method`);
         }
+    },
+
+    repairSave() {
+        let save = JSON.parse(localStorage.save);
+
+        console.info('Attempting to validate object list...')
+
+        let errs = 0;
+        // repair object list
+        let newObjectList = [];
+        for(let i = 0; i < save.grid.clients; i++) {
+            if(save.grid.clients[i].hasOwnProperty('constructor')) {
+                newObjectList.push(save.grid.clients[i]);
+            } else {
+                console.info('Deleting client at index ' + i, save.grid.clients[i]);
+                errs++;
+            }
+        }
+
+        save.grid.clients = newObjectList;
+
+        console.info(`Validated object list; found ${errs} erratic objects`)
+
+        localStorage.save = JSON.stringify(save);
     }
 }
