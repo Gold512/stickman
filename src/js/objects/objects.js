@@ -1299,6 +1299,7 @@ export class CarrotClient extends Client {
         this.growthStages = 3;
 
         this.growthTime = this.stageGrowthTime; 
+        this.grown = (growth == this.growthStages - 1);
 
         this.collision.solid = false;
     }
@@ -1310,14 +1311,16 @@ export class CarrotClient extends Client {
         const x = this.position[0] * scale + offset[0];
         const y = this.position[1] * scale + offset[1];
 
-        let t = (this.stageGrowthTime / 1000).toFixed(1);
+        let t = this.grown ? 'Fully grown' : (this.growthTime / 1000).toFixed(1) + 's left';
         ctx.fillStyle = 'black';
-        ctx.fillText(t + 's left', x, y - .2 * scale);
+        ctx.fillText(t, x, y - .1 * scale);
         ctx.drawImage(this.sprites[this.growth], x, y, this.dimensions[0] * scale, this.dimensions[1] * scale)
     }
 
     Step(t) {
-        if(this.growth >= (this.growthStages - 1)) return;
+        if(this.growth >= (this.growthStages - 1)) this.grown = true;
+        if(this.grown) return;
+
         this.growthTime -= t;
 
         if(this.growthTime < 0) {
