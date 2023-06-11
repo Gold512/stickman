@@ -264,8 +264,9 @@ export class SlopeSolid extends Client {
      */
     _pointRelativeToLine(x, y) {
         const orig = this.slopeVectorOrigin;
-        let intercept = Vector.intersection([this[orig[0]], this[orig[1]]], this.slopeVector, [x, y], [1, 0]);
-        return Math.sign(intercept[0] - x);
+        const m = this.slopeVector[1] / this.slopeVector[0];
+        const intercept_x = (y - (this[orig[1]] - m * this[orig[0]])) / m;
+        return Math.sign(intercept_x - x);
     }
     
     /**
