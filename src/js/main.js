@@ -7,7 +7,7 @@ import { loadFromStorage } from './save.js';
 import { FPS } from './libs/fps.min.js'
 import { Vector } from './module/vector.js';
 import { camera, skillConversionTable, speed } from './module/calc.js';
-import { GROUPS, KEY_CIPHER, MIN_TICK_INTERVAL } from './const.js';
+import { GROUPS, KEY_CIPHER, MAX_TICK_INTERVAL } from './const.js';
 import { generateWorld } from './module/worldgen.js';
 
 
@@ -351,48 +351,25 @@ function frame(t) {
 
     let center = player.GetCenter();
 
-    // player movement 
-    if(!player.HasTag('NoMovement')) {
-        if(t < MIN_TICK_INTERVAL) {
-            player.Move(keyState, elapsedTime);
-        } else {
-            player.Move(keyState, elapsedTime / 2);
-            player.Move(keyState, elapsedTime / 2);
-        }
-    }
-
     let objects = grid.FindNear(center, [Math.ceil(1.1 * width / camera.scale), Math.ceil(1.1 * height / camera.scale)]);
-    
-    // gravity 
-    const ts = elapsedTime / 1000;
-    for(let i = 0; i < objects.length; i++) {
-        if(!objects[i].HasTag('NoGravity') && (objects[i].gravity === true)) {
-            objects[i]._gravity = objects[i]._gravity ? objects[i]._gravity + Math.min(4**(1+objects[i]._gravity), 10) * ts : 6 * ts;
-            objects[i].position[1] += objects[i]._gravity * ts;
-        }
-    }
 
-    grid.UpdateClient(player);
+    // player movement 
+    const noMovement = !player.HasTag('NoMovement');
 
-    // next use vector math to project the next place
-    // the player will be and make the camera slightly behind the 
-    // player by lerping time based on duration move keys are held down
-
-    ctx.clearRect(0, 0, width, height);
-
-    // if physics time steps/s is too low then do subticking 
-    if(t < MIN_TICK_INTERVAL) { 
-        grid.Step(elapsedTime);
+    if(elapsedTime < MAX_TICK_INTERVAL) {
+        physicsTick(elapsedTime, objects, noMovement);
     } else {
-        // prevent chrome low power mode from causing tunnelling 
-        grid.Step(elapsedTime / 2);
-        grid.Step(elapsedTime / 2);
+        // 2-subtick system
+        physicsTick(elapsedTime / 2, objects, noMovement);
+        physicsTick(elapsedTime / 2, objects, noMovement);
     }
+
     // get objects to render
 
     // Used for overlays like spawn area
     // ONLY use for interaction code 
     // use Client.zIndex for client layering
+    ctx.clearRect(0, 0, width, height);
     if(focusedClient && focusedClient.OnFocusBeforeRender) {
         focusedClient.OnFocusBeforeRender(ctx, offset, camera.scale)
     }
@@ -574,6 +551,23 @@ Object.defineProperty(window, 'dev', {
     }
 }();
 
+
+function physicsTick(elapsedTime, objects, noMovement) {
+    if (noMovement) player.Move(keyState, elapsedTime);
+
+    // gravity 
+    const ts = elapsedTime / 1000;
+    for (let i = 0; i < objects.length; i++) {
+        if (!objects[i].HasTag('NoGravity') && (objects[i].gravity === true)) {
+            objects[i]._gravity = objects[i]._gravity ? objects[i]._gravity + Math.min(4 ** (1 + objects[i]._gravity), 10) * ts : 6 * ts;
+            objects[i].position[1] += objects[i]._gravity * ts;
+        }
+    }
+
+    grid.UpdateClient(player);
+
+    grid.Step(elapsedTime);
+}
 
 function renderFrameObjects(objects) {
     let objectLayers = {};

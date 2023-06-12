@@ -12,4 +12,4 @@ export const KEY_CIPHER = {
 }
 
 // threshold at which to start doing subticking
-export const MIN_TICK_INTERVAL = 1000 / 30;
+export const MAX_TICK_INTERVAL = 1000 / 30;
