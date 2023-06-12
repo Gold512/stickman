@@ -10,3 +10,6 @@ export const KEY_CIPHER = {
     'S':'s',
     'D':'d'
 }
+
+// threshold at which to start doing subticking
+export const MIN_TICK_INTERVAL = 1000 / 30;

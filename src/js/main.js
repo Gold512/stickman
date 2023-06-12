@@ -7,7 +7,7 @@ import { loadFromStorage } from './save.js';
 import { FPS } from './libs/fps.min.js'
 import { Vector } from './module/vector.js';
 import { camera, skillConversionTable, speed } from './module/calc.js';
-import { GROUPS, KEY_CIPHER } from './const.js';
+import { GROUPS, KEY_CIPHER, MIN_TICK_INTERVAL } from './const.js';
 import { generateWorld } from './module/worldgen.js';
 
 
@@ -352,8 +352,14 @@ function frame(t) {
     let center = player.GetCenter();
 
     // player movement 
-    if(!player.HasTag('NoMovement')) player.Move(keyState, elapsedTime);
-    grid.UpdateClient(player);
+    if(!player.HasTag('NoMovement')) {
+        if(t < MIN_TICK_INTERVAL) {
+            player.Move(keyState, elapsedTime);
+        } else {
+            player.Move(keyState, elapsedTime / 2);
+            player.Move(keyState, elapsedTime / 2);
+        }
+    }
 
     let objects = grid.FindNear(center, [Math.ceil(1.1 * width / camera.scale), Math.ceil(1.1 * height / camera.scale)]);
     
@@ -366,13 +372,22 @@ function frame(t) {
         }
     }
 
+    grid.UpdateClient(player);
+
     // next use vector math to project the next place
     // the player will be and make the camera slightly behind the 
     // player by lerping time based on duration move keys are held down
 
     ctx.clearRect(0, 0, width, height);
-    grid.Step(elapsedTime);
 
+    // if physics time steps/s is too low then do subticking 
+    if(t < MIN_TICK_INTERVAL) { 
+        grid.Step(elapsedTime);
+    } else {
+        // prevent chrome low power mode from causing tunnelling 
+        grid.Step(elapsedTime / 2);
+        grid.Step(elapsedTime / 2);
+    }
     // get objects to render
 
     // Used for overlays like spawn area
