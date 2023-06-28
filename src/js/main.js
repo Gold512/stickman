@@ -416,8 +416,10 @@ function frame(t) {
             continue;
         }
 
+        const center = o.GetCenter();
+
         if(o.collision.type == 'active') {
-            const nearBy = grid.FindNear(o.GetCenter(), o.dimensions);
+            const nearBy = grid.FindNear(center, o.dimensions);
 
             let collisions = [];
             let collisionCount = 0;
@@ -427,6 +429,8 @@ function frame(t) {
             // o - this
             // e - other object(s) 
             const r1 = o.dimensions[0]/2;
+
+            let collidedSolids = [];
 
             for(let i = 0; i < nearBy.length; i++) {
                 const e = nearBy[i];
@@ -486,7 +490,7 @@ function frame(t) {
                     collisionCount++;
 
                     if(e.group === GROUPS.STATIC && o.collision.solid) {
-                        o.HandleSolidCollision(e); 
+                        collidedSolids.push(e);
                     } else if(!e.CheckCollision || e.CheckCollision(o)) {
                         collisions.push(e)
                     }
@@ -494,6 +498,21 @@ function frame(t) {
 
                 if(collisionCount >= limit) break;
             }
+            
+            collidedSolids.sort((a, b) => {
+                // const d1 = (a.position[0] + .5 * a.dimensions[0] - center[0]) ** 2 + (a.position[1] + .5 * a.dimensions[1] - center[1]) ** 2;
+                // const d2 = (b.position[0] + .5 * b.dimensions[0] - center[0]) ** 2 + (b.position[1] + .5 * b.dimensions[1] - center[1]) ** 2;
+                // return d2 - d1;
+
+                return b.position[1] - a.position[1] + .1 * (b.position[0] - a.position[0]);
+            })
+
+            // handle solid collisions 
+            for (let i = 0; i < collidedSolids.length; i++) {
+                const e = collidedSolids[i];
+                o.HandleSolidCollision(e); 
+            }
+
 
             if(collisions.length > 0) {
                 o.Collision({
