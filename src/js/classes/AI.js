@@ -1,4 +1,4 @@
-import { MagicProjectile, PlayerClient } from "../objects.js";
+import { MagicProjectile, PlayerClient } from "../objects/objects.js";
 import { math } from "../module/math.js";
 import { Vector } from "../module/vector.js";
 import { collision } from '../module/collision.js';
@@ -50,6 +50,8 @@ export class AI {
                 targetDistance
             }
         }
+
+        this.attack_cd = 1000;
     }
 
     // AI tick function to calculate next action in current frame
@@ -67,6 +69,9 @@ export class AI {
             
             if(!this.attack_cd) this.attack();
         }
+
+        // if client has shield make it face the target 
+        if(this.client.shield && this.target) this.shieldUpdate();
 
         this.action.time -= t;
         if(this.action.time <= 0) {
@@ -157,40 +162,40 @@ export class AI {
             // projectile's velocity and check the collision with self 
             // to predict if the projectile will collide
             const willCollide = collision.Polygon([
-                {
-                    x: e.position[0] - sideVect[0],
-                    y: e.position[1] - sideVect[1]
-                },
-                {
-                    x: e.position[0] + sideVect[0],
-                    y: e.position[1] + sideVect[1]
-                },
-                {
-                    x: e.position[0] + sideVect[0] + lx,
-                    y: e.position[1] + sideVect[1] + ly
-                },
-                {
-                    x: e.position[0] - sideVect[0] + lx,
-                    y: e.position[1] - sideVect[1] + ly
-                }
+                [
+                    e.position[0] - sideVect[0],
+                    e.position[1] - sideVect[1]
+                ],
+                [
+                    e.position[0] + sideVect[0],
+                    e.position[1] + sideVect[1]
+                ],
+                [
+                    e.position[0] + sideVect[0] + lx,
+                    e.position[1] + sideVect[1] + ly
+                ],
+                [
+                    e.position[0] - sideVect[0] + lx,
+                    e.position[1] - sideVect[1] + ly
+                ]
             ],
             [
-                {
-                    x: this.client.position[0], 
-                    y: this.client.position[1]
-                },
-                {
-                    x: this.client.position[0] + this.client.dimensions[0],
-                    y: this.client.position[1]
-                },
-                {
-                    x: this.client.position[0] + this.client.dimensions[0],
-                    y: this.client.position[1] + this.client.dimensions[0]
-                },
-                {
-                    x: this.client.position[0],
-                    y: this.client.position[1] + this.client.dimensions[0]
-                }
+                [
+                    this.client.position[0], 
+                    this.client.position[1]
+                ],
+                [
+                    this.client.position[0] + this.client.dimensions[0],
+                    this.client.position[1]
+                ],
+                [
+                    this.client.position[0] + this.client.dimensions[0],
+                    this.client.position[1] + this.client.dimensions[0]
+                ],
+                [
+                this.client.position[0],
+                this.client.position[1] + this.client.dimensions[0]
+                ]
             ]);
 
             if(willCollide) {
@@ -212,6 +217,7 @@ export class AI {
                     continue;
                 }
 
+                // Find the shortest distance to go out of the path of the projectile
                 if(
                     ((e.position[0] - sideVect[0] - c[0])**2 + (e.position[1] - sideVect[1] - c[1])**2) <=
                     ((e.position[0] + sideVect[0] - c[0])**2 + (e.position[1] + sideVect[1] - c[1])**2)
@@ -272,6 +278,8 @@ export class AI {
             });
         }
 
+        // console.table(weights )
+
         const selectedSkill = math.weighted_random(weights);
         if(selectedSkill == 'nothing') {
             this.attack_cd = 100;
@@ -285,6 +293,14 @@ export class AI {
         });
         if(status !== false) this.client.mana -= skills[selectedSkill].mana;
         this.attack_cd = 1000*skills[selectedSkill].cd;
+    }
+    
+    shieldUpdate() {
+        if(this.client.GetCenter()[0] > grid.GetClientById(this.target).GetCenter()[0]) {
+            this.client.facing = 'left';
+        } else {
+            this.client.facing = 'right';
+        }
     }
 
     _getManaPercentage() {

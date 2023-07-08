@@ -84,15 +84,27 @@
     background: var(--regen-color);
 }
 
+.bar:hover > .tooltip.mpl::after {
+    content: 'MPL: ' counter(mpl);
+    counter-reset: mpl var(--mpl, 1);
+}
+
+.sub-bar {
+    width: calc(100% * var(--percent) / var(--total));
+    left: 0;
+    position: absolute;
+    height: 100%;
+    background: linear-gradient(0deg, darkred .2em, transparent 0);
+    z-index: 1;
+    transition:width linear 200ms;
+}
+
 .tooltip.regen-text::after {
     content: 'Regen: ' counter(regen) '/s';
     counter-reset: regen var(--regen);
 }
 
-.bar:hover > .tooltip.mpl::after {
-    content: 'MPL: ' counter(mpl);
-    counter-reset: mpl var(--mpl, 1);
-}
+
 
 #level-container {
     font-size: .8em;
@@ -332,3 +344,39 @@ button.interactive-right::after {
     position: relative;
 }
 
+#chat {
+    z-index: 1;
+    position: absolute; 
+    top: 0; 
+    left: 12em;
+    height: 5em;
+    width: 15em;
+    background: rgb(0 0 0 / .5);
+    border-radius: .25em;
+    border: 2px solid black;
+    margin-top: 3px;
+    color: white; 
+    padding: 2px 3px;
+}
+
+#chat-input {
+    width: 90%;
+    position: absolute;
+    bottom: 0;
+    margin-bottom: 3px;
+    background: rgb(255 255 255 / .75);
+    border: none;
+    border-radius: .25em
+}
+
+.chat-sender {
+    color: yellow;
+}
+
+#chat.default-font {
+    font-family: AUTO;
+}
+
+#chat.default-font > input {
+    font-family: AUTO;
+}

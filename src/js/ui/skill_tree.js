@@ -11,7 +11,7 @@ const SKILL_TREE = [
     ['single_shot', 'double_shot', 'triple_shot', 'quad_shot', 'penta_shot'],
     ['curve_shot', 'double_curve_shot'],
     ['laser', 'curved_laser'],
-    ['shield', 'shield_shot', 'expand_shield'],
+    ['shield', 'shield_shot', 'shield_expand'],
     ['levitation', 'flight', 'super_speed', 'hyperspeed'],
     ['volley_shot', 'recursive_shot']
 ]

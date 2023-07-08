@@ -122,8 +122,8 @@ export const collision = {
 	 * Helper function to determine whether there is an intersection between the two polygons described
 	 * by the lists of vertices. Uses the Separating Axis Theorem
 	 *
-	 * @param {Object[]} a an array of connected points [{x:, y:}, {x:, y:},...] that form a closed polygon
-	 * @param {Object[]} b an array of connected points [{x:, y:}, {x:, y:},...] that form a closed polygon
+	 * @param {import("./vector").Vector2D[]} a an array of connected points [{x:, y:}, {x:, y:},...] that form a closed polygon
+	 * @param {import("./vector").Vector2D[]} b an array of connected points [{x:, y:}, {x:, y:},...] that form a closed polygon
 	 * @return {Boolean} true if there is any intersection between the 2 polygons, false otherwise
 	 */
 	Polygon(a, b) {
@@ -141,13 +141,13 @@ export const collision = {
 				var p2 = polygon[i2];
 
 				// find the line perpendicular to this edge
-				var normal = { x: p2.y - p1.y, y: p1.x - p2.x };
+				var normal = [p2[1] - p1[1], p1[0] - p2[0]];
 
 				minA = maxA = undefined;
 				// for each vertex in the first shape, project it onto the line perpendicular to the edge
 				// and keep track of the min and max of these values
 				for (j = 0; j < a.length; j++) {
-					projected = normal.x * a[j].x + normal.y * a[j].y;
+					projected = normal[0] * a[j][0] + normal[1] * a[j][1];
 					if (minA == undefined || projected < minA) {
 						minA = projected;
 					}
@@ -160,7 +160,7 @@ export const collision = {
 				// and keep track of the min and max of these values
 				minB = maxB = undefined;
 				for (j = 0; j < b.length; j++) {
-					projected = normal.x * b[j].x + normal.y * b[j].y;
+					projected = normal[0] * b[j][0] + normal[1] * b[j][1];
 					if (minB == undefined || projected < minB) {
 						minB = projected;
 					}
@@ -178,6 +178,121 @@ export const collision = {
 		}
 		return true;
 	},
+
+	/**
+	 * Check intersection of circle and triangle 
+	 * @param {number} c1x
+	 * @param {number} c1y
+	 * @param {number} centrex
+	 * @param {number} centrey
+	 * @param {number} v1x
+	 * @param {number} v1y
+	 * @param {number} v2x
+	 * @param {number} v2y
+	 * @param {number} v3x
+	 * @param {number} v3y
+	 * @returns {Boolean}
+	 */
+	CircleAndTriangle(
+		c1x,
+		c1y,
+		centrex,
+		centrey,
+		v1x,
+		v1y,
+		v2x,
+		v2y,
+		v3x,
+		v3y
+	  ) {
+		//
+		// TEST 1: Vertex within circle
+		//
+		c1x = centrex - v1x;
+		c1y = centrey - v1y;
+	  
+		let radiusSqr = radius * radius;
+		let c1sqr = c1x * c1x + c1y * c1y - radiusSqr;
+	  
+		if (c1sqr <= 0) return true;
+	  
+		let c2x = centrex - v2x;
+		let c2y = centrey - v2y;
+		let c2sqr = c2x * c2x + c2y * c2y - radiusSqr;
+	  
+		if (c2sqr <= 0) return true;
+	  
+		let c3x = centrex - v3x;
+		let c3y = centrey - v3y;
+	  
+		let c3sqr = c3x * c3x + c3y * c3y - radiusSqr;
+	  
+		if (c3sqr <= 0) return true;
+	  
+		// ;
+		// ; TEST 2: Circle centre within triangle
+		// ;
+	  
+		// ;
+		// ; Calculate edges
+		// ;
+		let e1x = v2x - v1x;
+		let e1y = v2y - v1y;
+	  
+		let e2x = v3x - v2x;
+		let e2y = v3y - v2y;
+	  
+		let e3x = v1x - v3x;
+		let e3y = v1y - v3y;
+	  
+		if (
+		  Math.sign(
+			(e1y * c1x - e1x * c1y) |
+			  (e2y * c2x - e2x * c2y) |
+			  (e3y * c3x - e3x * c3y)
+		  ) >= 0
+		)
+		  return true;
+	  
+		// ;
+		// ; TEST 3: Circle intersects edge
+		// ;
+		let k = c1x * e1x + c1y * e1y;
+	  
+		if (k > 0) {
+		  len = e1x * e1x + e1y * e1y; // ; squared len
+	  
+		  if (k < len) {
+			if (c1sqr * len <= k * k) return true;
+		  }
+		}
+	  
+		// ; Second edge
+		k = c2x * e2x + c2y * e2y;
+	  
+		if (k > 0) {
+		  let len = e2x * e2x + e2y * e2y;
+	  
+		  if (k < len) {
+			if (c2sqr * len <= k * k) return true;
+		  }
+		}
+	  
+		// ; Third edge
+		k = c3x * e3x + c3y * e3y;
+	  
+		if (k > 0) {
+		  len = e3x * e3x + e3y * e3y;
+	  
+		  if (k < len) {
+			if (c3sqr * len <= k * k) return true;
+		  }
+		}
+	  
+		// ; We're done, no intersection
+		return false;
+	  }
+	  
 };
 
 const intersection = {

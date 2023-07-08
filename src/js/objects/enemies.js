@@ -1,19 +1,22 @@
-import { Enemy } from "../objects.js";
+import { Enemy } from "./objects.js";
 
 // single shot only stats: 1,1
 
 /**
  * 
  * @param {[number, number]} position 
- * @param {keyof enemies} type 
+ * @param {keyof magicians} type 
  * @returns 
  */
 export function createMagician(position, type) {
     const stats = magicians[type];
     if (!stats) throw new Error("Invalid enemy type: " + type);
-
-    return new Enemy(position, [0.5,0.5], stats);
+    const magician = new Enemy(position, [0.5,0.5], stats);
+    magician.xp = stats.xp;
+    return magician;
 }
+
+export const enemyGenerators = {createMagician}
 
 export const magicians = {
     beginner: {
@@ -27,7 +30,7 @@ export const magicians = {
         ai: {
             dodge: 'none'
         },
-        xp: 1
+        xp: 5
     },
     rookie: {
         color: 'lime',
@@ -40,7 +43,7 @@ export const magicians = {
         ai: {
             dodge: 'none'
         },
-        xp: 3
+        xp: 15
     },
     intermediate: {
         color: 'yellow',
@@ -53,7 +56,7 @@ export const magicians = {
         ai: {
             dodge: 'low'
         },
-        xp: 5
+        xp: 40
     },
     expert: {
         color: 'red',
@@ -66,7 +69,7 @@ export const magicians = {
         ai: {
             dodge: 'low'
         },
-        xp: 10
+        xp: 100
     },
     master: {
         color: 'blue',
@@ -79,7 +82,7 @@ export const magicians = {
         ai: {
             dodge: 'low'
         },
-        xp: 25
+        xp: 250
     },
     legend: {
         color: 'purple',
@@ -92,6 +95,6 @@ export const magicians = {
         ai: {
             dodge: 'low'
         },
-        xp: 60
+        xp: 600
     }
 }

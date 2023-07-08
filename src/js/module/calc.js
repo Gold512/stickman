@@ -16,6 +16,7 @@ export const speed = {
 }
 
 export const camera = {
+    /** tiles * scale = pixels, pixels / scale = tiles */
     scale: 50,
     offset: [window.innerWidth / 2, window.innerHeight / 2],
     

@@ -1,5 +1,5 @@
 /**
- * @typedef {[Number, Number]} VectorArray
+ * @typedef {[Number, Number]} Vector2D
  */
 
 /**
@@ -11,8 +11,8 @@ export const Vector = {
     RAD_TO_DEG_SCALE: 180/Math.PI,
     /**
      * Normalise vector
-     * @param {VectorArray} vec - the vector to normalise
-     * @returns {VectorArray}
+     * @param {Vector2D} vec - the vector to normalise
+     * @returns {Vector2D}
      */
     normalise(vec) {
         const [x, y] = vec;
@@ -22,9 +22,9 @@ export const Vector = {
   
     /**
      * Rotate vector by ang degrees
-     * @param {VectorArray} vec - The vector to rotate
+     * @param {Vector2D} vec - The vector to rotate
      * @param {Number} ang - The ang to rotate in degrees
-     * @returns {VectorArray}
+     * @returns {Vector2D}
      */
     rotate(vec, ang) {
       ang = -ang * this.DEG_TO_RAD_SCALE;
@@ -35,9 +35,9 @@ export const Vector = {
     
     /**
      * Add the axes of each vector together
-     * @param {VectorArray} vec1 - first vector 
-     * @param {VectorArray} vec2 - second vector
-     * @returns {VectorArray}
+     * @param {Vector2D} vec1 - first vector 
+     * @param {Vector2D} vec2 - second vector
+     * @returns {Vector2D}
      */
     add(vec1, vec2) {
       return [vec1[0] + vec2[0], vec1[1] + vec2[1]];
@@ -45,9 +45,9 @@ export const Vector = {
 
     /**
      * Subtract axes of second vector from the first vector
-     * @param {VectorArray} vec1 - first vector 
-     * @param {VectorArray} vec2 - second vector
-     * @returns {VectorArray}
+     * @param {Vector2D} vec1 - first vector 
+     * @param {Vector2D} vec2 - second vector
+     * @returns {Vector2D}
      */
     sub(vec1, vec2) {
       return [vec1[0] - vec2[0], vec1[1] - vec2[1]];
@@ -55,9 +55,9 @@ export const Vector = {
 
     /**
      * Multiply axes of the first vector by x
-     * @param {VectorArray} vec1 - first vector 
-     * @param {Number|VectorArray} x - multiplier
-     * @returns {VectorArray}
+     * @param {Vector2D} vec1 - first vector 
+     * @param {Number|Vector2D} x - multiplier
+     * @returns {Vector2D}
      */
     multiply(vec, x) {
       x = (typeof x === 'number') ? [x, x] : x;
@@ -68,7 +68,7 @@ export const Vector = {
      * Create x,y vector from magnitude and angle
      * @param {Number} angle - the angle of the angle in degrees 
      * @param {Number} magnitude - The magnitude of the vector
-     * @returns {VectorArray}
+     * @returns {Vector2D}
      */
     create(angle, magnitude = 1) {
       angle = angle * this.DEG_TO_RAD_SCALE;
@@ -82,9 +82,9 @@ export const Vector = {
     /**
      * get intersection of 2 vectors from origin points (works in opposite direction of vector as well)
      * @param {Position} o1 - 1st origin
-     * @param {VectorArray} v1 - 1st vector
+     * @param {Vector2D} v1 - 1st vector
      * @param {Position} o2 - 2nd origin
-     * @param {VectorArray} v2 - 2nd vector
+     * @param {Vector2D} v2 - 2nd vector
      */
     intersection(o1, v1, o2, v2) {
       const m1 = v1[1] / v1[0],
@@ -111,7 +111,7 @@ export const Vector = {
     /**
      * Get angle of the vector in degrees from the right of the horizontal axis in
      * anti-clockwise direction
-     * @param {VectorArray} vector - The vector to get the angle from 
+     * @param {Vector2D} vector - The vector to get the angle from 
      * @param {Number} precision - the smallest unit of precision of the angle
      * @returns {Number} the angle in degrees
      */

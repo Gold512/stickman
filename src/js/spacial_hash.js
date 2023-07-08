@@ -1,13 +1,16 @@
+import { GROUPS } from './const.js';
 import quickselect from './libs/quick_select.js';
 import {math} from './module/math.js';
 
 export class SpatialHash {
   /**
    * A grid like object container with basic helper functions to manage the objects
-   * @param {[Number, Number]} bounds the topleft corner of the spacial hash grid
+   * @param {[Number, Number]|null} bounds the topleft corner of the spacial hash grid or null to create a blank spacial hash
    * @param {[Number, Number]} dimensions the size of the hash grid
    */
   constructor(bounds, dimensions) {
+    if(bounds === null) return;
+
     if(!(bounds[0] instanceof Array)) {
       // If bounds is just the position of the top left corner 
       // Convert it to an array of the top left and bottom right corners
@@ -100,6 +103,7 @@ export class SpatialHash {
 
     this._Remove(client);
     this._Insert(client);
+    if(client.Reload) client.Reload();
   }
 
   /**
@@ -211,10 +215,10 @@ export class SpatialHash {
   /**
    * Get client by id
    * @param {String} id id of the client to get
-   * @returns {Client|Null} the client if found or undefined
+   * @returns {Client|Null} the client if found or null if the client is not found
    */
   GetClientById(id) {
-    return this._idTable[id] || null;
+    return this._idTable[id] ?? null;
   }
 
   // /**
@@ -241,16 +245,16 @@ export class SpatialHash {
 
   /**
    * @param {Object} query - Query to search
-   * @param {[Number, Number]} query.origin - centerpoint of search
-   * @param {[Number, Number]} query.bounds - x and y distance away from centerpoint to search
+   * @param {[Number, Number]} [query.origin] - centerpoint of search (REQUIRED if bounds are defined)
+   * @param {[Number, Number]} [query.bounds] - x and y distance away from centerpoint to search (REQUIRED if origin is defined)
    * @param {('arbitrary'|'nearest')} [query.sort] - pattern to sort
    * @param {Class|Class[]} [query.type] - class or array of classes to check (compares constructor, and as such is a shallow check)
    * @param {Number} [query.limit] - max amount of results to return
    * @returns {Object[]} array of objects found in search
    */
   ClientSelector({
-    origin = [],
-    bounds = [],
+    origin = null,
+    bounds = null,
     sort = 'arbitrary',
     type = null,
     limit = Infinity
@@ -265,13 +269,31 @@ export class SpatialHash {
       // Create set of classes to check 
       type = new Set(type);
     }
+    
+    let definedLocationParams = 0;
+    if(origin) definedLocationParams++;
+    if(bounds) definedLocationParams++;
+
+    let i1, i2;
+
+    // define origin x and y coordinates
+    const [x, y] = origin || [NaN, NaN];
+
+    if(definedLocationParams === 0) {
+      // if there are no location params just search the whole spacial hash
+      i1 = [0, 0];
+      i2 = [this._dimensions[0] - 1, this._dimensions[1] - 1]
+
+    } else if(definedLocationParams === 1)  {
+      throw new Error('Invalid positional search: origin and bounds must be either both defined or undefined')
+    
+    } else /* if(definedLocationParams === 2) */ {
+      const [w, h] = bounds;
+      i1 = this._GetCellIndex([x - w / 2, y - h / 2]);
+      i2 = this._GetCellIndex([x + w / 2, y + h / 2]);
+    }
 
     // Main search operation
-    const [x, y] = origin;
-    const [w, h] = bounds;
-    const i1 = this._GetCellIndex([x - w / 2, y - h / 2]);
-    const i2 = this._GetCellIndex([x + w / 2, y + h / 2]);
-
     for_x:for (let x = i1[0], xn = i2[0]; x <= xn; ++x) {
       for_y:for (let y = i1[1], yn = i2[1]; y <= yn; ++y) {
         let head = this._cells[x][y];
@@ -466,13 +488,51 @@ export class SpatialHash {
           if (v._queryId != queryId) {
             v._queryId = queryId;
             if(!v.toJSON) throw new Error(`[object ${v.constructor.name}] does not have toJSON method`);
-
-            clients.push(v.toJSON());
+            
+            let json = v.toJSON();
+            if(!json) continue;
+            clients.push(json);
           }
         }
       }
     }
-    return clients;
+
+    return {
+      clients: clients,
+      dimensions: this._dimensions,
+      bounds: this._bounds
+    };
+  }
+
+  /**
+   * Convert spacial hash to json and stringify it (numbers to 3 decimal places)
+   * @returns {Object}
+   */
+  toString() {
+    return JSON.stringify(this.toJSON(), function(key, val) {
+      if(val === undefined) return val;
+      return val.toFixed ? Number(val.toFixed(3)) : val;
+    });
+  }
+
+  /**
+   * @param {Object|} json json from spacial_hash.prototype.toJSON or toString 
+   * @param {Object<string, Class>} constructors object containing classes with the keys being the name of the class
+   */
+  static from(json, constructors) {
+    if(typeof json === 'string') json = JSON.parse(json);
+
+    const grid = new this(json.bounds, json.dimensions);
+
+    for (let i = 0; i < json.clients.length; i++) {
+      const e = json.clients[i];
+      const constructor = constructors[e.constructor];
+      if(!constructor) throw new Error('Unable to get constructor of ' + e.constructor);
+      if(!constructor.from) throw new Error(constructor)
+      grid.InsertClient(constructor.from(e));
+    }
+
+    return grid;
   }
 }
 
@@ -522,6 +582,40 @@ export class Client {
     this.__queryId = -1;
     this.id = Date.now().toString(36) + Math.floor(1e12 + Math.random() * 9e12).toString(36);
     this.inGrid = false;
+    this.group = GROUPS.SOLID; // default object group
+  }
+
+  // easy positional read write functions 
+  get top() {
+    return this.position[1];
+  }
+
+  set top(value) {
+    this.position[1] = value;
+  }
+
+  get bottom() {
+    return this.position[1] + this.dimensions[1];
+  }
+
+  set bottom(value) {
+    this.position[1] = value - this.dimensions[1];
+  }
+
+  get left() {
+    return this.position[0];
+  }
+
+  set left(value) {
+    this.position[0] = value;
+  }
+
+  get right() {
+    return this.position[0] + this.dimensions[0];
+  }
+
+  set right(value) {
+    this.position[0] = value - this.dimensions[0];
   }
 
   /**
@@ -593,6 +687,11 @@ export class Client {
   // OnRemove() {
   //
   // }
+
+  // helper function for solid collision
+  HandleSolidCollision(o) {
+    if(!o.CheckCollision || o.CheckCollision(this)) o.SetPosition(this); 
+  }
 
   // debug methods
   showBoundingBox(ctx, offset, scale) {

@@ -5,12 +5,42 @@ import { keyState } from "../main.js";
 import { newSVG } from "../module/svg.js";
 
 function touchStart(e) {
-    keyState[e.currentTarget.dataset.direction] = true;
-    console.log(e.currentTarget.dataset.direction)
+    e.preventDefault();
+    const direction = e.currentTarget.dataset.direction;
+    prevDirection = direction;
+    keyState[direction] = true;
 }
 
 function touchEnd(e) {
-    keyState[e.currentTarget.dataset.direction] = false;
+    e.preventDefault();
+    const direction = e.currentTarget.dataset.direction;
+    prevDirection = direction;
+    keyState[direction] = false;
+}
+
+const MIN_TOUCH_MOVE_INTERVAL = 50;
+let touchMoved = false;
+let prevDirection;
+
+/**
+ * 
+ * @param {TouchEvent} ev 
+ * @returns 
+ */
+function touchMove(ev) {
+    if(touchMoved) return;
+    touchMoved = true;
+
+    const element = document.elementFromPoint(ev.touches[0].clientX, ev.touches[0].clientY);
+    if(element) {
+        keyState[prevDirection] = false;
+
+        const direction = element.dataset.direction;
+        prevDirection = direction;
+        keyState[prevDirection] = true;
+    }
+
+    setTimeout(() => { touchMoved = false }, MIN_TOUCH_MOVE_INTERVAL)
 }
 
 // Add event listener to canvas
@@ -42,7 +72,7 @@ export function init() {
                 .addEventListener('touchstart', touchStart)
                 .addEventListener('touchend', touchEnd)
                 .end
-            
+            .addEventListener('touchmove', touchMove)
         .appendTo(document.body);
             
 

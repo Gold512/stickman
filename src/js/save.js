@@ -1,8 +1,9 @@
 import {LZString} from "./libs/lzstring.js";
-import { skills } from "./skill.js";
 import {keyRegistry, EQUIPPED_SKILLS, loadSkillBar} from "./ui.js";
+import * as objects from './objects/objects.js'
+import { SpatialHash } from "./spacial_hash.js";
 
-function getSaveJSON(player) {
+export function getSaveJSON(player) {
     if(!player.stats) return;
     const skills = Array.from(EQUIPPED_SKILLS);
 
@@ -13,9 +14,10 @@ function getSaveJSON(player) {
         stats: player.stats,
         skills: [...player.skills],
         equipped_skills: skillKeys,
-    }, function(key, val) {
+        grid: grid.toJSON()
+    }, (key, val) => {
         if(val === undefined) return val;
-        return val.toFixed ? Number(val.toFixed(4)) : val;
+        return val.toFixed ? Number(val.toFixed(3)) : val;
     });
 }
 
@@ -24,7 +26,7 @@ function getSaveJSON(player) {
  * @param {Blob|String} blob blob to download (strings will be auto converted)
  * @param {String} filename name of file to download 
  */
-function saveFile(blob, filename) {
+export function saveFile(blob, filename) {
     if(typeof blob == 'string') blob = new Blob([blob]);
 
 	if (window.navigator.msSaveOrOpenBlob) {
@@ -62,7 +64,12 @@ function load(obj, player) {
         EQUIPPED_SKILLS.add(k[i]);
     }
 
+    // grid = SpatialHash.from(obj.grid, objects);
+
     loadSkillBar(false);
+
+    if(!obj.grid) return null;
+    return SpatialHash.from(obj.grid, objects);
 }
 
 export function saveToStorage(player) {
@@ -75,7 +82,7 @@ export function loadFromStorage(player) {
     if(!data) return;
 
     data = JSON.parse(data);
-    load(data, player);
+    return load(data, player);
 }
 
 export function downloadSave(player) {
@@ -102,4 +109,8 @@ export function loadSaveFile(player) {
     });
 
     fileInput.click();
+}
+
+export function saveGrid() {
+    return grid.toJSON();
 }

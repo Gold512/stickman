@@ -1,10 +1,14 @@
-import {math} from './module/math.js';
-import {Client} from './spacial_hash.js';
-import { saveToStorage } from './save.js';
-import { newInteractive } from './ui/interaction.js';
-import { AI } from './classes/AI.js';
-import { Vector } from './module/vector.js';
-import { getOrbStats, speed } from './module/calc.js';
+import {math} from '../module/math.js';
+import {Client} from '../spacial_hash.js';
+import { saveToStorage } from '../save.js';
+import { newInteractive } from '../ui/interaction.js';
+import { AI } from '../classes/AI.js';
+import { Vector } from '../module/vector.js';
+import { getOrbStats, speed } from '../module/calc.js';
+import { enemyGenerators } from './enemies.js';
+import { GROUPS } from '../const.js';
+import { RectSolid } from './solid.js';
+import { createSVGImage } from '../module/svg.js';
 
 // base class with helper functions for moving clients
 export class Character extends Client {
@@ -82,8 +86,8 @@ export class PlayerClient extends Client {
         this.facing = 'right';
 
         this.stats = {
-            health: 20,
-            maxHealth: 20,
+            health: 100,
+            maxHealth: 100,
             healthRegen: 1,
             mana: 50,
             maxMana: 50,
@@ -108,12 +112,25 @@ export class PlayerClient extends Client {
 
         this.skills = new Set();
         this.onGround = false;
+
+        this.collision = {
+            type: 'active',
+            shape: 'rectangle',
+            solid: true 
+        }
     }
 
     // Mana and health regen
     Step(t) { 
         if(this.stats.health < this.stats.maxHealth) this._regen.health += (t / 1000) * this.stats.healthRegen;
         if(this.stats.mana < this.stats.maxMana) this._regen.mana += (t / 1000) * this.stats.manaRegen;
+
+        // update sub-health bar 
+        if(this._regen.health < 0) {
+            this.bars.health.style.setProperty('--percent', Math.abs(this._regen.health))
+        } else {
+            this.bars.health.style.setProperty('--percent', 0)
+        }
 
         const keys = {
             health: 'maxHealth',
@@ -146,32 +163,38 @@ export class PlayerClient extends Client {
     Move(keys, t) {
         let {up, down, left, right} = keys;
 
+        const noGravity = this.HasTag('NoGravity');
+
         // time in seconds
         const ts = t * 0.001;
+        const jumping = (!noGravity) && (this.onGround === false);
 
-        if((!this.HasTag('NoGravity')) && (this.onGround === false)) {
+        if(jumping) {
             // allow smaller jumps 
             if(up == false) this._gravity += 10 * t/1000;
             // prevent up and down movement while in the air
-            up = true;
-            down = false;
         }
 
         this.onGround = false;
         
         let vel = 1;
-        if(this.modifier && this.modifier.noMove) return;
-        if( (up || down) && !(up && down) && 
-        (left || right) &&  !(left && right)) vel = Math.SQRT1_2;
+        const JUMP_HEIGHT = 1;
 
-        if( !(up && down) && (up || down) ) {
-            if(down) {
-                this.velocity[1] = vel;
-            } else  {
-                this.velocity[1] = -vel;
-            }
-        } else { this.velocity[1] = 0; }
-        
+        if(this.modifier && this.modifier.noMove) return;
+        if(jumping || ((up || down) && !(up && down) && 
+        (left || right) &&  !(left && right))) vel = Math.SQRT1_2;
+
+        if(!jumping) {
+            if( !(up && down) && (up || down)) {
+                if(down) {
+                    this.velocity[1] = JUMP_HEIGHT;
+                } else  {
+                this.velocity[1] = -JUMP_HEIGHT;
+                }
+            
+            } else { this.velocity[1] = 0; }
+        }
+
         if( !(left && right) && (left || right) ) {
             if(right) {
                 this.velocity[0] = vel;
@@ -240,10 +263,14 @@ export class PlayerClient extends Client {
 
     set health(v) {
         const diff = this.stats.health - v;
-        this._regen.health = Math.min(-diff * 3, this._regen.health);
-
+        this.bars.health.style.setProperty('--current', v);
         this.stats.health = v;
-        this.bars.health.style.setProperty('--current', v)
+
+        const healthRegenCd = Math.min(-diff * 3, this._regen.health);
+        if(healthRegenCd >= 0) return;
+
+        this._regen.health = healthRegenCd;
+        this.bars.health.style.setProperty('--total', -healthRegenCd);
     }
 
     get health() { return this.stats.health; }
@@ -340,24 +367,28 @@ export class PlayerClient extends Client {
     }
 
     toJSON() {
-        return {
-            position: this.position,
-            dimensions: this.dimensions,
+        return false;
+        
+        
+        //     constructor: this.constructor.name,
+            
+        //     position: this.position,
+        //     dimensions: this.dimensions,
 
-            maxHealth: this.maxHealth,
-            health: this.health,
-            healthRegen: this.healthRegen,
+        //     maxHealth: this.maxHealth,
+        //     health: this.health,
+        //     healthRegen: this.healthRegen,
 
-            maxMana: this.maxMana,
-            mana: this.mana,
-            manaRegen: this.manaRegen,
+        //     maxMana: this.maxMana,
+        //     mana: this.mana,
+        //     manaRegen: this.manaRegen,
 
-            mpl: this.mpl,
-            magicAffinity: this.magicAffinity,
+        //     mpl: this.mpl,
+        //     magicAffinity: this.magicAffinity,
 
-            speed: this.speed,
-            velocity: this.velocity
-        }
+        //     speed: this.speed,
+        //     velocity: this.velocity
+        // }
     }
 }
 
@@ -422,7 +453,10 @@ export class Enemy extends Client {
             dodge: 'low'
         };
 
-        this.AI = ai || new AI(this, aiConfig)
+        this.AI = ai || new AI(this, aiConfig);
+
+        this.collision.solid = true;
+        this.collision.type = 'active';
     }
 
     Step(t) {
@@ -507,6 +541,8 @@ export class Enemy extends Client {
 
     toJSON() {
         return {
+            constructor: this.constructor.name,
+            
             position: this.position,
             dimensions: this.dimensions,
 
@@ -522,8 +558,20 @@ export class Enemy extends Client {
             AIConfig: this.AIConfig,
 
             speed: this.speed,
-            velocity: this.velocity
+            velocity: this.velocity,
+            ai: this.AI.config,
+            color: this.color,
+            skills: this.skills
         }
+    }
+
+    static from(json) {
+        const position = json.position;
+        const dimensions = json.dimensions;
+        delete json.position;
+        delete json.dimensions;
+
+        return new this(position, dimensions, json)
     }
 }
 
@@ -533,7 +581,10 @@ export class Spawner extends Client {
      * @param {[number,number]} position 
      * @param {[number, number]} bounds 
      * @param {object} options
-     * @param {function(this:Spawner)} [options.objectGenerator] - function that returns the client to spawn
+     * @param {object} [options.objectGenerator] - definition of a spawning function
+     * @param {} [options.objectGenerator.name] - name of the generator function
+     * @param {any[]} [options.objectGenerator.args] - params of the generator function
+     *  use '$' prefix to reference property of spawner (ie $var translates to this.var)
      * @param {number} options.count 
      * @param {string} [type] - used to store spawn type information if needed
      */
@@ -598,9 +649,11 @@ export class Spawner extends Client {
             if(client) this.grid.Remove(client);
             this.total = this.count; 
         }
-
+        
+        let args = this.ParseGeneratorFunctionArgs()
+        
         for(let i = 0; i < this.count; i++) {
-            const obj = this.objectGenerator(this);
+            let obj = this.InvokeGeneratorFunction(this.objectGenerator.name, args)
             const bounds = [
                 [this.position[0] - .5 * this.bounds[0], this.position[1] - .5 * this.bounds[1]],
                 [this.position[0] + .5 * this.bounds[0], this.position[1] + .5 * this.bounds[1]]
@@ -621,11 +674,34 @@ export class Spawner extends Client {
 
             obj.spawner = this.id;
             obj.bounds = bounds;
-            
             this.grid.InsertClient(obj);
 
             this.spawned.add(obj.id);
         }
+    }
+
+    /**
+     * Safely create and return a new enemy perfoming object cloning as needed+ 
+     * @param {string} name name of the generator function
+     * @param {any[]} args params of the generator function
+     * @returns {Enemy}
+     */
+    InvokeGeneratorFunction(name, args) {
+        return enemyGenerators[name](...structuredClone(args));
+    }
+
+    ParseGeneratorFunctionArgs() {
+        let args = structuredClone(this.objectGenerator.args);
+
+        // resolve relative references
+        for(let i = 0; i < args.length; i++) {
+            if(typeof args[i] === 'string' && args[i][0] === '$') {
+                let propertyName = args[i].slice(1);
+                args[i] = this[propertyName];
+            }
+        }   
+
+        return args
     }
 
     Render(ctx, offset, scale) {
@@ -643,11 +719,18 @@ export class Spawner extends Client {
 
     toJSON() {
         return {
+            constructor: this.constructor.name,
+            
             position: this.position,
             bounds: this.bounds,
             count: this.count,
-            entity: {}
+            objectGenerator: this.objectGenerator,
+            type: this.type
         }
+    }
+
+    static from(json) {
+        return new this(json.position, json);
     }
 
     set killed(v) {
@@ -713,6 +796,8 @@ export class MagicProjectile extends Client {
 
         if(!mpl) throw new Error('no mpl specified');
         this.mpl = mpl;
+
+        this.group = GROUPS.PROJECTILE;
     }
 
     /**
@@ -902,6 +987,34 @@ export class MagicProjectile extends Client {
             this.grid.InsertClient(new ExplosionParticle(this.GetCenter(), [this.dimensions[0], 2.5 * this.dimensions[0]], 10));
         }
     }
+
+    toJSON() {
+        let o = {
+            constructor: this.constructor.name,
+            position: this.position,
+            size: this.dimensions[0],
+
+            projectile: this.projectile,
+            velocity: this.velocity,
+            speed: this.speed,
+            curve: this.curve,
+            mpl: this.mpl
+        }
+
+        if(this.owner) o.owner = this.owner;
+        return o;
+    }
+
+    // TODO: have to fix owner reference being lost as IDs are not preserved
+    static from(json) {
+        return new this(json.position, json.size, json.velocity, json.speed, {
+            dmg: json.projectile.damage,
+            color: json.projectile.color,
+            mpl: json.mpl,
+            curve: json.curve,
+            anchor: 'top-left'
+        })
+    }
 }
 
 export class RecursiveMagicProjectile extends MagicProjectile {
@@ -947,11 +1060,11 @@ export class RecursiveMagicProjectile extends MagicProjectile {
     }
 
     OnRemove() {
-        this.Recurse();
+        this._Recurse();
     }
 
     // split in to 8 smaller projectiles
-    Recurse() {
+    _Recurse() {
         const d = Math.SQRT1_2;
         const velocities = [
             [1, 0],
@@ -994,6 +1107,9 @@ export class Shield extends Client {
         // 1  : right
         // -1 : left
         // this.collision.type= 'none';
+
+        this.group = GROUPS.PROJECTILE;
+        this.expand = 1;
     }
 
     Step(t) {
@@ -1005,12 +1121,19 @@ export class Shield extends Client {
             return;
         }
         const owner = this.grid.GetClientById(this.owner);
-        if(!owner) this.grid.Remove();
+        if(!owner) this.grid.Remove(this);
         
-        let [cx, cy] = owner.GetCenter();
+        // let [cx, cy] = owner.GetCenter();
         this.direction = owner.facing == 'right' ? 1 : -1;
-        cx += this.direction * owner.dimensions[0] - .5 * this.dimensions[0];
-        cy -= this.dimensions[1] * .5;
+
+        // basically ensure the distance between their centeres is d 
+        const widthDiff = .5 * (owner.dimensions[0] - this.dimensions[0]);
+        const d = .5 * (1.2 * this.dimensions[0] + owner.dimensions[0]);
+        const cx = owner.position[0] + widthDiff + this.direction * d;
+
+
+        // let cx = owner.position[0] + this.direction * .5 * ( this.dimensions[0] + owner.dimensions[0] );
+        const cy = owner.position[1] + .5 * owner.dimensions[1] - this.dimensions[1] * .5;
         this.position = [cx, cy];
     }
 
@@ -1046,6 +1169,9 @@ export class Shield extends Client {
 
     OnRemove() {
         const owner = this.grid.GetClientById(this.owner);
+        
+        if(!owner) return; // check if the shield is removed due to the owner dying
+        
         owner.shield = null;
     }
 
@@ -1054,8 +1180,14 @@ export class Shield extends Client {
         for(let i = 0; i < ev.objects.length; i++) {
             const o = ev.objects[i];
             if(o instanceof MagicProjectile) return;
+            if(o.group === GROUPS.STATIC) {
+                this._Explode();
+                return;
+            }
+
             if(!o.health) return;
             o.health -= this.damage;
+
             if(o.health <= 0) {
                 this.grid.Remove(o);
                 if(o instanceof PlayerClient) {
@@ -1066,12 +1198,21 @@ export class Shield extends Client {
                     owner.xp += o.xp || 1;
                 }
             }
+
         }
 
+        this._Explode();
+    }
+
+    _Explode() {
         const s = Math.max(this.dimensions[0], this.dimensions[1]);
         this.grid.InsertClient(new ExplosionParticle(this.GetCenter(), [s, 2.5 * s], 10));
 
         this.grid.Remove(this);
+    }
+
+    toJSON() {
+        return false;
     }
 }
 
@@ -1107,142 +1248,123 @@ class ExplosionParticle extends Client {
         ctx.beginPath();
         ctx.arc(x, y , r, 0, 2 * Math.PI);
 
-        const opacity = .8 - .4 * (this.frame / this.duration);
+        const opacity = math.lerp(this.frame / this.duration, 0.8, 0.4);
         ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
         ctx.fill();
 
         this.frame++;   
     }
+
+    // toJSON() {
+    //     return {
+    //         constructor: this.constructor.name,
+            
+    //         position: this.position,
+    //         dimensions: this.dimensions,
+    //         frame: this.frame,
+    //         diameters: this.diameters,
+    //         duration: this.duration
+    //     }
+    // }
+
+    toJSON() {
+        return false;
+    }
 }
+
+let itemTextures = {};
 
 export class Item extends Client {
     constructor(position, item) {
+        super(position, [.25, .25]);
+        this.item = item;
+    }
+
+    Render(ctx, scale, offset) {
 
     }
 }
 
-export class RectSolid extends Client {
-    constructor(position, dimensions) {
+export class CarrotClient extends Client {
+    constructor(position, dimensions, growth = 0) {
         super(position, dimensions);
-        this.collision = {
-            type: 'active', 
-            shape: 'rectangle',
-            solid: true
-        }
+        this.sprites = [
+            createSVGImage('./src/svg/tile/carrot/carrot_1.svg'),
+            createSVGImage('./src/svg/tile/carrot/carrot_2.svg'),
+            createSVGImage('./src/svg/tile/carrot/carrot_3.svg')
+        ];
+
+        this.growth = growth;
+        this.stageGrowthTime = 20000; // 20s 
+        this.growthStages = 3;
+
+        this.growthTime = this.stageGrowthTime; 
+        this.grown = (growth == this.growthStages - 1);
+
+        this.collision.solid = false;
     }
 
-    Step() {}
-
-    Collision(ev) {
-        const center = this.GetCenter();
-
-        for(let i = 0; i < ev.objects.length; i++) {
-            const o = ev.objects[i];
-            if(!o.collision.solid) continue;
-            if(o instanceof MagicProjectile) continue;
-
-            // move object that collided away so it will no longer
-            // overlap the solid 
-            // collision conditions based on edge distance comparisons
-            // basically the side that is collided with is the side which the opposite edges of the 
-            // objects are the closest to each other
-            // also make object lose its velocity on collision
-
-            const obj_c = o.GetCenter();
-            
-            // distances between object edges
-
-            // distance between left edge of o and right edge of this
-            const LR_diff = Math.abs(o.position[0] - (this.position[0] + this.dimensions[0]));
-            
-            // distance between top edge of o and bottom edge of this
-            const TB_diff = Math.abs(o.position[1] - (this.position[1] + this.dimensions[1]));
-
-            const RL_diff = Math.abs((o.position[0] + o.dimensions[0]) - this.position[0]);
-
-            const BT_diff = Math.abs((o.position[1] + o.dimensions[1]) - this.position[1]);
-
-            const min_y_diff = Math.min(TB_diff, BT_diff);
-            const min_x_diff = Math.min(RL_diff, LR_diff);
-
-            // check if the object collided from the right
-            if( (obj_c[0] > center[0]) && (LR_diff < min_y_diff)) {
-                o.position[0] = this.position[0] + this.dimensions[0];
-                continue;
-            } 
-            
-            // check if the object collided from the left
-            if( (obj_c[0] < center[0]) && (RL_diff < min_y_diff) ) {
-                o.position[0] = this.position[0] - o.dimensions[0];
-                continue;
-            }
-            
-
-            // check if collided from top
-            if( (obj_c[1] < center[1]) && (BT_diff < min_x_diff) ) {
-                o.position[1] = this.position[1] - o.dimensions[1];
-                if(o._gravity !== undefined) o._gravity = 0;
-                if(o.onGround === false) o.onGround = true;
-                continue;
-            }
-
-            // check if collided from bottom
-            if( (obj_c[1] > center[1]) && (TB_diff < min_x_diff) ) {
-                o.position[1] = this.position[1] + this.dimensions[1];
-                continue;
-            }
-        }
-    }
-
+    /**
+     * @param {CanvasRenderingContext2D} ctx
+     */
     Render(ctx, offset, scale) {
-        ctx.fillStyle = 'gray';
-        ctx.strokeStyle = 'black';
-        ctx.lineWidth = 5;
+        const x = this.position[0] * scale + offset[0];
+        const y = this.position[1] * scale + offset[1];
 
-        ctx.fillRect(this.position[0] * scale + offset[0], this.position[1] * scale + offset[1], this.dimensions[0] * scale, this.dimensions[1] * scale);
-        ctx.strokeRect(this.position[0] * scale + offset[0], this.position[1] * scale + offset[1], this.dimensions[0] * scale, this.dimensions[1] * scale);
+        let t = this.grown ? 'Fully grown' : (this.growthTime / 1000).toFixed(1) + 's left';
+        ctx.fillStyle = 'black';
+        ctx.fillText(t, x, y - .1 * scale);
+        ctx.drawImage(this.sprites[this.growth], x, y, this.dimensions[0] * scale, this.dimensions[1] * scale)
+    }
 
-        ctx.fillStyle = null;
-        ctx.strokeStyle = null;
-        ctx.lineWidth = null;
+    Step(t) {
+        if(this.growth >= (this.growthStages - 1)) this.grown = true;
+        if(this.grown) return;
+
+        this.growthTime -= t;
+
+        if(this.growthTime < 0) {
+            this.growth++;
+            this.growthTime += this.stageGrowthTime; // start next stage
+        }
     }
 
     toJSON() {
         return {
+            constructor: this.constructor.name,
             position: this.position,
-            dimensions: this.dimensions
+            dimensions: this.dimensions,
+
+            growth: this.growth
         }
     }
-}
 
-// Solid object represented by a convex polygon
-export class PolySolid extends Client {
-    /**
-     * Create solid from convex list of points
-     * @param {Object[]} points - list of points  
-     * @param {Number} points[].x - x coord of point
-     * @param {Number} points[].y - y coord of point
-     */
-    constructor(points) {
-        if(points.length < 3) throw new Error('cannot construct polygonal figure from less then 3 points')
-        // Find bounds and dimensions 
-        // default values are in the maximum opposite directions of the points
-        const topLeft = [Infinity, Infinity];
-        const bottomRight = [-Infinity, -Infinity];
-
-        for(let i = 0; i < points.length; i++) {
-            const e = points[i];
-            if(e.x > bottomRight[0]) bottomRight[0] = e.x
-                else if(e.x < topLeft[0]) topLeft[0] = e.x;
-
-            if(e.y > bottomRight[1]) bottomRight[1] = e.y
-                else if(e.y < topLeft[1]) topLeft[1] = e.y;
+    Interaction(ev) {
+        let buttons = [];
+        if(this.growth === this.growthStages - 1) {
+            buttons.push({
+                text: 'Harvest',
+                close: true,
+                callback: () => this.Harvest()
+            });
         }
 
-        super(topLeft, [
-            Math.abs(topLeft[0] - bottomRight[0]),
-            Math.abs(topLeft[1] - bottomRight[1])
-        ]);
+        newInteractive(`Carrot (Growth Stage ${this.growth+1}/${this.growthStages})`, {
+            x: ev.client[0],
+            y: ev.client[1],
+            options: buttons
+        });
+    }
+
+    Harvest() {
+        // harvest the carrot? 
+        player.health = player.stats.maxHealth;
+        player.mana = player.stats.maxMana;
+        this.grid.Remove(this);
+    }
+
+    static from(json) {
+        return new this(json.position, json.dimensions, json.growth);
     }
 }
 
@@ -1268,3 +1390,5 @@ function anchorPosition(anchor, position, size) {
     }
     return position;
 }
+
+export {SlopeSolid, RectSolid} from './solid.js'

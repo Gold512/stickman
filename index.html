@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -9,19 +10,23 @@
     <link rel="stylesheet" href="src/css/stat_menu.css">
     <link rel="stylesheet" href="src/css/ui.css">
 </head>
+
 <body>
+    <div id="background"></div>
     <canvas id="canvas"></canvas>
     <div id="stats">
         <div class="bar-container" id="health-bar" style="
             --color: red;
-            --current: 20;
-            --max: 20;
+            --current: 100;
+            --max: 100;
             
             --regen: 5;
             --regen-color: pink;
             ">
 
-            <span class="bar"></span>
+            <span class="bar">
+                <span class="sub-bar"></span>
+            </span>
             <div class="tooltip bottom auto-expand uninteractive regen-text"></div>
             <div class="regen"></div>
         </div>
@@ -58,13 +63,13 @@
 
     <div id="skill-container">
         <div id="skill-bar">
-            
+
         </div>
     </div>
 
     <div id="menu"></div>
-    <script src="https://unpkg.com/create-conical-gradient@latest/umd/create-conical-gradient.min.js"></script>
-
+    
     <script src="./src/js/main.js" type="module"></script>
 </body>
+
 </html>

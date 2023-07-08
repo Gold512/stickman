@@ -1,5 +1,6 @@
 // Declare to global scope to avoid creating multiple caches
 if(!window.SVG_CACHE) window.SVG_CACHE = {};
+if(!window.SVG_IMAGE_CACHE) window.SVG_IMAGE_CACHE = {};
 
 /**
  * 
@@ -40,8 +41,57 @@ export async function getSVG(url) {
         .then(function(response) {
             return response.text();
         }).then(function(data) {
+            window.SVG_CACHE[url] = data;
             return data; // this will be a string
-        });;
+        });
 }
 
-window.getSVG = getSVG
+export function syncGetSVG(url) {
+    let svg = document.createElement('svg');
+    
+    if(window.SVG_CACHE[url] != undefined) {
+        setSVG(window.SVG_CACHE[url]);
+        return svg;
+    }
+
+    fetch(url)
+        .then(function(response) {
+            return response.text();
+        }).then(function(data) {
+            window.SVG_CACHE[url] = data;
+
+            setSVG(data);
+        });
+
+    return svg;
+
+    function setSVG(data) {
+        let template = document.createElement('template');
+        template.innerHTML = data;
+        let newSVG = template.content.firstChild;
+
+        let svgAttributes = newSVG.getAttributeNames();
+        for (let i = 0; i < svgAttributes.length; i++) {
+            const attr = svgAttributes[i];
+            svg.setAttribute(attr, newSVG.getAttribute(attr));
+        }
+
+        svg.innerHTML = newSVG.innerHTML;
+    }
+}
+
+export function createSVGImage(path) {
+    if(window.SVG_IMAGE_CACHE[path]) return window.SVG_IMAGE_CACHE[path];
+    let svgimg = document.createElementNS('http://www.w3.org/2000/svg','image');
+    svgimg.setAttributeNS('http://www.w3.org/1999/xlink','href',path);
+    window.SVG_IMAGE_CACHE[path] = svgimg;
+    return svgimg;
+}
+
+/**
+ * preload svg files into svg elements for fetching svg data instantly 
+ * @param {...string} paths - paths of svgs to preload 
+ */
+export function preloadSVGImages(...paths) {
+
+}
